@@ -6,21 +6,8 @@ import { createServer } from "http";
 const app = express();
 const httpServer = createServer(app);
 
-declare module "http" {
-  interface IncomingMessage {
-    rawBody: unknown;
-  }
-}
-
-app.use(
-  express.json({
-    verify: (req, _res, buf) => {
-      req.rawBody = buf;
-    },
-  }),
-);
-
-app.use(express.urlencoded({ extended: false }));
+app.use(express.json({ limit: "25mb" }));
+app.use(express.urlencoded({ extended: false, limit: "25mb" }));
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {
@@ -33,6 +20,7 @@ export function log(message: string, source = "express") {
   console.log(`${formattedTime} [${source}] ${message}`);
 }
 
+// 🔧 Logger mejorado (oculta base64 largos)
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
@@ -48,8 +36,18 @@ app.use((req, res, next) => {
     const duration = Date.now() - start;
     if (path.startsWith("/api")) {
       let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+
       if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+        const safe = { ...capturedJsonResponse };
+
+        // 🧠 ocultar cualquier imageUrl grande (data URL o base64 puro)
+        if (typeof safe.imageUrl === "string") {
+          if (safe.imageUrl.startsWith("data:") || safe.imageUrl.length > 200) {
+            safe.imageUrl = "[image omitted]";
+          }
+        }
+
+        logLine += ` :: ${JSON.stringify(safe)}`;
       }
 
       log(logLine);
@@ -75,9 +73,6 @@ app.use((req, res, next) => {
     return res.status(status).json({ message });
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
   if (process.env.NODE_ENV === "production") {
     serveStatic(app);
   } else {
@@ -85,10 +80,6 @@ app.use((req, res, next) => {
     await setupVite(httpServer, app);
   }
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || "5000", 10);
   httpServer.listen(
     {

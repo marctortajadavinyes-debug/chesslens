@@ -1,0 +1,33 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "parts": [
+          {
+            "text": "{\"pgn\": \"1. d4 CF6 2. CF3 g6 3. C4 Ag7 4. Cc3 O-O 5. e4 d6 6. Ae2 e5 7. O-O Cc6 8. d5 Ce7 9. b4 a5 10. bxa5 Txa5 11. a4 C5 12. dxc6 bxc6 13. Aa3 C5 14. Dd3 Cc6 15. TFd1 Cd4 16. Tab1 Ad7 17. Cxd4 exd4 18. Cb5 De7 19. F3 Ah6 20. Cxd4 cxd4 21. Dxd4 Axa4 22. Axd6 Da7 23. Dxa7 Txa7 24. Axf8 Ae3+ 25. Rf1 Axd1 26. Tb8 Cd7 27. Td8 Ab6 28. Ac5+ Axe5 29. Axaf Axe2 30. Rxe2 Ab6 31. Axb6 Cxb6 32. c5 Cc8 33. Rd3 Rf8 34. Rd4 Re7 35. Rd5 Ca7 36. g4 g5 37. C6 Cb5 38. e5 Cc7+ 39. Re4 Ce6 40. Rd5 h6 41. Re4 CF4 42. RF5 Cd5 43. h3 Rd8 44. e6 Re7 45. exf7 Rxf7 46. Re5 Cc7 47. F4 gxf4 48. Rxf4 RF6 49. h4 Re6 50. Re4 Cd5 51. g5 h5 52. g6 Ce7 53. g7 RF7 54. RF4 Rxg7 55. Rg5 Cxc6 56. Rxh5 Ce5 57. Rg5 CF3+ 58. Rg4 Cxh4\"}"
+          }
+        ],
+        "role": "model"
+      },
+      "finishReason": "STOP",
+      "index": 0
+    }
+  ],
+  "usageMetadata": {
+    "promptTokenCount": 330,
+    "candidatesTokenCount": 485,
+    "totalTokenCount": 815,
+    "promptTokensDetails": [
+      {
+        "modality": "TEXT",
+        "tokenCount": 72
+      },
+      {
+        "modality": "IMAGE",
+        "tokenCount": 258
+      }
+    ]
+  },
+  "modelVersion": "gemini-2.5-flash",
+  "responseId": "CUa4acaiEY3_qtsP7sWesAg"
+}

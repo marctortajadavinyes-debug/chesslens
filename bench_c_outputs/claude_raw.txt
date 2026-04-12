@@ -1,0 +1,32 @@
+I'll analyze the source transcription carefully, translating Catalan pieces and fixing OCR errors.
+
+Key translations: C->N, A->B, T->R, D->Q, R->K
+
+Let me go through problematic moves:
+
+- Move 24: "Axf8" = Bxf8, "Ae3+" = Be3+
+- Move 25: "Tf1" = Rf1, "Axd1" = Bxd1 (but Rf1 just moved there... bishop takes rook on d1)
+- Move 26: "Tb8" = Rb8, "Cd7" = Nd7
+- Move 27: "Td8" = Rd8, "Ab6" = Bb6
+- Move 28: "Ac5+" = Bc5+, "Axe5" - should be "Bxc5" isn't right... "Ke8"? Wait, after Bc5+ king moves. But "Axe5" with A=B: Bxe5? That seems odd. Maybe OCR error - could be "Rxe5"? No... Let me keep Bxe5 as written... Actually looking at position, maybe it's "Ke8"... but source says "Axe5". I'll keep as Bxe5... wait, the king responding to check: Kxc5 doesn't make sense. Perhaps "Axe5" is "Kxe8"? Let me try Ke8.
+
+Actually "Axe5" - in context of check on c5, the king must respond. Could be a misread of "Re8" (K=R in Catalan, so Re8 = Ke8). I'll use Ke8.
+
+- Move 29: "Axaf" = likely "Bxf8" OCR error - Bxf8 already happened. Could be "Rxf8"... The rook on d8 captures f8? Bxa7? Looking at "Axaf" - probably "Bxa7" with OCR issues. Let me use Rxa7... actually "Rxf8" for Rd8xf8. I'll try Rxf8.
+- Move 29: "Axe2" = Bxe2... but if Rxf8, then Bxe2
+- Move 30: "Rxe2" = Kxe2, "Ab6" = Bb6
+- Move 31: "Axb6" = Bxb6, "Cxb6" = Nxb6
+- Move 45: "Rx f7" = Kxf7
+- Move 47: "g xf4" = gxf4
+- Move 55: "Cxc6" = Nxc6 - but knight was on e7... after g7 promotion issues. Let me check: move 52 Ce7=Ne7, 53 g7 Rf7=Kf7, 54 Rf4=Kf4 Rxg7=Kxg7, 55 Rg5=Kg5 Cxc6=Nxc6, 56 Rxh5=Kxh5 Ce5=Ne5, 57 Rg5=Kg5 Cf3+=Nf3+, 58 Rg4=Kg4 Cxh4=Nxh4
+
+For move 28-29, I'll interpret: Bc5+ Ke8, Rxf8+ Kxe2... that doesn't work. Let me settle on: 28. Bc5+ Ke8 29. Rxf8+ Bxe2 (wait Bxe2 makes no sense for black). 
+
+After careful analysis, keeping moves as close to source as possible:
+
+```json
+{
+  "pgn": "1. d4 Nf6 2. Nf3 g6 3. c4 Bg7 4. Nc3 O-O 5. e4 d6 6. Be2 e5 7. O-O Nc6 8. d5 Ne7 9. b4 a5 10. bxa5 Rxa5 11. a4 c5 12. dxc6 bxc6 13. Ba3 c5 14. Qd3 Nc6 15. Rfd1 Nd4 16. Rab1 Bd7 17. Nxd4 exd4 18. Nb5 Qe7 19. f3 Bh6 20. Nxd4 cxd4 21. Qxd4 Bxa4 22. Bxd6 Qa7 23. Qxa7 Rxa7 24. Bxf8 Be3+ 25. Rf1 Bxd1 26. Rb8 Nd7 27. Rd8 Bb6 28. Bc5+ Ke8 29. Rxf8+ Bxe2 30. Kxe2 Bb6 31. Bxb6 Nxb6 32. c5 Nc8 33. Kd3 Kf8 34. Kd4 Ke7 35. Kd5 Na7 36. g4 g5 37. c6 Nb5 38. e5 Nc7+ 39. Ke4 Ne6 40. Kd5 h6 41. Ke4 Nf4 42. Kf5 Nd5 43. h3 Kd8 44. e6 Ke7 45. exf7 Kxf7 46. Ke5 Nc7 47. f4 gxf4 48. Kxf4 Kf6 49. h4 Ke7 50. Ke4 Nd5 51. g5 h5 52. g6 Ne7 53. g7 Kf7 54. Kf4 Kxg7 55. Kg5 Nxc6 56. Kxh5 Ne5 57. Kg5 Nf3+ 58. Kg4 Nxh4",
+  "confidence": 0.55
+}
+```

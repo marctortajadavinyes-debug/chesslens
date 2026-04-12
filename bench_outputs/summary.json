@@ -1,0 +1,44 @@
+[
+  {
+    "provider": "openai",
+    "model": "gpt-4o",
+    "ok_http": true,
+    "elapsed_sec": 14.361086201010039,
+    "raw_text_len": 870,
+    "json_ok": true,
+    "pgn_present": true,
+    "moves_present": true,
+    "legal_moves": 53,
+    "total_moves_checked": 53,
+    "parse_source": "pgn",
+    "error": null
+  },
+  {
+    "provider": "gemini",
+    "model": "gemini-2.5-flash",
+    "ok_http": true,
+    "elapsed_sec": 3.639700391999213,
+    "raw_text_len": 705,
+    "json_ok": true,
+    "pgn_present": true,
+    "moves_present": false,
+    "legal_moves": 5,
+    "total_moves_checked": 5,
+    "parse_source": "pgn",
+    "error": null
+  },
+  {
+    "provider": "anthropic",
+    "model": "claude-sonnet-4-6",
+    "ok_http": true,
+    "elapsed_sec": 26.47140428898274,
+    "raw_text_len": 3288,
+    "json_ok": true,
+    "pgn_present": false,
+    "moves_present": false,
+    "legal_moves": 0,
+    "total_moves_checked": 0,
+    "parse_source": "none",
+    "error": null
+  }
+]

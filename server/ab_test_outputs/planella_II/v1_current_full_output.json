@@ -1,0 +1,622 @@
+{
+  "ok": true,
+  "pgn": "[Event \"Lliga Catalana 2026\"]\n[Site \"\"]\n[Date \"2026.01.25\"]\n[Round \"2\"]\n[White \"Didac Sirvent\"]\n[Black \"Pol Tortajada\"]\n[Result \"1/2-1/2\"]\n\n1. d4 Nf6 2. Nf3 g6 3. c4 Bg7 4. Nc3 O-O 5. e4 d6 6. Be2 e5 7. O-O Nc6 8. d5 Ne7 9. b4 a5 10. bxa5 Rxa5 11. a4 c5 12. dxc6 bxc6 13. Ba3 c5 14. Qd3 Nc6 15. Rfd1 Nd4 16. Rab1 Bd7 17. Nxd4 exd4 18. Nb5 Qe7 19. f3 Bh6 20. Nxd4 cxd4 21. Qxd4 Bxa4 22. Bxd6 Qa7 23. Qxa7 Rxa7 24. Bxf8 Be3+ 25. Kf1 Bxd1 26. Rb8 Nd7 27. Rd8 Bb6 28. Bc5+ 1/2-1/2",
+  "error": null,
+  "moves": [
+    "d4",
+    "Nf6",
+    "Nf3",
+    "g6",
+    "c4",
+    "Bg7",
+    "Nc3",
+    "O-O",
+    "e4",
+    "d6",
+    "Be2",
+    "e5",
+    "O-O",
+    "Nc6",
+    "d5",
+    "Ne7",
+    "b4",
+    "a5",
+    "bxa5",
+    "Rxa5",
+    "a4",
+    "c5",
+    "dxc6",
+    "bxc6",
+    "Ba3",
+    "c5",
+    "Qd3",
+    "Nc6",
+    "Rfd1",
+    "Nd4",
+    "Rab1",
+    "Bd7",
+    "Nxd4",
+    "exd4",
+    "Nb5",
+    "Qe7",
+    "f3",
+    "Bh6",
+    "Nxd4",
+    "cxd4",
+    "Qxd4",
+    "Bxa4",
+    "Bxd6",
+    "Qa7",
+    "Qxa7",
+    "Rxa7",
+    "Bxf8",
+    "Be3+",
+    "Kf1",
+    "Bxd1",
+    "Rb8",
+    "Nd7",
+    "Rd8",
+    "Bb6",
+    "Bc5+"
+  ],
+  "errors": [
+    {
+      "row": 28,
+      "side": "b",
+      "raw": "Axc5",
+      "normalized": "",
+      "candidates": [],
+      "reason": "illegal san: 'hxc5' in 3R2k1/r2n1p1p/1b4p1/2B5/2P1P3/5P2/4B1PP/3b1K2 b - - 5 28",
+      "fen": "3R2k1/r2n1p1p/1b4p1/2B5/2P1P3/5P2/4B1PP/3b1K2 b - - 5 28"
+    }
+  ],
+  "meta": {
+    "event": "Lliga Catalana 2026",
+    "site": "",
+    "date": "2026.01.25",
+    "round": "2",
+    "white": "Didac Sirvent",
+    "black": "Pol Tortajada",
+    "result": "1/2-1/2",
+    "headers_raw": {
+      "Event": "Lliga Catalana 2026",
+      "Site": "",
+      "Date": "25/1/26",
+      "Round": "2",
+      "White": "Didac Sirvent",
+      "Black": "Pol Tortajada",
+      "Result": "1/2"
+    },
+    "headers_normalized": {
+      "Event": "Lliga Catalana 2026",
+      "Site": "",
+      "Date": "2026.01.25",
+      "Round": "2",
+      "White": "Didac Sirvent",
+      "Black": "Pol Tortajada",
+      "Result": "1/2-1/2"
+    },
+    "engine": "gemini",
+    "parse_mode": "json_rows_a3_resumeable",
+    "rows_count": 75,
+    "raw_moves_count": 150,
+    "valid_moves_count": 55,
+    "errors_count": 1,
+    "considered_cells": 56,
+    "pushed_moves": 55,
+    "sample_rows": [
+      {
+        "row": 1,
+        "w": "d4",
+        "b": "CF6"
+      },
+      {
+        "row": 2,
+        "w": "CF3",
+        "b": "96"
+      },
+      {
+        "row": 3,
+        "w": "C4",
+        "b": "Ag7"
+      },
+      {
+        "row": 4,
+        "w": "Cc3",
+        "b": "0-0"
+      },
+      {
+        "row": 5,
+        "w": "e4",
+        "b": "d6"
+      },
+      {
+        "row": 6,
+        "w": "Ae2",
+        "b": "e5"
+      },
+      {
+        "row": 7,
+        "w": "0-0",
+        "b": "Cc6"
+      },
+      {
+        "row": 8,
+        "w": "d5",
+        "b": "Ce7"
+      },
+      {
+        "row": 9,
+        "w": "b4",
+        "b": "a5"
+      },
+      {
+        "row": 10,
+        "w": "bxa5",
+        "b": "Txa5"
+      },
+      {
+        "row": 11,
+        "w": "a4",
+        "b": "C5"
+      },
+      {
+        "row": 12,
+        "w": "dxc6",
+        "b": "bxc6"
+      },
+      {
+        "row": 13,
+        "w": "Aa3",
+        "b": "C5"
+      },
+      {
+        "row": 14,
+        "w": "Dd3",
+        "b": "Cc6"
+      },
+      {
+        "row": 15,
+        "w": "TFd1",
+        "b": "Cd4"
+      },
+      {
+        "row": 16,
+        "w": "Tab1",
+        "b": "Ad7"
+      },
+      {
+        "row": 17,
+        "w": "Cxd4",
+        "b": "exd4"
+      },
+      {
+        "row": 18,
+        "w": "Cb5",
+        "b": "De7"
+      },
+      {
+        "row": 19,
+        "w": "F3",
+        "b": "Ah6"
+      },
+      {
+        "row": 20,
+        "w": "Cxd4",
+        "b": "cxd4"
+      }
+    ]
+  },
+  "ocr": {
+    "meta": {
+      "event": "Lliga Catalana 2026",
+      "site": "",
+      "date": "2026.01.25",
+      "round": "2",
+      "white": "Didac Sirvent",
+      "black": "Pol Tortajada",
+      "result": "1/2-1/2",
+      "headers_raw": {
+        "Event": "Lliga Catalana 2026",
+        "Site": "",
+        "Date": "25/1/26",
+        "Round": "2",
+        "White": "Didac Sirvent",
+        "Black": "Pol Tortajada",
+        "Result": "1/2"
+      },
+      "headers_normalized": {
+        "Event": "Lliga Catalana 2026",
+        "Site": "",
+        "Date": "2026.01.25",
+        "Round": "2",
+        "White": "Didac Sirvent",
+        "Black": "Pol Tortajada",
+        "Result": "1/2-1/2"
+      }
+    },
+    "rows": [
+      {
+        "row": 1,
+        "w": "d4",
+        "b": "CF6"
+      },
+      {
+        "row": 2,
+        "w": "CF3",
+        "b": "96"
+      },
+      {
+        "row": 3,
+        "w": "C4",
+        "b": "Ag7"
+      },
+      {
+        "row": 4,
+        "w": "Cc3",
+        "b": "0-0"
+      },
+      {
+        "row": 5,
+        "w": "e4",
+        "b": "d6"
+      },
+      {
+        "row": 6,
+        "w": "Ae2",
+        "b": "e5"
+      },
+      {
+        "row": 7,
+        "w": "0-0",
+        "b": "Cc6"
+      },
+      {
+        "row": 8,
+        "w": "d5",
+        "b": "Ce7"
+      },
+      {
+        "row": 9,
+        "w": "b4",
+        "b": "a5"
+      },
+      {
+        "row": 10,
+        "w": "bxa5",
+        "b": "Txa5"
+      },
+      {
+        "row": 11,
+        "w": "a4",
+        "b": "C5"
+      },
+      {
+        "row": 12,
+        "w": "dxc6",
+        "b": "bxc6"
+      },
+      {
+        "row": 13,
+        "w": "Aa3",
+        "b": "C5"
+      },
+      {
+        "row": 14,
+        "w": "Dd3",
+        "b": "Cc6"
+      },
+      {
+        "row": 15,
+        "w": "TFd1",
+        "b": "Cd4"
+      },
+      {
+        "row": 16,
+        "w": "Tab1",
+        "b": "Ad7"
+      },
+      {
+        "row": 17,
+        "w": "Cxd4",
+        "b": "exd4"
+      },
+      {
+        "row": 18,
+        "w": "Cb5",
+        "b": "De7"
+      },
+      {
+        "row": 19,
+        "w": "F3",
+        "b": "Ah6"
+      },
+      {
+        "row": 20,
+        "w": "Cxd4",
+        "b": "cxd4"
+      },
+      {
+        "row": 21,
+        "w": "Dxd4",
+        "b": "Axa4"
+      },
+      {
+        "row": 22,
+        "w": "Axd6",
+        "b": "Da7"
+      },
+      {
+        "row": 23,
+        "w": "Dxa7",
+        "b": "Txa7"
+      },
+      {
+        "row": 24,
+        "w": "Axf8",
+        "b": "Ae3+"
+      },
+      {
+        "row": 25,
+        "w": "Rf1",
+        "b": "Axd1"
+      },
+      {
+        "row": 26,
+        "w": "T68",
+        "b": "Cd7"
+      },
+      {
+        "row": 27,
+        "w": "Td8",
+        "b": "Ab6"
+      },
+      {
+        "row": 28,
+        "w": "Ac5+",
+        "b": "Axc5"
+      },
+      {
+        "row": 29,
+        "w": "Axaf",
+        "b": "Axe2"
+      },
+      {
+        "row": 30,
+        "w": "Rxe2",
+        "b": "Ab6"
+      },
+      {
+        "row": 31,
+        "w": "Axb6",
+        "b": "Cxb6"
+      },
+      {
+        "row": 32,
+        "w": "c5",
+        "b": "Cc8"
+      },
+      {
+        "row": 33,
+        "w": "Rd3",
+        "b": "Rf8"
+      },
+      {
+        "row": 34,
+        "w": "Rd4",
+        "b": "Re7"
+      },
+      {
+        "row": 35,
+        "w": "Rd5",
+        "b": "Ca7"
+      },
+      {
+        "row": 36,
+        "w": "g4",
+        "b": "95"
+      },
+      {
+        "row": 37,
+        "w": "C6",
+        "b": "Cb5"
+      },
+      {
+        "row": 38,
+        "w": "e5",
+        "b": "Cc7+"
+      },
+      {
+        "row": 39,
+        "w": "Re4",
+        "b": "Ce6"
+      },
+      {
+        "row": 40,
+        "w": "Rd5",
+        "b": "h6"
+      },
+      {
+        "row": 41,
+        "w": "Re4",
+        "b": "CF4"
+      },
+      {
+        "row": 42,
+        "w": "Rf5",
+        "b": "Cd5"
+      },
+      {
+        "row": 43,
+        "w": "h3",
+        "b": "Rd8"
+      },
+      {
+        "row": 44,
+        "w": "e6",
+        "b": "Re7"
+      },
+      {
+        "row": 45,
+        "w": "exf7",
+        "b": "Rxf7"
+      },
+      {
+        "row": 46,
+        "w": "Re5",
+        "b": "Cc7"
+      },
+      {
+        "row": 47,
+        "w": "F4",
+        "b": "gxf4"
+      },
+      {
+        "row": 48,
+        "w": "Rxf4",
+        "b": "Rf6"
+      },
+      {
+        "row": 49,
+        "w": "h4",
+        "b": "Re6"
+      },
+      {
+        "row": 50,
+        "w": "Re4",
+        "b": "Cd5"
+      },
+      {
+        "row": 51,
+        "w": "95",
+        "b": "h5"
+      },
+      {
+        "row": 52,
+        "w": "96",
+        "b": "Ce7"
+      },
+      {
+        "row": 53,
+        "w": "97",
+        "b": "Rf7"
+      },
+      {
+        "row": 54,
+        "w": "Rf4",
+        "b": "Rxg7"
+      },
+      {
+        "row": 55,
+        "w": "Rg5",
+        "b": "Cxc6"
+      },
+      {
+        "row": 56,
+        "w": "Rxh5",
+        "b": "Ce5"
+      },
+      {
+        "row": 57,
+        "w": "Rg5",
+        "b": "CF3+"
+      },
+      {
+        "row": 58,
+        "w": "Rg4",
+        "b": "Cxh4"
+      },
+      {
+        "row": 59,
+        "w": "",
+        "b": ""
+      },
+      {
+        "row": 60,
+        "w": "",
+        "b": ""
+      },
+      {
+        "row": 61,
+        "w": "",
+        "b": ""
+      },
+      {
+        "row": 62,
+        "w": "",
+        "b": ""
+      },
+      {
+        "row": 63,
+        "w": "",
+        "b": ""
+      },
+      {
+        "row": 64,
+        "w": "",
+        "b": ""
+      },
+      {
+        "row": 65,
+        "w": "",
+        "b": ""
+      },
+      {
+        "row": 66,
+        "w": "",
+        "b": ""
+      },
+      {
+        "row": 67,
+        "w": "",
+        "b": ""
+      },
+      {
+        "row": 68,
+        "w": "",
+        "b": ""
+      },
+      {
+        "row": 69,
+        "w": "",
+        "b": ""
+      },
+      {
+        "row": 70,
+        "w": "",
+        "b": ""
+      },
+      {
+        "row": 71,
+        "w": "",
+        "b": ""
+      },
+      {
+        "row": 72,
+        "w": "",
+        "b": ""
+      },
+      {
+        "row": 73,
+        "w": "",
+        "b": ""
+      },
+      {
+        "row": 74,
+        "w": "",
+        "b": ""
+      },
+      {
+        "row": 75,
+        "w": "",
+        "b": ""
+      }
+    ]
+  },
+  "stopped_for_review": true,
+  "blocked_row": 28,
+  "blocked_side": "b",
+  "raw_token": "Axc5",
+  "candidates": [],
+  "fen": "3R2k1/r2n1p1p/1b4p1/2B5/2P1P3/5P2/4B1PP/3b1K2 b - - 5 28"
+}

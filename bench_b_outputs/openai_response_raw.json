@@ -1,0 +1,71 @@
+{
+  "id": "resp_022302fe83b917300069b848202a4881939c5f3da6c8011500",
+  "object": "response",
+  "created_at": 1773684768,
+  "status": "completed",
+  "background": false,
+  "billing": {
+    "payer": "developer"
+  },
+  "completed_at": 1773684775,
+  "error": null,
+  "frequency_penalty": 0.0,
+  "incomplete_details": null,
+  "instructions": null,
+  "max_output_tokens": 2000,
+  "max_tool_calls": null,
+  "model": "gpt-4o-2024-08-06",
+  "output": [
+    {
+      "id": "msg_022302fe83b917300069b84821102881938b649b21f344fa47",
+      "type": "message",
+      "status": "completed",
+      "content": [
+        {
+          "type": "output_text",
+          "annotations": [],
+          "logprobs": [],
+          "text": "```json\n{\n  \"pgn\": \"1. d4 Nf6 2. Nf3 g6 3. c4 Bg7 4. Nc3 O-O 5. e4 d6 6. Be2 e5 7. O-O Nc6 8. d5 Ne7 9. b4 a5 10. bxa5 Rxa5 11. a4 c5 12. dxc6 bxc6 13. Ba3 c5 14. Qd3 Nc6 15. Rfd1 Nd4 16. Rab1 Bc6 17. Nxd4 exd4 18. Nb5 Qe7 19. f3 Be6 20. Nxd4 cxd4 21. Qxd4 Bxa4 22. Bxd6 Bxd1 23. Qxa7 Rxa7 24. Bxf8 Be3+ 25. Rf1 Bxe2 26. Rb1 Nd7 27. Rd1 Bc5+ 28. Bxc5 Bxd1 29. Bxa7 Bxf3 30. gxf3 Ne5 31. Bxc5 Nxc4 32. c5 Ne5 33. Kf2 Kg7 34. Ke3 Kf6 35. Kd5 Nc7+ 36. Kc6 g5 37. c6 Ne8 38. e5+ Kxe5 39. Kc5 Nc7 40. Kc4 h6 41. Kd3 h5 42. Ke4 Nd5 43. f4 gxf4 44. Kf3 Kf5 45. h3 Nc7 46. Kf2 Ne6 47. Kf3 Ng7 48. Kf2 Kg6 49. Kg2 Nxc6 50. Kh2 Ne5 51. Kg2 Nf3+ 52. Kf2 Nh4\",\n  \"confidence\": 0.95\n}\n```"
+        }
+      ],
+      "role": "assistant"
+    }
+  ],
+  "parallel_tool_calls": true,
+  "presence_penalty": 0.0,
+  "previous_response_id": null,
+  "prompt_cache_key": null,
+  "prompt_cache_retention": null,
+  "reasoning": {
+    "effort": null,
+    "summary": null
+  },
+  "safety_identifier": null,
+  "service_tier": "default",
+  "store": true,
+  "temperature": 1.0,
+  "text": {
+    "format": {
+      "type": "text"
+    },
+    "verbosity": "medium"
+  },
+  "tool_choice": "auto",
+  "tools": [],
+  "top_logprobs": 0,
+  "top_p": 1.0,
+  "truncation": "disabled",
+  "usage": {
+    "input_tokens": 619,
+    "input_tokens_details": {
+      "cached_tokens": 0
+    },
+    "output_tokens": 440,
+    "output_tokens_details": {
+      "reasoning_tokens": 0
+    },
+    "total_tokens": 1059
+  },
+  "user": null,
+  "metadata": {}
+}

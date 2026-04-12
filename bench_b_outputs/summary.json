@@ -1,0 +1,20 @@
+{
+  "provider": "gemini->openai",
+  "gemini_model": "gemini-2.5-flash",
+  "openai_model": "gpt-4o",
+  "gemini_elapsed_sec": 3.3927772979996007,
+  "openai_elapsed_sec": 7.575063477000185,
+  "total_elapsed_sec": 10.967840774999786,
+  "json_ok": true,
+  "gemini_pgn_present": true,
+  "repaired_pgn_present": true,
+  "legal_plies": 31,
+  "total_plies": 104,
+  "failed": {
+    "ply": 32,
+    "raw": "Bc6",
+    "reason": "illegal san: 'Bc6' in 2bq1rk1/5pbp/3p1np1/r1p1p3/P1PnP3/B1NQ1N2/4BPPP/1R1R2K1 b - - 5 16",
+    "fen": "2bq1rk1/5pbp/3p1np1/r1p1p3/P1PnP3/B1NQ1N2/4BPPP/1R1R2K1 b - - 5 16"
+  },
+  "valid_movetext": "1. d4 Nf6 2. Nf3 g6 3. c4 Bg7 4. Nc3 O-O 5. e4 d6 6. Be2 e5 7. O-O Nc6 8. d5 Ne7 9. b4 a5 10. bxa5 Rxa5 11. a4 c5 12. dxc6 bxc6 13. Ba3 c5 14. Qd3 Nc6 15. Rfd1 Nd4 16. Rab1"
+}

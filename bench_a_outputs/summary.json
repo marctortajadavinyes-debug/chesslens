@@ -1,0 +1,17 @@
+{
+  "provider": "gemini",
+  "model": "gemini-2.5-flash",
+  "elapsed_sec": 3.321088764999331,
+  "json_ok": true,
+  "raw_pgn_present": true,
+  "legal_plies": 4,
+  "total_plies": 116,
+  "failed": {
+    "ply": 5,
+    "raw": "C4",
+    "normalized": "N4",
+    "reason": "invalid san: 'N4'",
+    "fen": "rnbqkb1r/pppppp1p/5np1/8/3P4/5N2/PPP1PPPP/RNBQKB1R w KQkq - 0 3"
+  },
+  "normalized_movetext": "1. d4 Nf6 2. Nf3 g6"
+}

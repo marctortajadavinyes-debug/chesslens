@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { useLocation } from "wouter";
 import { useDropzone } from "react-dropzone";
 import { motion } from "framer-motion";
-import { Upload, FileImage, Loader2 } from "lucide-react";
+import { Upload, Loader2, Plus, Play, CheckCircle2 } from "lucide-react";
 import { useCreateGame, useGames } from "@/hooks/use-games";
 import { Button } from "@/components/ui/button";
 import { GameCard } from "@/components/game-card";
@@ -13,49 +13,89 @@ export default function Home() {
   const { toast } = useToast();
   const createGame = useCreateGame();
   const { data: games, isLoading } = useGames();
+
   const [isUploading, setIsUploading] = useState(false);
+  const [images, setImages] = useState<string[]>([]);
 
-  const onDrop = useCallback(async (acceptedFiles: File[]) => {
-    const file = acceptedFiles[0];
-    if (!file) return;
+  const onDrop = useCallback(
+    async (acceptedFiles: File[]) => {
+      if (!acceptedFiles || acceptedFiles.length === 0) return;
 
-    setIsUploading(true);
-    
-    // Convert file to base64 for MVP simplicity
-    // In production, upload to S3/Cloudinary and get a URL
-    const reader = new FileReader();
-    reader.onload = async () => {
       try {
-        const imageUrl = reader.result as string;
-        const game = await createGame.mutateAsync({ imageUrl });
+        const newImages: string[] = [];
+        for (const file of acceptedFiles) {
+          const base64 = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.readAsDataURL(file);
+          });
+          newImages.push(base64);
+        }
+
+        setImages((prev) => [...prev, ...newImages]);
         toast({
-          title: "Scoresheet Uploaded",
-          description: "We're processing your game now.",
+          title: "Planella afegida",
+          description: `${newImages.length} imatge(s) afegida(es)`,
         });
-        setLocation(`/games/${game.id}`);
       } catch (error) {
         toast({
-          title: "Upload Failed",
+          title: "Error",
           description: (error as Error).message,
           variant: "destructive",
         });
-      } finally {
-        setIsUploading(false);
       }
-    };
-    reader.readAsDataURL(file);
-  }, [createGame, setLocation, toast]);
+    },
+    [toast],
+  );
 
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({ 
-    onDrop, 
-    accept: { 'image/*': [] },
-    maxFiles: 1,
-    disabled: isUploading
+  const handleSubmit = async () => {
+    if (images.length === 0) return;
+    setIsUploading(true);
+
+    try {
+      const game = await createGame.mutateAsync({ imageUrls: images });
+      toast({
+        title: "Planelles enviades",
+        description: "S'està processant la partida.",
+      });
+      setImages([]);
+      setLocation(`/games/${game.id}`);
+    } catch (error) {
+      let errorMsg = (error as Error).message;
+
+      // Traduïm i fem amigables els errors més comuns dels servidors i la IA
+      if (
+        errorMsg.includes("503") ||
+        errorMsg.toLowerCase().includes("high demand") ||
+        errorMsg.includes("UNAVAILABLE") ||
+        errorMsg.toLowerCase().includes("failed to create game")
+      ) {
+        errorMsg =
+          "Els servidors d'intel·ligència artificial estan molt sol·licitats. Si us plau, espera uns segons i torna-ho a provar.";
+      } else if (errorMsg.toLowerCase().includes("failed to fetch")) {
+        errorMsg =
+          "Problema de connexió amb el servidor. Comprova la teva xarxa.";
+      }
+
+      toast({
+        title: "No s'ha pogut iniciar l'escaneig",
+        description: errorMsg,
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: { "image/jpeg": [], "image/png": [], "image/webp": [] },
+    maxFiles: 5,
+    disabled: isUploading,
   });
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b border-border bg-white/50 backdrop-blur-md sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -64,87 +104,105 @@ export default function Home() {
             </div>
             <span className="font-display font-bold text-xl">ChessLens</span>
           </div>
-          <Button variant="ghost" size="sm" asChild>
-            <a href="https://github.com" target="_blank" rel="noopener noreferrer">GitHub</a>
-          </Button>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Hero / Upload Section */}
         <section className="mb-16 text-center">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
           >
-            <h1 className="text-4xl md:text-5xl font-display font-bold mb-4 tracking-tight">
-              Digitize Your Chess Games
+            <h1 className="text-4xl md:text-5xl font-display font-bold mb-4">
+              Digitalitza la teva partida d'escacs
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-              Upload a photo of your handwritten scoresheet. We'll use AI to convert it into a digital PGN you can analyze and share.
+              Puja una o més planelles i genera el PGN automàticament.
             </p>
           </motion.div>
 
-          {/* Upload Zone */}
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2, duration: 0.4 }}
-            className="max-w-xl mx-auto"
-          >
-            <div 
-              {...getRootProps()} 
-              className={`
-                relative border-2 border-dashed rounded-2xl p-12 transition-all cursor-pointer group
-                ${isDragActive ? "border-primary bg-primary/5 scale-[1.02]" : "border-border hover:border-primary/50 hover:bg-muted/30"}
-                ${isUploading ? "opacity-50 pointer-events-none" : ""}
-              `}
-            >
-              <input {...getInputProps()} />
-              <div className="flex flex-col items-center justify-center space-y-4">
-                <div className={`p-4 rounded-full ${isDragActive ? "bg-primary/10" : "bg-muted group-hover:bg-primary/5"}`}>
-                  {isUploading ? (
-                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
-                  ) : (
-                    <Upload className="w-8 h-8 text-muted-foreground group-hover:text-primary transition-colors" />
-                  )}
-                </div>
-                <div className="text-center">
-                  <p className="font-medium text-lg">
-                    {isUploading ? "Processing..." : isDragActive ? "Drop it here!" : "Click or drag to upload"}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Supports JPG, PNG, WEBP (Max 10MB)
-                  </p>
+          <div className="max-w-xl mx-auto">
+            {images.length === 0 ? (
+              <div
+                {...getRootProps()}
+                className={`border-2 border-dashed rounded-2xl p-12 cursor-pointer transition-colors ${isDragActive ? "border-primary bg-primary/10" : "border-primary/50 bg-primary/5 hover:bg-primary/10"} ${isUploading ? "opacity-50 pointer-events-none" : ""}`}
+              >
+                <input {...getInputProps()} />
+                <div className="flex flex-col items-center gap-4">
+                  <Upload className="w-12 h-12 text-primary" />
+                  <div>
+                    <p className="text-xl font-medium text-foreground">
+                      {isDragActive
+                        ? "Deixa la planella aquí"
+                        : "Clica per afegir la teva planella"}
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      o arrossega la imatge aquí (JPG, PNG, WEBP)
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex flex-col items-center gap-6 bg-card p-8 rounded-2xl border shadow-sm"
+              >
+                <div className="flex items-center justify-center gap-3 text-green-600">
+                  <CheckCircle2 className="w-6 h-6" />
+                  <span className="text-lg font-medium">
+                    {images.length}{" "}
+                    {images.length === 1
+                      ? "planella carregada"
+                      : "planelles carregades"}
+                  </span>
+                </div>
+                <Button
+                  type="button"
+                  size="lg"
+                  className="w-full h-16 text-lg rounded-xl shadow-lg hover:scale-[1.02] transition-transform"
+                  disabled={isUploading}
+                  onClick={handleSubmit}
+                >
+                  {isUploading ? (
+                    <Loader2 className="w-6 h-6 animate-spin mr-3" />
+                  ) : (
+                    <Play className="w-6 h-6 mr-3 fill-current" />
+                  )}
+                  {isUploading ? "Processant planella..." : "Escanejar partida"}
+                </Button>
+                <div {...getRootProps()} className="mt-2">
+                  <input {...getInputProps()} />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={isUploading}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Afegir una altra planella (opcional)
+                  </Button>
+                </div>
+              </motion.div>
+            )}
+          </div>
         </section>
 
-        {/* Recent Games List */}
         <section>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-display font-bold">Recent Games</h2>
-            <div className="h-px flex-1 bg-border ml-6"></div>
-          </div>
-
+          <h2 className="text-2xl font-bold mb-6">Partides recents</h2>
           {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-32 bg-muted/50 rounded-xl animate-pulse" />
-              ))}
+            <div className="flex justify-center p-8">
+              <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
             </div>
           ) : games?.length === 0 ? (
-            <div className="text-center py-12 bg-muted/20 rounded-xl border border-dashed border-border">
-              <FileImage className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-              <p className="text-muted-foreground">No games uploaded yet.</p>
+            <div className="text-center p-8 border rounded-xl bg-muted/20 text-muted-foreground">
+              No hi ha partides encara
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {games?.map((game) => (
-                <GameCard key={game.id} game={game} />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {games?.map((g) => (
+                <GameCard key={g.id} game={g} />
               ))}
             </div>
           )}

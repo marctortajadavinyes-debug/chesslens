@@ -1,5 +1,10 @@
-import { z } from 'zod';
-import { insertGameSchema, games } from './schema';
+import { z } from "zod";
+import {
+  createGameRequestSchema,
+  gameSchema,
+  reviewGameRequestSchema,
+  updateGameRequestSchema,
+} from "./schema";
 
 export const errorSchemas = {
   validation: z.object({
@@ -17,54 +22,55 @@ export const errorSchemas = {
 export const api = {
   games: {
     create: {
-      method: 'POST' as const,
-      path: '/api/games' as const,
-      input: z.object({
-        imageUrl: z.string().url(),
-      }),
+      method: "POST" as const,
+      path: "/api/games" as const,
+      input: createGameRequestSchema,
       responses: {
-        201: z.custom<typeof games.$inferSelect>(),
+        200: gameSchema,
         400: errorSchemas.validation,
       },
     },
     get: {
-      method: 'GET' as const,
-      path: '/api/games/:id' as const,
+      method: "GET" as const,
+      path: "/api/games/:id" as const,
       responses: {
-        200: z.custom<typeof games.$inferSelect>(),
-        404: errorSchemas.notFound,
-      },
-    },
-    update: {
-      method: 'PATCH' as const,
-      path: '/api/games/:id' as const,
-      input: z.object({
-        pgn: z.string(),
-      }),
-      responses: {
-        200: z.custom<typeof games.$inferSelect>(),
+        200: gameSchema,
         404: errorSchemas.notFound,
       },
     },
     list: {
-      method: 'GET' as const,
-      path: '/api/games' as const,
+      method: "GET" as const,
+      path: "/api/games" as const,
       responses: {
-        200: z.array(z.custom<typeof games.$inferSelect>()),
+        200: z.array(gameSchema),
       },
     },
-    process: { // Trigger processing manually if needed, or just status check
-        method: 'POST' as const,
-        path: '/api/games/:id/process' as const,
-        responses: {
-            202: z.object({ message: z.string() }),
-            404: errorSchemas.notFound
-        }
-    }
+    update: {
+      method: "PATCH" as const,
+      path: "/api/games/:id" as const,
+      input: updateGameRequestSchema,
+      responses: {
+        200: gameSchema,
+        404: errorSchemas.notFound,
+      },
+    },
+    review: {
+      method: "POST" as const,
+      path: "/api/games/:id/review" as const,
+      input: reviewGameRequestSchema,
+      responses: {
+        200: gameSchema,
+        400: errorSchemas.validation,
+        404: errorSchemas.notFound,
+      },
+    },
   },
 };
 
-export function buildUrl(path: string, params?: Record<string, string | number>): string {
+export function buildUrl(
+  path: string,
+  params?: Record<string, string | number>,
+): string {
   let url = path;
   if (params) {
     Object.entries(params).forEach(([key, value]) => {

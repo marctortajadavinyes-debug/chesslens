@@ -1,0 +1,20 @@
+{
+  "runner_status": "Success",
+  "status": "unknown",
+  "stopped_for_review": true,
+  "elapsed": 6.029301643371582,
+  "headers": {
+    "Event": "Lliga Catalana 2026",
+    "Site": "",
+    "Date": "2026.01.25",
+    "Round": "2",
+    "White": "Didac Sirvent",
+    "Black": "Pol Tortajada",
+    "Result": "1/2-1/2"
+  },
+  "rows_count": 75,
+  "pushed_moves": 55,
+  "blocked_row": 28,
+  "blocked_side": "b",
+  "raw_token": "Axc5"
+}
