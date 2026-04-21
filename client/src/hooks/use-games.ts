@@ -132,9 +132,6 @@ export function useReviewGame() {
     onSuccess: (data, variables) => {
       queryClient.setQueryData([api.games.get.path, variables.id], data);
       queryClient.invalidateQueries({ queryKey: [api.games.list.path] });
-      queryClient.invalidateQueries({
-        queryKey: [api.games.get.path, variables.id],
-      });
     },
   });
 }

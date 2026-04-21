@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 interface ChessboardViewerProps {
   pgn?: string | null;
   error?: string | null;
+  syncToken?: string;
   onMove?: (move: {
     from: string;
     to: string;
@@ -129,9 +130,38 @@ const translateSanToCatalan = (san: string) => {
     .replace(/K/g, "R");
 };
 
+type PromotionPiece = "q" | "r" | "b" | "n";
+
+type PendingPromotion = {
+  from: string;
+  to: string;
+  undoIndex: number;
+};
+
+function isPromotionMove(piece: string, target: string) {
+  const normalizedPiece = (piece || "").toLowerCase();
+  const isPawn = normalizedPiece === "p" || normalizedPiece.endsWith("p");
+
+  return isPawn && (target.endsWith("8") || target.endsWith("1"));
+}
+
+function promotionPieceLabel(piece: PromotionPiece) {
+  switch (piece) {
+    case "q":
+      return "Dama";
+    case "r":
+      return "Torre";
+    case "b":
+      return "Alfil";
+    case "n":
+      return "Cavall";
+  }
+}
+
 export function ChessboardViewer({
   pgn,
   error,
+  syncToken,
   onMove,
   enableInput,
   onMoveIndexChange,
@@ -143,6 +173,8 @@ export function ChessboardViewer({
   const [isPlaying, setIsPlaying] = useState(false);
   const [uiError, setUiError] = useState<string | null>(null);
   const [tempPosition, setTempPosition] = useState<string | null>(null);
+  const [pendingPromotion, setPendingPromotion] =
+    useState<PendingPromotion | null>(null);
 
   const { toast } = useToast();
 
@@ -158,25 +190,38 @@ export function ChessboardViewer({
     setTempPosition(null);
   }, [currentMoveIndex, pgn]);
 
+  useEffect(() => {
+    if (!enableInput) {
+      setCurrentMoveIndex(historySan.length);
+    }
+  }, [enableInput, historySan.length]);
+
+  const currentPosition = useMemo(() => {
+    if (tempPosition) return tempPosition;
+    return fenAtMoveIndex(game, currentMoveIndex);
+  }, [game, currentMoveIndex, tempPosition]);
+
   const handlePieceDrop = (source: string, target: string, piece: string) => {
     if (!enableInput || !onMove) return false;
 
-    const promotion =
-      piece?.toLowerCase() === "p" &&
-      (target.endsWith("8") || target.endsWith("1"))
-        ? "q"
-        : undefined;
+    if (isPromotionMove(piece, target)) {
+      setPendingPromotion({
+        from: source,
+        to: target,
+        undoIndex: currentMoveIndex,
+      });
+      return false;
+    }
 
     const tempGame = new Chess(fenAtMoveIndex(game, currentMoveIndex));
 
     try {
-      tempGame.move({ from: source, to: target, promotion });
+      tempGame.move({ from: source, to: target });
       setTempPosition(tempGame.fen());
 
       onMove({
         from: source,
         to: target,
-        promotion,
         undoIndex: currentMoveIndex,
       });
 
@@ -191,6 +236,19 @@ export function ChessboardViewer({
     }
   };
 
+  const handlePromotionChoice = (promotion: PromotionPiece) => {
+    if (!pendingPromotion || !onMove) return;
+
+    onMove({
+      from: pendingPromotion.from,
+      to: pendingPromotion.to,
+      promotion,
+      undoIndex: pendingPromotion.undoIndex,
+    });
+
+    setPendingPromotion(null);
+  };
+
   useEffect(() => {
     setTempPosition(null);
 
@@ -199,6 +257,7 @@ export function ChessboardViewer({
       setGame(new Chess());
       setIsPlaying(false);
       setCurrentMoveIndex(0);
+      setPendingPromotion(null);
       return;
     }
 
@@ -207,6 +266,7 @@ export function ChessboardViewer({
       setGame(new Chess());
       setIsPlaying(false);
       setCurrentMoveIndex(0);
+      setPendingPromotion(null);
       return;
     }
 
@@ -215,6 +275,7 @@ export function ChessboardViewer({
     setGame(newGame);
     setIsPlaying(false);
     setCurrentMoveIndex(newGame.history().length);
+    setPendingPromotion(null);
 
     if (firstBad && newGame.history().length === 0) {
       setUiError(
@@ -223,7 +284,7 @@ export function ChessboardViewer({
     } else {
       setUiError(null);
     }
-  }, [pgn, error]);
+  }, [pgn, error, syncToken]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined;
@@ -246,11 +307,6 @@ export function ChessboardViewer({
     };
   }, [isPlaying, historySan.length]);
 
-  const currentPosition = useMemo(() => {
-    if (tempPosition) return tempPosition;
-    return fenAtMoveIndex(game, currentMoveIndex);
-  }, [game, currentMoveIndex, tempPosition]);
-
   return (
     <div className="flex flex-col space-y-4">
       {uiError ? (
@@ -260,16 +316,49 @@ export function ChessboardViewer({
         </div>
       ) : null}
 
-      <div className="aspect-square w-full max-w-[400px] mx-auto shadow-2xl rounded-lg overflow-hidden border-4 border-primary/10">
-        <Chessboard
-          position={currentPosition}
-          boardOrientation={boardOrientation}
-          onPieceDrop={handlePieceDrop}
-          arePiecesDraggable={enableInput}
-          customDarkSquareStyle={{ backgroundColor: "#779556" }}
-          customLightSquareStyle={{ backgroundColor: "#ebecd0" }}
-          animationDuration={200}
-        />
+      <div className="relative aspect-square w-full max-w-[400px] mx-auto">
+        <div className="shadow-2xl rounded-lg border-4 border-primary/10 bg-white">
+          <Chessboard
+            position={currentPosition}
+            boardOrientation={boardOrientation}
+            onPieceDrop={handlePieceDrop}
+            arePiecesDraggable={enableInput}
+            customDarkSquareStyle={{ backgroundColor: "#779556" }}
+            customLightSquareStyle={{ backgroundColor: "#ebecd0" }}
+            animationDuration={200}
+          />
+        </div>
+
+        {pendingPromotion && (
+          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/35 rounded-lg">
+            <div className="bg-white rounded-xl shadow-xl border p-3 w-[220px]">
+              <p className="text-sm font-semibold mb-3 text-center">
+                Tria peça de coronació
+              </p>
+
+              <div className="grid grid-cols-2 gap-2">
+                {(["q", "r", "b", "n"] as PromotionPiece[]).map((piece) => (
+                  <Button
+                    key={piece}
+                    variant="outline"
+                    className="h-12"
+                    onClick={() => handlePromotionChoice(piece)}
+                  >
+                    {promotionPieceLabel(piece)}
+                  </Button>
+                ))}
+              </div>
+
+              <Button
+                variant="ghost"
+                className="w-full mt-2"
+                onClick={() => setPendingPromotion(null)}
+              >
+                Cancel·lar
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center justify-center space-x-2">

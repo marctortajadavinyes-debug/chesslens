@@ -59,24 +59,32 @@ export default function GameDetail() {
   const currentVisiblePlyCount = maxBoardIndex;
 
   const expectedLiveTurn = useMemo(() => {
-    return getExpectedTurnFromPlyCount(currentVisiblePlyCount);
-  }, [currentVisiblePlyCount]);
+    const blockedRow = game?.reviewState?.blockedRow;
+    const blockedSide = game?.reviewState?.blockedSide;
 
-  const blockedLocalMoveNumber = useMemo(() => {
-    if (!game?.reviewState?.blockedRow) return null;
-
-    const blockedRow = game.reviewState.blockedRow;
-
-    const matchedRow = Array.isArray(game?.ocr?.rows)
-      ? game.ocr.rows.find((r: any) => r.row === blockedRow)
-      : null;
-
-    if (matchedRow && typeof matchedRow.originalRow === "number") {
-      return matchedRow.originalRow;
+    if (
+      game?.status === "needs_review" &&
+      typeof blockedRow === "number" &&
+      (blockedSide === "w" || blockedSide === "b")
+    ) {
+      return {
+        moveNumber: blockedRow,
+        side: blockedSide,
+      } as const;
     }
 
-    return ((blockedRow - 1) % 75) + 1;
-  }, [game?.reviewState?.blockedRow, game?.ocr?.rows]);
+    return getExpectedTurnFromPlyCount(currentVisiblePlyCount);
+  }, [
+    currentVisiblePlyCount,
+    game?.status,
+    game?.reviewState?.blockedRow,
+    game?.reviewState?.blockedSide,
+  ]);
+
+  const blockedLocalMoveNumber = useMemo(() => {
+    if (typeof game?.reviewState?.blockedRow !== "number") return null;
+    return ((game.reviewState.blockedRow - 1) % 75) + 1;
+  }, [game?.reviewState?.blockedRow]);
 
   const expectedBoardTurn = useMemo(() => {
     return getExpectedTurnFromPlyCount(boardIndex);
@@ -105,6 +113,7 @@ export default function GameDetail() {
 
     setIsResuming(true);
     setHideQuestionUI(true);
+    setBoardIndex(maxBoardIndex);
 
     const finalUndoIndex = undoIndex !== undefined ? undoIndex : boardIndex;
 
@@ -133,7 +142,7 @@ export default function GameDetail() {
   };
 
   useEffect(() => {
-    if (game?.pgn && !isEditing && !isResuming) {
+    if (game?.pgn && !isEditing) {
       setPgnText(game.pgn);
     }
 
@@ -313,6 +322,9 @@ export default function GameDetail() {
           <ChessboardViewer
             pgn={pgnText}
             error={game.error ?? null}
+            syncToken={`${game.updatedAt ?? ""}:${game.status ?? ""}:${
+              game.reviewState?.blockedRow ?? ""
+            }:${game.reviewState?.blockedSide ?? ""}`}
             enableInput={needsReview}
             onMove={handleMoveFromBoard}
             onMoveIndexChange={(idx, maxIdx) => {

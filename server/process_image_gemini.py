@@ -319,11 +319,38 @@ def normalize_meta_from_payload(meta: Dict[str, Any]) -> Dict[str, Any]:
 # =========================================================
 # PGN builder
 # =========================================================
+def final_result_from_board(board: chess.Board, fallback: str) -> str:
+    if board.is_checkmate():
+        # Si hay mate, gana el lado que acaba de mover.
+        return "0-1" if board.turn == chess.WHITE else "1-0"
+
+    if board.is_stalemate():
+        return "1/2-1/2"
+
+    if board.is_insufficient_material():
+        return "1/2-1/2"
+
+    if board.can_claim_threefold_repetition():
+        return "1/2-1/2"
+
+    if board.can_claim_fifty_moves():
+        return "1/2-1/2"
+
+    return fallback or "*"
 
 
 def build_pgn(meta: Dict[str, Any], moves: List[str]) -> str:
     def esc(x: str) -> str:
         return (x or "").replace('"', '\\"')
+
+    temp_board = chess.Board()
+    for mv in moves:
+        try:
+            temp_board.push_san(mv)
+        except Exception:
+            break
+
+    resolved_result = final_result_from_board(temp_board, meta.get("result", "*"))
 
     lines = [
         f'[Event "{esc(meta.get("event", ""))}"]',
@@ -332,7 +359,7 @@ def build_pgn(meta: Dict[str, Any], moves: List[str]) -> str:
         f'[Round "{esc(meta.get("round", ""))}"]',
         f'[White "{esc(meta.get("white", ""))}"]',
         f'[Black "{esc(meta.get("black", ""))}"]',
-        f'[Result "{esc(meta.get("result", "*"))}"]',
+        f'[Result "{esc(resolved_result)}"]',
         "",
     ]
     out = []
@@ -351,9 +378,10 @@ def build_pgn(meta: Dict[str, Any], moves: List[str]) -> str:
 
     body = " ".join(out).strip()
     if body:
-        body = f"{body} {meta.get('result', '*')}".strip()
+        body = f"{body} {resolved_result}".strip()
     else:
-        body = meta.get("result", "*")
+        body = resolved_result
+
     lines.append(body)
     return "\n".join(lines).strip()
 
@@ -647,21 +675,57 @@ def legal_candidates(
     return candidates, legal, last_err
 
 
+def san_capture_semantics_ok(board: chess.Board, san: str, move: chess.Move) -> bool:
+    san_upper = san.upper()
+
+    # Enroques: no aplicar esta regla
+    if san_upper in ("O-O", "O-O-O"):
+        return True
+
+    expects_capture = "X" in san_upper
+    is_capture = board.is_capture(move)
+
+    return expects_capture == is_capture
+
+
 def try_push_san(
-    board: chess.Board, raw: str
+    board: chess.Board,
+    raw: str,
 ) -> Tuple[bool, Optional[str], Optional[str], List[str]]:
-    candidates, legal, last_err = legal_candidates(board, raw)
-    if not candidates:
-        return False, None, "empty/filtered", []
+    cands = candidate_tokens(raw)
+    legal: List[str] = []
+    last_err: Optional[str] = None
+
+    for cand in cands:
+        tmp = board.copy(stack=True)
+
+        try:
+            move = tmp.parse_san(cand)
+        except Exception as e:
+            last_err = f"invalid san: {cand!r}"
+            continue
+
+        # ✅ Regla crítica: la semántica de captura debe coincidir
+        if not san_capture_semantics_ok(board, cand, move):
+            last_err = f"capture mismatch: {cand!r} in {board.fen()}"
+            continue
+
+        try:
+            tmp.push(move)
+            legal.append(cand)
+        except Exception as e:
+            last_err = f"illegal san: {cand!r} in {board.fen()}"
+            continue
+
     if not legal:
-        return False, None, last_err or "invalid", []
-    if candidates[0] in legal:
-        board.push_san(candidates[0])
-        return True, candidates[0], None, legal
-    if len(legal) == 1:
-        board.push_san(legal[0])
-        return True, legal[0], None, legal
-    return False, None, "ambiguous_multiple_legal_candidates", legal
+        return False, None, last_err or f"invalid san: {raw!r}", []
+
+    chosen = legal[0]
+
+    move = board.parse_san(chosen)
+    board.push(move)
+
+    return True, chosen, None, legal
 
 
 def canonicalize_user_move_for_match_variants(token: str) -> List[str]:
@@ -671,18 +735,27 @@ def canonicalize_user_move_for_match_variants(token: str) -> List[str]:
 
     variants: List[str] = []
 
-    # Variante 1: tratarlo como SAN ya correcta (lo normal si viene del tablero)
+    # Variante 1: tratarlo como SAN inglesa ya correcta
+    # (esto es lo normal cuando viene del tablero / chess.js)
     v1 = normalize_square_case(t)
     v1 = re.sub(r"[+#]+$", "", v1)
     if v1:
         variants.append(v1)
 
-    # Variante 2: tratarlo como entrada catalana y traducirla
-    v2 = translate_catalan_piece_letters(t)
-    v2 = normalize_square_case(v2)
-    v2 = re.sub(r"[+#]+$", "", v2)
-    if v2 and v2 not in variants:
-        variants.append(v2)
+    # Solo intentamos traducción catalana si NO parece ya una SAN inglesa
+    # de pieza. Esto evita ambigüedades como:
+    #   Rg3+  -> rook move correcto
+    #   Rg3+  -> mal reinterpretado como Kg3 por "R = Rei"
+    first = t[0].upper() if t else ""
+
+    looks_like_english_piece_san = first in VALID_ENGLISH_PIECES
+
+    if not looks_like_english_piece_san:
+        v2 = translate_catalan_piece_letters(t)
+        v2 = normalize_square_case(v2)
+        v2 = re.sub(r"[+#]+$", "", v2)
+        if v2 and v2 not in variants:
+            variants.append(v2)
 
     return variants
 
