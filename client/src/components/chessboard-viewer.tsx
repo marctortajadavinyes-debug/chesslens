@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
 import { Button } from "@/components/ui/button";
@@ -175,8 +175,29 @@ export function ChessboardViewer({
   const [tempPosition, setTempPosition] = useState<string | null>(null);
   const [pendingPromotion, setPendingPromotion] =
     useState<PendingPromotion | null>(null);
+  const [selectedPromotion, setSelectedPromotion] = useState<string | null>(
+    null,
+  );
 
   const { toast } = useToast();
+
+  const boardContainerRef = useRef<HTMLDivElement | null>(null);
+  const [boardWidth, setBoardWidth] = useState(360);
+
+  useEffect(() => {
+    const el = boardContainerRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const w = Math.floor(entry.contentRect.width);
+        if (w > 0) setBoardWidth(w);
+      }
+    });
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const historySan = useMemo(() => game.history(), [game]);
 
@@ -188,6 +209,7 @@ export function ChessboardViewer({
 
   useEffect(() => {
     setTempPosition(null);
+    setSelectedPromotion(null);
   }, [currentMoveIndex, pgn]);
 
   useEffect(() => {
@@ -204,27 +226,31 @@ export function ChessboardViewer({
   const handlePieceDrop = (source: string, target: string, piece: string) => {
     if (!enableInput || !onMove) return false;
 
-    if (isPromotionMove(piece, target)) {
+    // 1. Inicializamos tempGame al principio para poder consultar el tablero real
+    const tempGame = new Chess(fenAtMoveIndex(game, currentMoveIndex));
+    const pieceOnBoard = tempGame.get(source);
+
+    // 2. Detección robusta: miramos si la pieza EN EL TABLERO es un peón ('p')
+    if (
+      pieceOnBoard?.type === "p" &&
+      (target.endsWith("8") || target.endsWith("1"))
+    ) {
       setPendingPromotion({
         from: source,
         to: target,
         undoIndex: currentMoveIndex,
       });
-      return false;
+      return false; // Cancelamos el drop visual para mostrar tu UI de coronación
     }
-
-    const tempGame = new Chess(fenAtMoveIndex(game, currentMoveIndex));
 
     try {
       tempGame.move({ from: source, to: target });
       setTempPosition(tempGame.fen());
-
       onMove({
         from: source,
         to: target,
         undoIndex: currentMoveIndex,
       });
-
       return true;
     } catch {
       toast({
@@ -236,17 +262,26 @@ export function ChessboardViewer({
     }
   };
 
+  const handlePromotionPieceSelect = (piece?: string) => {
+    setSelectedPromotion(piece ?? null);
+    return true;
+  };
+
   const handlePromotionChoice = (promotion: PromotionPiece) => {
     if (!pendingPromotion || !onMove) return;
+
+    const finalPromotion =
+      selectedPromotion?.toLowerCase().slice(-1) || promotion;
 
     onMove({
       from: pendingPromotion.from,
       to: pendingPromotion.to,
-      promotion,
+      promotion: finalPromotion,
       undoIndex: pendingPromotion.undoIndex,
     });
 
     setPendingPromotion(null);
+    setSelectedPromotion(null);
   };
 
   useEffect(() => {
@@ -316,16 +351,21 @@ export function ChessboardViewer({
         </div>
       ) : null}
 
-      <div className="relative aspect-square w-full max-w-[400px] mx-auto">
+      <div
+        ref={boardContainerRef}
+        className="relative aspect-square w-full max-w-[400px] mx-auto"
+      >
         <div className="shadow-2xl rounded-lg border-4 border-primary/10 bg-white">
           <Chessboard
-            position={currentPosition}
-            boardOrientation={boardOrientation}
+            id="BasicBoard"
+            position={tempPosition || fenAtMoveIndex(game, currentMoveIndex)}
             onPieceDrop={handlePieceDrop}
-            arePiecesDraggable={enableInput}
+            boardOrientation={boardOrientation}
+            animationDuration={200}
+            boardWidth={boardWidth}
             customDarkSquareStyle={{ backgroundColor: "#779556" }}
             customLightSquareStyle={{ backgroundColor: "#ebecd0" }}
-            animationDuration={200}
+            // LA LÍNEA DE onPromotionPieceSelect HA SIDO ELIMINADA
           />
         </div>
 
