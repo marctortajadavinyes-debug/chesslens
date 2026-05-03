@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
 import { Button } from "@/components/ui/button";
@@ -130,34 +130,6 @@ const translateSanToCatalan = (san: string) => {
     .replace(/K/g, "R");
 };
 
-type PromotionPiece = "q" | "r" | "b" | "n";
-
-type PendingPromotion = {
-  from: string;
-  to: string;
-  undoIndex: number;
-};
-
-function isPromotionMove(piece: string, target: string) {
-  const normalizedPiece = (piece || "").toLowerCase();
-  const isPawn = normalizedPiece === "p" || normalizedPiece.endsWith("p");
-
-  return isPawn && (target.endsWith("8") || target.endsWith("1"));
-}
-
-function promotionPieceLabel(piece: PromotionPiece) {
-  switch (piece) {
-    case "q":
-      return "Dama";
-    case "r":
-      return "Torre";
-    case "b":
-      return "Alfil";
-    case "n":
-      return "Cavall";
-  }
-}
-
 export function ChessboardViewer({
   pgn,
   error,
@@ -173,31 +145,8 @@ export function ChessboardViewer({
   const [isPlaying, setIsPlaying] = useState(false);
   const [uiError, setUiError] = useState<string | null>(null);
   const [tempPosition, setTempPosition] = useState<string | null>(null);
-  const [pendingPromotion, setPendingPromotion] =
-    useState<PendingPromotion | null>(null);
-  const [selectedPromotion, setSelectedPromotion] = useState<string | null>(
-    null,
-  );
 
   const { toast } = useToast();
-
-  const boardContainerRef = useRef<HTMLDivElement | null>(null);
-  const [boardWidth, setBoardWidth] = useState(360);
-
-  useEffect(() => {
-    const el = boardContainerRef.current;
-    if (!el || typeof ResizeObserver === "undefined") return;
-
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const w = Math.floor(entry.contentRect.width);
-        if (w > 0) setBoardWidth(w);
-      }
-    });
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
 
   const historySan = useMemo(() => game.history(), [game]);
 
@@ -209,7 +158,6 @@ export function ChessboardViewer({
 
   useEffect(() => {
     setTempPosition(null);
-    setSelectedPromotion(null);
   }, [currentMoveIndex, pgn]);
 
   useEffect(() => {
@@ -226,31 +174,31 @@ export function ChessboardViewer({
   const handlePieceDrop = (source: string, target: string, piece: string) => {
     if (!enableInput || !onMove) return false;
 
-    // 1. Inicializamos tempGame al principio para poder consultar el tablero real
-    const tempGame = new Chess(fenAtMoveIndex(game, currentMoveIndex));
-    const pieceOnBoard = tempGame.get(source);
+    const currentGame = new Chess(fenAtMoveIndex(game, currentMoveIndex));
+    const movingPiece = currentGame.get(source as any);
 
-    // 2. Detección robusta: miramos si la pieza EN EL TABLERO es un peón ('p')
-    if (
-      pieceOnBoard?.type === "p" &&
-      (target.endsWith("8") || target.endsWith("1"))
-    ) {
-      setPendingPromotion({
-        from: source,
-        to: target,
-        undoIndex: currentMoveIndex,
-      });
-      return false; // Cancelamos el drop visual para mostrar tu UI de coronación
+    const isPawnPromotion =
+      movingPiece?.type === "p" &&
+      (target.endsWith("8") || target.endsWith("1"));
+
+    // Capturamos la pieza elegida en el menú de imágenes nativo de react-chessboard
+    let promotionChar = undefined;
+    if (isPawnPromotion) {
+      // 'piece' suele venir como "wQ", "bR", etc. Nos quedamos con la segunda letra en minúscula.
+      promotionChar = piece.length === 2 ? piece[1].toLowerCase() : "q";
     }
 
     try {
-      tempGame.move({ from: source, to: target });
-      setTempPosition(tempGame.fen());
+      currentGame.move({ from: source, to: target, promotion: promotionChar });
+      setTempPosition(currentGame.fen());
+
       onMove({
         from: source,
         to: target,
+        promotion: promotionChar,
         undoIndex: currentMoveIndex,
       });
+
       return true;
     } catch {
       toast({
@@ -262,28 +210,6 @@ export function ChessboardViewer({
     }
   };
 
-  const handlePromotionPieceSelect = (piece?: string) => {
-    setSelectedPromotion(piece ?? null);
-    return true;
-  };
-
-  const handlePromotionChoice = (promotion: PromotionPiece) => {
-    if (!pendingPromotion || !onMove) return;
-
-    const finalPromotion =
-      selectedPromotion?.toLowerCase().slice(-1) || promotion;
-
-    onMove({
-      from: pendingPromotion.from,
-      to: pendingPromotion.to,
-      promotion: finalPromotion,
-      undoIndex: pendingPromotion.undoIndex,
-    });
-
-    setPendingPromotion(null);
-    setSelectedPromotion(null);
-  };
-
   useEffect(() => {
     setTempPosition(null);
 
@@ -292,7 +218,6 @@ export function ChessboardViewer({
       setGame(new Chess());
       setIsPlaying(false);
       setCurrentMoveIndex(0);
-      setPendingPromotion(null);
       return;
     }
 
@@ -301,7 +226,6 @@ export function ChessboardViewer({
       setGame(new Chess());
       setIsPlaying(false);
       setCurrentMoveIndex(0);
-      setPendingPromotion(null);
       return;
     }
 
@@ -310,7 +234,6 @@ export function ChessboardViewer({
     setGame(newGame);
     setIsPlaying(false);
     setCurrentMoveIndex(newGame.history().length);
-    setPendingPromotion(null);
 
     if (firstBad && newGame.history().length === 0) {
       setUiError(
@@ -351,54 +274,18 @@ export function ChessboardViewer({
         </div>
       ) : null}
 
-      <div
-        ref={boardContainerRef}
-        className="relative aspect-square w-full max-w-[400px] mx-auto"
-      >
+      <div className="relative aspect-square w-full max-w-[400px] mx-auto">
         <div className="shadow-2xl rounded-lg border-4 border-primary/10 bg-white">
           <Chessboard
-            id="BasicBoard"
-            position={tempPosition || fenAtMoveIndex(game, currentMoveIndex)}
-            onPieceDrop={handlePieceDrop}
+            position={currentPosition}
             boardOrientation={boardOrientation}
-            animationDuration={200}
-            boardWidth={boardWidth}
+            onPieceDrop={handlePieceDrop}
+            arePiecesDraggable={enableInput}
             customDarkSquareStyle={{ backgroundColor: "#779556" }}
             customLightSquareStyle={{ backgroundColor: "#ebecd0" }}
-            // LA LÍNEA DE onPromotionPieceSelect HA SIDO ELIMINADA
+            animationDuration={200}
           />
         </div>
-
-        {pendingPromotion && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/35 rounded-lg">
-            <div className="bg-white rounded-xl shadow-xl border p-3 w-[220px]">
-              <p className="text-sm font-semibold mb-3 text-center">
-                Tria peça de coronació
-              </p>
-
-              <div className="grid grid-cols-2 gap-2">
-                {(["q", "r", "b", "n"] as PromotionPiece[]).map((piece) => (
-                  <Button
-                    key={piece}
-                    variant="outline"
-                    className="h-12"
-                    onClick={() => handlePromotionChoice(piece)}
-                  >
-                    {promotionPieceLabel(piece)}
-                  </Button>
-                ))}
-              </div>
-
-              <Button
-                variant="ghost"
-                className="w-full mt-2"
-                onClick={() => setPendingPromotion(null)}
-              >
-                Cancel·lar
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="flex items-center justify-center space-x-2">

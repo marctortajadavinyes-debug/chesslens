@@ -479,7 +479,26 @@ export async function registerRoutes(_httpServer: Server, app: Express) {
   app.get("/api/ping", (_req, res) => {
     res.json({ ok: true, ts: Date.now() });
   });
+  function getOcrCellForPly(
+    rows: OcrRow[],
+    plyIndex: number,
+  ): { row: number; side: ReviewSide } | null {
+    const cells: { row: number; side: ReviewSide }[] = [];
 
+    for (const r of rows) {
+      if (typeof r.row !== "number") continue;
+
+      if (typeof r.w === "string" && r.w.trim() !== "") {
+        cells.push({ row: r.row, side: "w" });
+      }
+
+      if (typeof r.b === "string" && r.b.trim() !== "") {
+        cells.push({ row: r.row, side: "b" });
+      }
+    }
+
+    return cells[plyIndex] ?? null;
+  }
   app.get("/api/games", (_req, res) => {
     const list = Array.from(games.values()).sort(
       (a, b) => +new Date(b.createdAt) - +new Date(a.createdAt),
@@ -743,8 +762,17 @@ export async function registerRoutes(_httpServer: Server, app: Express) {
           tempBoard.move(move);
         }
         startFen = tempBoard.fen();
-        startRow = Math.floor(undoIndex / 2) + 1;
-        startSide = undoIndex % 2 === 0 ? "w" : "b";
+        const physicalCell = game.ocr?.rows
+          ? getOcrCellForPly(game.ocr.rows, undoIndex)
+          : null;
+
+        if (physicalCell) {
+          startRow = physicalCell.row;
+          startSide = physicalCell.side;
+        } else {
+          startRow = Math.floor(undoIndex / 2) + 1;
+          startSide = undoIndex % 2 === 0 ? "w" : "b";
+        }
       }
 
       if (!finalMove && moveFrom && moveTo) {

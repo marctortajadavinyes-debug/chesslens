@@ -35,6 +35,23 @@ CATALAN_PIECE_MAP = {
     "D": "Q",  # Dama
     "R": "K",  # Rei
 }
+# Para promociones escritas en planilla / OCR.
+# IMPORTANTE:
+# - "T" catalán = Torre -> "R" SAN
+# - "R" en SAN = Rook/Torre, NO Rei
+# - No convertir nunca "=R" en "=K"
+PROMOTION_PIECE_MAP = {
+    # Catalán
+    "D": "Q",  # Dama
+    "T": "R",  # Torre
+    "A": "B",  # Alfil
+    "C": "N",  # Cavall
+    # SAN internacional / inglés
+    "Q": "Q",
+    "R": "R",
+    "B": "B",
+    "N": "N",
+}
 
 VALID_CATALAN_PIECES = set("CATDR")
 VALID_ENGLISH_PIECES = set("KQRBN")
@@ -588,12 +605,13 @@ def normalize_square_case(token: str) -> str:
         if from_file.lower() in VALID_FILES and to_file.lower() in VALID_FILES:
             return from_file.lower() + "x" + to_file.lower() + rank_ + suf
         return t
-    m = re.fullmatch(r"([a-hA-H](?:x[a-hA-H])?[18])=([CATDNBRQcatdnbrq])([+#]?)", t)
+        m = re.fullmatch(r"([a-hA-H](?:x[a-hA-H])?[18])=([CATDNBRQcatdnbrq])([+#]?)", t)
     if m:
         base, promo, suf = m.groups()
         promo = promo.upper()
-        promo = CATALAN_PIECE_MAP.get(promo, promo)
+        promo = PROMOTION_PIECE_MAP.get(promo, promo)
         return base.lower() + "=" + promo + suf
+
     return t
 
 
@@ -1226,9 +1244,12 @@ def process_resume(payload: Dict[str, Any]) -> Dict[str, Any]:
 
     prefix = list(accepted_prefix_moves) + [chosen]
 
-    last_applied_ply = len(prefix) - 1
-    last_row, last_side = row_side_from_ply_index(last_applied_ply)
-    next_index = find_resume_next_index(seq, last_row, last_side)
+    # IMPORTANTE:
+    # Para reanudar, avanzamos desde la celda física OCR corregida
+    # (start_row/start_side), no desde el número lógico de jugada.
+    # Esto evita romper los saltos de fila: una jugada lógica 78 puede estar
+    # escrita físicamente en la fila 79 de la planilla.
+    next_index = find_resume_next_index(seq, int(start_row), start_side)
 
     return parse_rows_stop_on_first_conflict(
         rows=rows,

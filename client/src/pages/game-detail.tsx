@@ -30,6 +30,31 @@ function getExpectedTurnFromPlyCount(plyCount: number) {
     side: plyCount % 2 === 0 ? "w" : "b",
   } as const;
 }
+function getPhysicalRowFromPly(game: any, plyIndex: number) {
+  const rows = Array.isArray(game?.ocr?.rows) ? game.ocr.rows : [];
+  if (rows.length === 0) return null;
+
+  const occupiedRows = rows
+    .filter((r: any) => {
+      const hasWhite = typeof r?.w === "string" && r.w.trim() !== "";
+      const hasBlack = typeof r?.b === "string" && r.b.trim() !== "";
+      return hasWhite || hasBlack;
+    })
+    .map((r: any) => ({
+      row: typeof r.row === "number" ? r.row : null,
+      sheet: typeof r.sheet === "number" ? r.sheet : null,
+      originalRow:
+        typeof r.originalRow === "number"
+          ? r.originalRow
+          : typeof r.row === "number"
+            ? ((r.row - 1) % 75) + 1
+            : null,
+    }))
+    .filter((r: any) => r.row != null);
+
+  const moveNumber = Math.floor(plyIndex / 2) + 1;
+  return occupiedRows[moveNumber - 1] ?? null;
+}
 
 export default function GameDetail() {
   const [, params] = useRoute("/games/:id");
@@ -59,36 +84,74 @@ export default function GameDetail() {
   const currentVisiblePlyCount = maxBoardIndex;
 
   const expectedLiveTurn = useMemo(() => {
-    const blockedRow = game?.reviewState?.blockedRow;
-    const blockedSide = game?.reviewState?.blockedSide;
+    if (isNavigatingPast) {
+      return getExpectedTurnFromPlyCount(boardIndex);
+    }
 
-    if (
-      game?.status === "needs_review" &&
-      typeof blockedRow === "number" &&
-      (blockedSide === "w" || blockedSide === "b")
-    ) {
-      return {
-        moveNumber: blockedRow,
-        side: blockedSide,
-      } as const;
+    if (game?.status === "needs_review") {
+      return getExpectedTurnFromPlyCount(boardIndex);
     }
 
     return getExpectedTurnFromPlyCount(currentVisiblePlyCount);
-  }, [
-    currentVisiblePlyCount,
-    game?.status,
-    game?.reviewState?.blockedRow,
-    game?.reviewState?.blockedSide,
-  ]);
-
-  const blockedLocalMoveNumber = useMemo(() => {
-    if (typeof game?.reviewState?.blockedRow !== "number") return null;
-    return ((game.reviewState.blockedRow - 1) % 75) + 1;
-  }, [game?.reviewState?.blockedRow]);
+  }, [isNavigatingPast, boardIndex, currentVisiblePlyCount, game?.status]);
 
   const expectedBoardTurn = useMemo(() => {
     return getExpectedTurnFromPlyCount(boardIndex);
   }, [boardIndex]);
+
+  const physicalReviewRow = useMemo(() => {
+    if (!game) return null;
+
+    const blockedRow =
+      typeof game?.reviewState?.blockedRow === "number"
+        ? game.reviewState.blockedRow
+        : null;
+
+    const blockedSide = game?.reviewState?.blockedSide;
+
+    if (blockedRow == null) return null;
+
+    const anchorRow = game.ocr?.rows?.find((r: any) => r.row === blockedRow);
+
+    const anchorOriginalRow =
+      anchorRow && typeof anchorRow.originalRow === "number"
+        ? anchorRow.originalRow
+        : ((blockedRow - 1) % 75) + 1;
+
+    const anchorSheet =
+      anchorRow && typeof anchorRow.sheet === "number"
+        ? anchorRow.sheet
+        : typeof game.reviewState.blockedSheet === "number"
+          ? game.reviewState.blockedSheet
+          : Math.floor((blockedRow - 1) / 75);
+
+    if (isNavigatingPast) {
+      const anchorMoveNumber = expectedLiveTurn.moveNumber;
+      const targetMoveNumber = expectedBoardTurn.moveNumber;
+      const delta = targetMoveNumber - anchorMoveNumber;
+
+      return {
+        row: blockedRow + delta,
+        sheet: anchorSheet,
+        originalRow: anchorOriginalRow + delta,
+      };
+    }
+
+    return {
+      row: blockedRow,
+      sheet: anchorSheet,
+      originalRow: anchorOriginalRow,
+    };
+  }, [
+    game,
+    isNavigatingPast,
+    expectedLiveTurn.moveNumber,
+    expectedBoardTurn.moveNumber,
+    game?.reviewState?.blockedRow,
+    game?.reviewState?.blockedSheet,
+  ]);
+
+  const blockedLocalMoveNumber = physicalReviewRow?.originalRow ?? null;
 
   const displayedSheetIndex = getDisplayedSheetIndex(game, needsReview);
 
@@ -281,7 +344,7 @@ export default function GameDetail() {
             !isNavigatingPast && (
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm space-y-2">
                 <h4 className="text-sm font-bold text-amber-900">
-                  Següent moviment esperat: {expectedLiveTurn.moveNumber}{" "}
+                  Següent jugada esperada: {expectedLiveTurn.moveNumber}{" "}
                   {expectedLiveTurn.side === "w" ? "blanques" : "negres"}
                 </h4>
 
@@ -290,11 +353,11 @@ export default function GameDetail() {
                   continuar l'escaneig.
                 </p>
 
-                {hasMultipleSheets && (
+                {hasMultipleSheets && displayedSheetIndex > 0 && (
                   <p className="text-xs text-amber-700">
                     Revisa la planella {displayedSheetIndex + 1}
                     {blockedLocalMoveNumber != null
-                      ? ` · moviment ${blockedLocalMoveNumber}`
+                      ? ` · jugada ${blockedLocalMoveNumber}`
                       : ""}
                     .
                   </p>
@@ -307,7 +370,7 @@ export default function GameDetail() {
               <Undo2 className="w-5 h-5 text-blue-600 shrink-0" />
               <div className="flex-1">
                 <p className="text-sm text-blue-900 font-bold">
-                  Estàs revisant la posició abans del moviment{" "}
+                  Estàs revisant la posició abans de la jugada{" "}
                   {expectedBoardTurn.moveNumber}{" "}
                   {expectedBoardTurn.side === "w" ? "blanques" : "negres"}.
                 </p>
@@ -320,8 +383,8 @@ export default function GameDetail() {
           )}
 
           <ChessboardViewer
-            pgn={pgnText}
-            error={game.error ?? null}
+            pgn={pgnText || game.pgn || ""}
+            error={game.status === "failed" ? (game.error ?? null) : null}
             syncToken={`${game.updatedAt ?? ""}:${game.status ?? ""}:${
               game.reviewState?.blockedRow ?? ""
             }:${game.reviewState?.blockedSide ?? ""}`}
