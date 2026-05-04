@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
 import { Button } from "@/components/ui/button";
@@ -148,6 +148,9 @@ export function ChessboardViewer({
 
   const { toast } = useToast();
 
+  const movesListRef = useRef<HTMLDivElement | null>(null);
+  const activeMoveRef = useRef<HTMLSpanElement | null>(null);
+
   const historySan = useMemo(() => game.history(), [game]);
 
   useEffect(() => {
@@ -155,6 +158,60 @@ export function ChessboardViewer({
       onMoveIndexChange(currentMoveIndex, historySan.length);
     }
   }, [currentMoveIndex, historySan.length, onMoveIndexChange]);
+
+  useEffect(() => {
+    const container = movesListRef.current;
+    const active = activeMoveRef.current;
+
+    if (!container || !active) return;
+
+    let frame1 = 0;
+    let frame2 = 0;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+
+    const scrollNow = () => {
+      const latestContainer = movesListRef.current;
+      const latestActive = activeMoveRef.current;
+
+      if (!latestContainer || !latestActive) return;
+
+      const isAtLatestPosition = currentMoveIndex >= historySan.length;
+
+      if (isAtLatestPosition) {
+        latestContainer.scrollTop = latestContainer.scrollHeight;
+        return;
+      }
+
+      const containerRect = latestContainer.getBoundingClientRect();
+      const activeRect = latestActive.getBoundingClientRect();
+
+      const activeOffsetInsideContainer =
+        activeRect.top - containerRect.top + latestContainer.scrollTop;
+
+      const targetScrollTop =
+        activeOffsetInsideContainer -
+        latestContainer.clientHeight / 2 +
+        latestActive.clientHeight / 2;
+
+      latestContainer.scrollTop = Math.max(0, targetScrollTop);
+    };
+
+    frame1 = window.requestAnimationFrame(() => {
+      frame2 = window.requestAnimationFrame(() => {
+        scrollNow();
+
+        // Segundo ajuste pequeño por si el contenido acaba de crecer
+        // al llegar una nueva respuesta del backend.
+        timeout = setTimeout(scrollNow, 80);
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frame1);
+      window.cancelAnimationFrame(frame2);
+      if (timeout) clearTimeout(timeout);
+    };
+  }, [currentMoveIndex, historySan.length, syncToken, enableInput]);
 
   useEffect(() => {
     setTempPosition(null);
@@ -373,7 +430,10 @@ export function ChessboardViewer({
         </Button>
       </div>
 
-      <div className="bg-muted/30 rounded-lg p-4 h-32 overflow-y-auto text-sm font-mono border border-border">
+      <div
+        ref={movesListRef}
+        className="bg-muted/30 rounded-lg p-4 h-32 overflow-y-auto text-sm font-mono border border-border"
+      >
         {historySan.length === 0 ? (
           <p className="text-muted-foreground text-center pt-8">
             Cap jugada encara
@@ -383,6 +443,7 @@ export function ChessboardViewer({
             {historySan.map((move, i) => (
               <span
                 key={i}
+                ref={i === currentMoveIndex - 1 ? activeMoveRef : null}
                 className={cn(
                   "px-1.5 rounded cursor-pointer transition-colors",
                   i === currentMoveIndex - 1

@@ -57,6 +57,7 @@ export default function Home() {
       toast({
         title: "Planelles enviades",
         description: "S'està processant la partida.",
+        duration: 1500,
       });
       setImages([]);
       setLocation(`/games/${game.id}`);

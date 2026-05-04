@@ -192,6 +192,7 @@ export default function GameDetail() {
       toast({
         title: "Jugada aplicada",
         description: "Continuem l'escaneig des d'aquesta posició.",
+        duration: 1500,
       });
     } catch (e) {
       toast({
