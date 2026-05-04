@@ -6,12 +6,20 @@ import sys
 import re
 import json
 import time
+import tempfile
 
 from typing import Any, Dict, List, Optional, Tuple, Set
 
 import chess
 
 from google import genai
+
+try:
+    from PIL import Image, ImageOps, ImageEnhance
+except Exception:
+    Image = None
+    ImageOps = None
+    ImageEnhance = None
 
 T0 = time.time()
 
@@ -27,6 +35,12 @@ def log(msg: str) -> None:
 
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+
+OCR_PREPROCESS_ENABLED = os.environ.get("CHESSLENS_PREPROCESS_OCR", "1") != "0"
+OCR_TARGET_LONG_SIDE = int(os.environ.get("CHESSLENS_OCR_TARGET_LONG_SIDE", "2200"))
+OCR_MAX_UPSCALE = float(os.environ.get("CHESSLENS_OCR_MAX_UPSCALE", "2.0"))
+OCR_CONTRAST = float(os.environ.get("CHESSLENS_OCR_CONTRAST", "1.35"))
+OCR_SHARPNESS = float(os.environ.get("CHESSLENS_OCR_SHARPNESS", "1.25"))
 
 CATALAN_PIECE_MAP = {
     "C": "N",  # Cavall
@@ -118,6 +132,98 @@ def guess_mime_type(image_path: str) -> str:
     if p.endswith(".webp"):
         return "image/webp"
     return "image/jpeg"
+
+
+def preprocess_image_for_ocr(image_path: str) -> Tuple[str, Dict[str, Any]]:
+    meta: Dict[str, Any] = {
+        "enabled": False,
+        "method": "none",
+        "reason": "",
+        "input_width": None,
+        "input_height": None,
+        "output_width": None,
+        "output_height": None,
+        "scale": 1.0,
+        "contrast": None,
+        "sharpness": None,
+    }
+
+    if not OCR_PREPROCESS_ENABLED:
+        meta["reason"] = "disabled_by_env"
+        return image_path, meta
+
+    if Image is None or ImageOps is None or ImageEnhance is None:
+        meta["reason"] = "pillow_not_available"
+        log("OCR preprocessing skipped: Pillow not available")
+        return image_path, meta
+
+    try:
+        img = Image.open(image_path)
+        img = ImageOps.exif_transpose(img)
+        img = img.convert("RGB")
+
+        input_w, input_h = img.size
+        meta["input_width"] = input_w
+        meta["input_height"] = input_h
+
+        max_side = max(input_w, input_h)
+        scale = 1.0
+
+        if max_side > 0 and max_side < OCR_TARGET_LONG_SIDE:
+            scale = min(OCR_MAX_UPSCALE, OCR_TARGET_LONG_SIDE / max_side)
+
+        if scale > 1.05:
+            new_w = int(round(input_w * scale))
+            new_h = int(round(input_h * scale))
+            resampling = getattr(Image, "Resampling", Image).LANCZOS
+            img = img.resize((new_w, new_h), resampling)
+        else:
+            scale = 1.0
+
+        # Versión OCR: gris + autocontraste suave + contraste + nitidez.
+        # La imagen original se mantiene para mostrarla en frontend.
+        gray = ImageOps.grayscale(img)
+        gray = ImageOps.autocontrast(gray, cutoff=1)
+        gray = ImageEnhance.Contrast(gray).enhance(OCR_CONTRAST)
+        gray = ImageEnhance.Sharpness(gray).enhance(OCR_SHARPNESS)
+
+        out_img = gray.convert("RGB")
+
+        fd, tmp_path = tempfile.mkstemp(
+            prefix="chesslens_ocr_preprocessed_",
+            suffix=".jpg",
+        )
+        os.close(fd)
+
+        out_img.save(tmp_path, "JPEG", quality=95, optimize=True)
+
+        output_w, output_h = out_img.size
+
+        meta.update(
+            {
+                "enabled": True,
+                "method": "exif_upscale_grayscale_autocontrast_contrast_sharpen",
+                "reason": "",
+                "output_width": output_w,
+                "output_height": output_h,
+                "scale": scale,
+                "contrast": OCR_CONTRAST,
+                "sharpness": OCR_SHARPNESS,
+            }
+        )
+
+        log(
+            "OCR preprocessing enabled: "
+            f"{input_w}x{input_h} -> {output_w}x{output_h}, "
+            f"scale={scale:0.2f}, contrast={OCR_CONTRAST}, sharpness={OCR_SHARPNESS}"
+        )
+
+        return tmp_path, meta
+
+    except Exception as e:
+        meta["reason"] = f"preprocess_failed: {e}"
+        log(f"OCR preprocessing failed; using original image: {e}")
+        return image_path, meta
 
 
 def base_result_payload() -> Dict[str, Any]:
@@ -1136,16 +1242,20 @@ def build_meta_out(
 
 
 def process_initial(image_path: str) -> Dict[str, Any]:
-    image_bytes = read_image_bytes(image_path)
-    mime_type = guess_mime_type(image_path)
+    ocr_image_path, preprocessing_meta = preprocess_image_for_ocr(image_path)
+
+    image_bytes = read_image_bytes(ocr_image_path)
+    mime_type = guess_mime_type(ocr_image_path)
+
     log("calling gemini rows OCR...")
     ocr = call_gemini_rows(image_bytes, mime_type)
     log("gemini returned")
+
     meta = ocr["meta"]
     rows = ocr["rows"]
     board = chess.Board()
 
-    return parse_rows_stop_on_first_conflict(
+    result = parse_rows_stop_on_first_conflict(
         rows=rows,
         meta=meta,
         board=board,
@@ -1153,6 +1263,16 @@ def process_initial(image_path: str) -> Dict[str, Any]:
         start_index=0,
         manual_corrections=[],
     )
+
+    if isinstance(result.get("meta"), dict):
+        result["meta"]["ocr_preprocessing"] = preprocessing_meta
+
+    if isinstance(result.get("ocr"), dict) and isinstance(
+        result["ocr"].get("meta"), dict
+    ):
+        result["ocr"]["meta"]["ocr_preprocessing"] = preprocessing_meta
+
+    return result
 
 
 def process_parse_rows(payload: Dict[str, Any]) -> Dict[str, Any]:
