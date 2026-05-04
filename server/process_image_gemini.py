@@ -605,7 +605,8 @@ def normalize_square_case(token: str) -> str:
         if from_file.lower() in VALID_FILES and to_file.lower() in VALID_FILES:
             return from_file.lower() + "x" + to_file.lower() + rank_ + suf
         return t
-        m = re.fullmatch(r"([a-hA-H](?:x[a-hA-H])?[18])=([CATDNBRQcatdnbrq])([+#]?)", t)
+
+    m = re.fullmatch(r"([a-hA-H](?:x[a-hA-H])?[18])=([CATDNBRQcatdnbrq])([+#]?)", t)
     if m:
         base, promo, suf = m.groups()
         promo = promo.upper()

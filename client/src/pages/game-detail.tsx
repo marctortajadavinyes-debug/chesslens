@@ -358,7 +358,7 @@ export default function GameDetail() {
                   <p className="text-xs text-amber-700">
                     Revisa la planella {displayedSheetIndex + 1}
                     {blockedLocalMoveNumber != null
-                      ? ` · jugada ${blockedLocalMoveNumber}`
+                      ? ` · fila ${blockedLocalMoveNumber}`
                       : ""}
                     .
                   </p>
