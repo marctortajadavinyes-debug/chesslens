@@ -30,31 +30,6 @@ function getExpectedTurnFromPlyCount(plyCount: number) {
     side: plyCount % 2 === 0 ? "w" : "b",
   } as const;
 }
-function getPhysicalRowFromPly(game: any, plyIndex: number) {
-  const rows = Array.isArray(game?.ocr?.rows) ? game.ocr.rows : [];
-  if (rows.length === 0) return null;
-
-  const occupiedRows = rows
-    .filter((r: any) => {
-      const hasWhite = typeof r?.w === "string" && r.w.trim() !== "";
-      const hasBlack = typeof r?.b === "string" && r.b.trim() !== "";
-      return hasWhite || hasBlack;
-    })
-    .map((r: any) => ({
-      row: typeof r.row === "number" ? r.row : null,
-      sheet: typeof r.sheet === "number" ? r.sheet : null,
-      originalRow:
-        typeof r.originalRow === "number"
-          ? r.originalRow
-          : typeof r.row === "number"
-            ? ((r.row - 1) % 75) + 1
-            : null,
-    }))
-    .filter((r: any) => r.row != null);
-
-  const moveNumber = Math.floor(plyIndex / 2) + 1;
-  return occupiedRows[moveNumber - 1] ?? null;
-}
 
 export default function GameDetail() {
   const [, params] = useRoute("/games/:id");
@@ -106,8 +81,6 @@ export default function GameDetail() {
       typeof game?.reviewState?.blockedRow === "number"
         ? game.reviewState.blockedRow
         : null;
-
-    const blockedSide = game?.reviewState?.blockedSide;
 
     if (blockedRow == null) return null;
 

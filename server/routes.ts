@@ -864,29 +864,31 @@ export async function registerRoutes(_httpServer: Server, app: Express) {
         );
         updateGameFromEngineResult(game, parsed);
 
-        console.log(
-          "[review-debug]",
-          JSON.stringify(
-            {
-              id: game.id,
-              status: game.status,
-              updatedAt: game.updatedAt,
-              reviewState: game.reviewState,
-              lastError: Array.isArray(game.errors)
-                ? game.errors.slice(-1)[0]
-                : null,
-              lastMoves: Array.isArray(game.moves)
-                ? game.moves.slice(-10)
-                : null,
-              pgnTail:
-                typeof game.pgn === "string"
-                  ? game.pgn.split(" ").slice(-40).join(" ")
+        if (process.env.CHESSLENS_DEBUG_REVIEW === "1") {
+          console.log(
+            "[review-debug]",
+            JSON.stringify(
+              {
+                id: game.id,
+                status: game.status,
+                updatedAt: game.updatedAt,
+                reviewState: game.reviewState,
+                lastError: Array.isArray(game.errors)
+                  ? game.errors.slice(-1)[0]
                   : null,
-            },
-            null,
-            2,
-          ),
-        );
+                lastMoves: Array.isArray(game.moves)
+                  ? game.moves.slice(-10)
+                  : null,
+                pgnTail:
+                  typeof game.pgn === "string"
+                    ? game.pgn.split(" ").slice(-40).join(" ")
+                    : null,
+              },
+              null,
+              2,
+            ),
+          );
+        }
 
         return res.json(game);
       } catch (e) {

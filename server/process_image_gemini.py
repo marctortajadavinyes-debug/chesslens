@@ -67,7 +67,6 @@ PROMOTION_PIECE_MAP = {
     "N": "N",
 }
 
-VALID_CATALAN_PIECES = set("CATDR")
 VALID_ENGLISH_PIECES = set("KQRBN")
 VALID_FILES = set("abcdefgh")
 VALID_RANKS = set("12345678")
@@ -781,25 +780,6 @@ def candidate_tokens(raw: str) -> List[str]:
 # =========================================================
 
 
-def legal_candidates(
-    board: chess.Board, raw: str
-) -> Tuple[List[str], List[str], Optional[str]]:
-    candidates = candidate_tokens(raw)
-    if not candidates:
-        return [], [], "empty/filtered"
-
-    legal = []
-    last_err = None
-    for c in candidates:
-        try:
-            tmp = board.copy(stack=True)
-            tmp.push_san(c)
-            legal.append(c)
-        except Exception as e:
-            last_err = str(e)
-    return candidates, legal, last_err
-
-
 def san_capture_semantics_ok(board: chess.Board, san: str, move: chess.Move) -> bool:
     san_upper = san.upper()
 
@@ -962,10 +942,6 @@ def find_resume_next_index(
     return len(seq)  # Si hemos llegado al final, terminamos.
 
 
-def row_side_from_ply_index(ply_index: int) -> Tuple[int, str]:
-    return (ply_index // 2) + 1, ("w" if ply_index % 2 == 0 else "b")
-
-
 def get_manual_correction_for_ply(
     manual_corrections: List[Dict[str, Any]], ply_index: int
 ) -> Optional[str]:
@@ -986,53 +962,6 @@ def get_manual_correction_for_ply(
             return san
 
     return None
-
-
-def auto_apply_manual_corrections(
-    board: chess.Board,
-    accepted_moves: List[str],
-    manual_corrections: List[Dict[str, Any]],
-) -> Tuple[List[str], Optional[Dict[str, Any]]]:
-    applied_moves = list(accepted_moves)
-
-    for item in manual_corrections:
-        if not isinstance(item, dict):
-            continue
-
-        ply = item.get("ply")
-        san = str(item.get("san") or "").strip()
-
-        try:
-            ply = int(ply)
-        except Exception:
-            continue
-
-        if not san:
-            continue
-
-        expected_ply = len(applied_moves)
-
-        # Solo reaplicamos correcciones futuras; si no cuadran, paramos
-        if ply != expected_ply:
-            break
-
-        ok, chosen, err, cands = try_accept_user_correction(board, san)
-
-        if not ok or not chosen:
-            row_num, side = row_side_from_ply_index(expected_ply)
-            return applied_moves, {
-                "row": row_num,
-                "side": side,
-                "raw": san,
-                "normalized": cands[0] if cands else "",
-                "candidates": cands[:20],
-                "reason": f"stored_manual_correction_invalid: {err}",
-                "fen": board.fen(),
-            }
-
-        applied_moves.append(chosen)
-
-    return applied_moves, None
 
 
 def compute_stats(
@@ -1244,35 +1173,45 @@ def build_meta_out(
 def process_initial(image_path: str) -> Dict[str, Any]:
     ocr_image_path, preprocessing_meta = preprocess_image_for_ocr(image_path)
 
-    image_bytes = read_image_bytes(ocr_image_path)
-    mime_type = guess_mime_type(ocr_image_path)
+    try:
+        image_bytes = read_image_bytes(ocr_image_path)
+        mime_type = guess_mime_type(ocr_image_path)
 
-    log("calling gemini rows OCR...")
-    ocr = call_gemini_rows(image_bytes, mime_type)
-    log("gemini returned")
+        log("calling gemini rows OCR...")
+        ocr = call_gemini_rows(image_bytes, mime_type)
+        log("gemini returned")
 
-    meta = ocr["meta"]
-    rows = ocr["rows"]
-    board = chess.Board()
+        meta = ocr["meta"]
+        rows = ocr["rows"]
+        board = chess.Board()
 
-    result = parse_rows_stop_on_first_conflict(
-        rows=rows,
-        meta=meta,
-        board=board,
-        accepted_prefix_moves=[],
-        start_index=0,
-        manual_corrections=[],
-    )
+        result = parse_rows_stop_on_first_conflict(
+            rows=rows,
+            meta=meta,
+            board=board,
+            accepted_prefix_moves=[],
+            start_index=0,
+            manual_corrections=[],
+        )
 
-    if isinstance(result.get("meta"), dict):
-        result["meta"]["ocr_preprocessing"] = preprocessing_meta
+        if isinstance(result.get("meta"), dict):
+            result["meta"]["ocr_preprocessing"] = preprocessing_meta
 
-    if isinstance(result.get("ocr"), dict) and isinstance(
-        result["ocr"].get("meta"), dict
-    ):
-        result["ocr"]["meta"]["ocr_preprocessing"] = preprocessing_meta
+        if isinstance(result.get("ocr"), dict) and isinstance(
+            result["ocr"].get("meta"), dict
+        ):
+            result["ocr"]["meta"]["ocr_preprocessing"] = preprocessing_meta
 
-    return result
+        return result
+
+    finally:
+        if ocr_image_path != image_path:
+            try:
+                if os.path.exists(ocr_image_path):
+                    os.unlink(ocr_image_path)
+                    log("deleted temporary OCR preprocessed image")
+            except Exception as e:
+                log(f"could not delete temporary OCR image: {e}")
 
 
 def process_parse_rows(payload: Dict[str, Any]) -> Dict[str, Any]:
