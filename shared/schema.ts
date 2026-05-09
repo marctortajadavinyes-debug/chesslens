@@ -26,6 +26,31 @@ export const games = pgTable("games", {
 
 export const reviewSideSchema = z.union([z.literal("w"), z.literal("b")]);
 
+export const appLanguageSchema = z.union([
+  z.literal("ca"),
+  z.literal("es"),
+  z.literal("en"),
+]);
+
+export const scoresheetLanguageSchema = z.union([
+  z.literal("ca"),
+  z.literal("es"),
+  z.literal("en"),
+  z.literal("fr"),
+  z.literal("de"),
+  z.literal("pt"),
+  z.literal("it"),
+  z.literal("ru"),
+  z.literal("tr"),
+  z.literal("zh"),
+  z.literal("hi"),
+]);
+
+export const sheetFormatSchema = z.union([
+  z.literal("fce_75_3x25"),
+  z.literal("fide_60_3x20"),
+  z.literal("generic_40_2x20"),
+]);
 export const reviewStateSchema = z.object({
   stoppedForReview: z.boolean(),
   blockedRow: z.number().nullable(),
@@ -89,6 +114,9 @@ export const gameSchema = z.object({
 
 export const createGameRequestSchema = z.object({
   imageUrls: z.array(z.string()).min(1),
+  appLanguage: appLanguageSchema.optional(),
+  scoresheetLanguage: scoresheetLanguageSchema.optional(),
+  sheetFormat: sheetFormatSchema.optional(),
 });
 
 export const reviewGameRequestSchema = z
@@ -130,3 +158,6 @@ export type UpdateGameRequest = z.infer<typeof updateGameRequestSchema>;
 export type ReviewState = z.infer<typeof reviewStateSchema>;
 export type OcrRow = z.infer<typeof ocrRowSchema>;
 export type OcrPayload = z.infer<typeof ocrPayloadSchema>;
+export type AppLanguage = z.infer<typeof appLanguageSchema>;
+export type ScoresheetLanguage = z.infer<typeof scoresheetLanguageSchema>;
+export type SheetFormat = z.infer<typeof sheetFormatSchema>;

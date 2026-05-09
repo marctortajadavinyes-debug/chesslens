@@ -8,6 +8,29 @@ import type { Server } from "http";
 
 type ReviewSide = "w" | "b";
 
+type AppLanguage = "ca" | "es" | "en";
+
+type ScoresheetLanguage =
+  | "ca"
+  | "es"
+  | "en"
+  | "fr"
+  | "de"
+  | "pt"
+  | "it"
+  | "ru"
+  | "tr"
+  | "zh"
+  | "hi";
+
+type SheetFormat = "fce_75_3x25" | "fide_60_3x20" | "generic_40_2x20";
+
+type GameSettings = {
+  appLanguage: AppLanguage;
+  scoresheetLanguage: ScoresheetLanguage;
+  sheetFormat: SheetFormat;
+};
+
 type ReviewState = {
   stoppedForReview: boolean;
   blockedRow: number | null;
@@ -74,6 +97,60 @@ const games = new Map<number, Game>();
 
 function nowIso() {
   return new Date().toISOString();
+}
+function resolveGameSettings(body: any): GameSettings {
+  const appLanguageValues: AppLanguage[] = ["ca", "es", "en"];
+  const scoresheetLanguageValues: ScoresheetLanguage[] = [
+    "ca",
+    "es",
+    "en",
+    "fr",
+    "de",
+    "pt",
+    "it",
+    "ru",
+    "tr",
+    "zh",
+    "hi",
+  ];
+  const sheetFormatValues: SheetFormat[] = [
+    "fce_75_3x25",
+    "fide_60_3x20",
+    "generic_40_2x20",
+  ];
+
+  const requestedAppLanguage = body?.appLanguage;
+  const requestedScoresheetLanguage = body?.scoresheetLanguage;
+  const requestedSheetFormat = body?.sheetFormat;
+
+  const appLanguage = appLanguageValues.includes(requestedAppLanguage)
+    ? requestedAppLanguage
+    : "ca";
+
+  const scoresheetLanguage = scoresheetLanguageValues.includes(
+    requestedScoresheetLanguage,
+  )
+    ? requestedScoresheetLanguage
+    : appLanguage;
+
+  const sheetFormat = sheetFormatValues.includes(requestedSheetFormat)
+    ? requestedSheetFormat
+    : "fce_75_3x25";
+
+  return {
+    appLanguage,
+    scoresheetLanguage,
+    sheetFormat,
+  };
+}
+
+function withSettingsMeta(meta: any, settings: GameSettings) {
+  return {
+    ...(meta && typeof meta === "object" ? meta : {}),
+    appLanguage: settings.appLanguage,
+    scoresheetLanguage: settings.scoresheetLanguage,
+    sheetFormat: settings.sheetFormat,
+  };
 }
 
 function emptyReviewState(): ReviewState {
@@ -417,7 +494,7 @@ function resolveIncomingImages(body: any): {
 
   if (rawPaths.length > 0) {
     const validPaths = rawPaths.filter(
-      (p) => typeof p === "string" && p.length >= 3,
+      (p: string) => typeof p === "string" && p.length >= 3,
     );
     return {
       imagePaths: validPaths,
@@ -427,8 +504,9 @@ function resolveIncomingImages(body: any): {
 
   if (rawUrls.length > 0) {
     const validUrls = rawUrls.filter(
-      (u) => typeof u === "string" && u.startsWith("data:image/"),
+      (u: string) => typeof u === "string" && u.startsWith("data:image/"),
     );
+
     return {
       imagePaths: [],
       imageUrls: validUrls,
@@ -519,6 +597,7 @@ export async function registerRoutes(_httpServer: Server, app: Express) {
 
   app.post("/api/games", async (req, res) => {
     try {
+      const settings = resolveGameSettings(req.body ?? {});
       const incoming = resolveIncomingImages(req.body ?? {});
 
       if (incoming.imagePaths.length === 0 && incoming.imageUrls.length === 0) {
@@ -558,7 +637,7 @@ export async function registerRoutes(_httpServer: Server, app: Express) {
         moves: null,
         manualCorrections: [],
         errors: null,
-        meta: null,
+        meta: withSettingsMeta(null, settings),
         ocr: null,
 
         reviewState: emptyReviewState(),
@@ -579,6 +658,14 @@ export async function registerRoutes(_httpServer: Server, app: Express) {
             finalImagePaths[0],
             null,
           );
+
+          if (parsed && typeof parsed === "object") {
+            parsed.meta = withSettingsMeta(parsed.meta, settings);
+            if (parsed.ocr && typeof parsed.ocr === "object") {
+              parsed.ocr.meta = withSettingsMeta(parsed.ocr.meta, settings);
+            }
+          }
+
           updateGameFromEngineResult(game, parsed);
           return res.json(game);
         }
@@ -657,13 +744,15 @@ export async function registerRoutes(_httpServer: Server, app: Express) {
           })),
         );
 
+        mergedOcr.meta = withSettingsMeta(mergedOcr.meta, settings);
+
         game.ocr = mergedOcr;
-        game.meta = mergedOcr.meta ?? mergedMeta ?? null;
+        game.meta = mergedOcr.meta ?? withSettingsMeta(mergedMeta, settings);
 
         const finalPayload = {
           mode: "parse_rows",
           rows: mergedOcr.rows,
-          meta: mergedOcr.meta ?? mergedMeta ?? {},
+          meta: withSettingsMeta(mergedOcr.meta ?? mergedMeta ?? {}, settings),
         };
 
         const parsedFinal = await runPythonProcess(
@@ -671,6 +760,16 @@ export async function registerRoutes(_httpServer: Server, app: Express) {
           finalImagePaths[0],
           finalPayload,
         );
+
+        if (parsedFinal && typeof parsedFinal === "object") {
+          parsedFinal.meta = withSettingsMeta(parsedFinal.meta, settings);
+          if (parsedFinal.ocr && typeof parsedFinal.ocr === "object") {
+            parsedFinal.ocr.meta = withSettingsMeta(
+              parsedFinal.ocr.meta,
+              settings,
+            );
+          }
+        }
 
         updateGameFromEngineResult(game, parsedFinal);
         return res.json(game);
