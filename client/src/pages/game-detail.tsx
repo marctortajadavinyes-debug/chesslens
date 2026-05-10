@@ -30,6 +30,17 @@ function getExpectedTurnFromPlyCount(plyCount: number) {
     side: plyCount % 2 === 0 ? "w" : "b",
   } as const;
 }
+function getRowsPerSheetFromGame(game: any) {
+  const sheetFormat =
+    typeof game?.meta?.sheetFormat === "string"
+      ? game.meta.sheetFormat
+      : "fce_75_3x25";
+
+  if (sheetFormat === "fide_60_3x20") return 60;
+  if (sheetFormat === "standard_60_2x30") return 60;
+  if (sheetFormat === "generic_40_2x20") return 40;
+  return 75;
+}
 
 export default function GameDetail() {
   const [, params] = useRoute("/games/:id");
@@ -85,18 +96,19 @@ export default function GameDetail() {
     if (blockedRow == null) return null;
 
     const anchorRow = game.ocr?.rows?.find((r: any) => r.row === blockedRow);
+    const rowsPerSheet = getRowsPerSheetFromGame(game);
 
     const anchorOriginalRow =
       anchorRow && typeof anchorRow.originalRow === "number"
         ? anchorRow.originalRow
-        : ((blockedRow - 1) % 75) + 1;
+        : ((blockedRow - 1) % rowsPerSheet) + 1;
 
     const anchorSheet =
       anchorRow && typeof anchorRow.sheet === "number"
         ? anchorRow.sheet
         : typeof game.reviewState.blockedSheet === "number"
           ? game.reviewState.blockedSheet
-          : Math.floor((blockedRow - 1) / 75);
+          : Math.floor((blockedRow - 1) / rowsPerSheet);
 
     if (isNavigatingPast) {
       const anchorMoveNumber = expectedLiveTurn.moveNumber;

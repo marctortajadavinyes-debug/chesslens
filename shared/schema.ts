@@ -45,10 +45,10 @@ export const scoresheetLanguageSchema = z.union([
   z.literal("zh"),
   z.literal("hi"),
 ]);
-
 export const sheetFormatSchema = z.union([
   z.literal("fce_75_3x25"),
   z.literal("fide_60_3x20"),
+  z.literal("standard_60_2x30"),
   z.literal("generic_40_2x20"),
 ]);
 export const reviewStateSchema = z.object({

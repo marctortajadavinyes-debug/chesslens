@@ -23,7 +23,11 @@ type ScoresheetLanguage =
   | "zh"
   | "hi";
 
-type SheetFormat = "fce_75_3x25" | "fide_60_3x20" | "generic_40_2x20";
+type SheetFormat =
+  | "fce_75_3x25"
+  | "fide_60_3x20"
+  | "standard_60_2x30"
+  | "generic_40_2x20";
 
 type GameSettings = {
   appLanguage: AppLanguage;
@@ -116,6 +120,7 @@ function resolveGameSettings(body: any): GameSettings {
   const sheetFormatValues: SheetFormat[] = [
     "fce_75_3x25",
     "fide_60_3x20",
+    "standard_60_2x30",
     "generic_40_2x20",
   ];
 
@@ -143,14 +148,72 @@ function resolveGameSettings(body: any): GameSettings {
     sheetFormat,
   };
 }
+function getSheetFormatProfileMeta(sheetFormat: SheetFormat) {
+  if (sheetFormat === "fide_60_3x20") {
+    return {
+      sheet_format: sheetFormat,
+      name: "FEDA/FIDE/US",
+      total_rows: 60,
+    };
+  }
+
+  if (sheetFormat === "standard_60_2x30") {
+    return {
+      sheet_format: sheetFormat,
+      name: "Standard club/school 2-column",
+      total_rows: 60,
+    };
+  }
+
+  if (sheetFormat === "generic_40_2x20") {
+    return {
+      sheet_format: sheetFormat,
+      name: "Generic 2-column",
+      total_rows: 40,
+    };
+  }
+
+  return {
+    sheet_format: "fce_75_3x25",
+    name: "FCE",
+    total_rows: 75,
+  };
+}
 
 function withSettingsMeta(meta: any, settings: GameSettings) {
+  const base = meta && typeof meta === "object" ? meta : {};
+
   return {
-    ...(meta && typeof meta === "object" ? meta : {}),
+    ...base,
     appLanguage: settings.appLanguage,
     scoresheetLanguage: settings.scoresheetLanguage,
     sheetFormat: settings.sheetFormat,
+    sheet_format_profile:
+      base.sheet_format_profile ??
+      getSheetFormatProfileMeta(settings.sheetFormat),
   };
+}
+
+function buildInitialEnginePayload(settings: GameSettings) {
+  return {
+    mode: "initial",
+    sheetFormat: settings.sheetFormat,
+  };
+}
+function getRowsPerSheet(sheetFormat: string | null | undefined): number {
+  if (sheetFormat === "fide_60_3x20") return 60;
+  if (sheetFormat === "standard_60_2x30") return 60;
+  if (sheetFormat === "generic_40_2x20") return 40;
+  return 75;
+}
+
+function getRowsPerSheetFromGame(game: Game): number {
+  const sheetFormat =
+    game.meta && typeof game.meta.sheetFormat === "string"
+      ? game.meta.sheetFormat
+      : "fce_75_3x25";
+
+  return getRowsPerSheet(sheetFormat);
 }
 
 function emptyReviewState(): ReviewState {
@@ -276,7 +339,21 @@ function updateGameFromEngineResult(game: Game, parsed: any) {
   game.pgn = typeof parsed?.pgn === "string" ? parsed.pgn : null;
   game.moves = Array.isArray(parsed?.moves) ? parsed.moves : null;
   game.errors = Array.isArray(parsed?.errors) ? parsed.errors : null;
-  game.meta = parsed?.meta ?? game.meta ?? null;
+  const previousMeta =
+    game.meta && typeof game.meta === "object" ? game.meta : {};
+  const parsedMeta =
+    parsed?.meta && typeof parsed.meta === "object" ? parsed.meta : {};
+
+  game.meta = {
+    ...previousMeta,
+    ...parsedMeta,
+    appLanguage: parsedMeta.appLanguage ?? previousMeta.appLanguage,
+    scoresheetLanguage:
+      parsedMeta.scoresheetLanguage ?? previousMeta.scoresheetLanguage,
+    sheetFormat: parsedMeta.sheetFormat ?? previousMeta.sheetFormat,
+    sheet_format_profile:
+      parsedMeta.sheet_format_profile ?? previousMeta.sheet_format_profile,
+  };
 
   const previousOcr = game.ocr ?? null;
   const parsedOcr = normalizeOcrRows(parsed?.ocr);
@@ -320,7 +397,8 @@ function updateGameFromEngineResult(game: Game, parsed: any) {
     Array.isArray(game.imageUrls) &&
     game.imageUrls.length > 1
   ) {
-    blockedSheet = Math.floor((blockedRow - 1) / 75);
+    const rowsPerSheet = getRowsPerSheetFromGame(game);
+    blockedSheet = Math.floor((blockedRow - 1) / rowsPerSheet);
   }
 
   game.reviewState = {
@@ -656,7 +734,7 @@ export async function registerRoutes(_httpServer: Server, app: Express) {
           const parsed = await runPythonProcess(
             scriptPath,
             finalImagePaths[0],
-            null,
+            buildInitialEnginePayload(settings),
           );
 
           if (parsed && typeof parsed === "object") {
@@ -690,7 +768,11 @@ export async function registerRoutes(_httpServer: Server, app: Express) {
                 await new Promise((r) => setTimeout(r, waitMs));
               }
 
-              const parsed = await runPythonProcess(scriptPath, imgPath, null);
+              const parsed = await runPythonProcess(
+                scriptPath,
+                imgPath,
+                buildInitialEnginePayload(settings),
+              );
               const usableOcr = extractUsableOcrFromPythonResult(parsed, i);
 
               if (!usableOcr) {

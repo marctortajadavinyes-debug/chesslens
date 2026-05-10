@@ -42,6 +42,52 @@ OCR_MAX_UPSCALE = float(os.environ.get("CHESSLENS_OCR_MAX_UPSCALE", "2.0"))
 OCR_CONTRAST = float(os.environ.get("CHESSLENS_OCR_CONTRAST", "1.35"))
 OCR_SHARPNESS = float(os.environ.get("CHESSLENS_OCR_SHARPNESS", "1.25"))
 
+DEFAULT_SHEET_FORMAT = "fce_75_3x25"
+
+SHEET_FORMAT_PROFILES = {
+    "fce_75_3x25": {
+        "name": "FCE",
+        "total_rows": 75,
+        "blocks": [
+            {"label": "Block 1", "from": 1, "to": 25, "position": "LEFT"},
+            {"label": "Block 2", "from": 26, "to": 50, "position": "MIDDLE"},
+            {"label": "Block 3", "from": 51, "to": 75, "position": "RIGHT"},
+        ],
+    },
+    "fide_60_3x20": {
+        "name": "FEDA/FIDE/US",
+        "total_rows": 60,
+        "blocks": [
+            {"label": "Block 1", "from": 1, "to": 20, "position": "LEFT"},
+            {"label": "Block 2", "from": 21, "to": 40, "position": "MIDDLE"},
+            {"label": "Block 3", "from": 41, "to": 60, "position": "RIGHT"},
+        ],
+    },
+    "standard_60_2x30": {
+        "name": "Standard club/school 2-column",
+        "total_rows": 60,
+        "blocks": [
+            {"label": "Block 1", "from": 1, "to": 30, "position": "LEFT"},
+            {"label": "Block 2", "from": 31, "to": 60, "position": "RIGHT"},
+        ],
+    },
+    "generic_40_2x20": {
+        "name": "Generic 2-column",
+        "total_rows": 40,
+        "blocks": [
+            {"label": "Block 1", "from": 1, "to": 20, "position": "LEFT"},
+            {"label": "Block 2", "from": 21, "to": 40, "position": "RIGHT"},
+        ],
+    },
+}
+
+
+def get_sheet_format_profile(sheet_format: str) -> Dict[str, Any]:
+    if sheet_format in SHEET_FORMAT_PROFILES:
+        return SHEET_FORMAT_PROFILES[sheet_format]
+    return SHEET_FORMAT_PROFILES[DEFAULT_SHEET_FORMAT]
+
+
 CATALAN_PIECE_MAP = {
     "C": "N",  # Cavall
     "A": "B",  # Alfil
@@ -257,11 +303,56 @@ def fail(error_message: str, extra: Optional[Dict[str, Any]] = None) -> None:
 # =========================================================
 
 
-def call_gemini_rows(image_bytes: bytes, mime_type: str) -> Dict[str, Any]:
+def build_sheet_structure_prompt(sheet_format: str) -> str:
+    profile = get_sheet_format_profile(sheet_format)
+    blocks = profile["blocks"]
+
+    lines = [
+        "ROWS:",
+        f'- The moves table uses the "{profile["name"]}" scoresheet format.',
+        f"- The sheet contains up to {profile['total_rows']} printed move rows.",
+        f"- The moves table is split into {len(blocks)} vertical block(s):",
+    ]
+
+    for block in blocks:
+        lines.append(
+            f"  {block['label']} = moves {block['from']}..{block['to']} "
+            f"({block['position']})"
+        )
+
+    reading_order = ", then ".join(block["position"] for block in blocks)
+
+    lines.extend(
+        [
+            f"- Read blocks STRICTLY in this order: {reading_order}.",
+            "- Inside each block, read rows from TOP to BOTTOM.",
+            "- Each row has move number, white move, black move.",
+            "- Return rows in final reading order.",
+            "- For each row return:",
+            '  {"n": <move_number>, "w": "<exact white cell text>", "b": "<exact black cell text>"}',
+            "- Read ONLY the handwritten move cell contents.",
+            "- Keep EXACT OCR text when possible.",
+            "- Do NOT validate chess legality.",
+            "- Do NOT normalize notation.",
+            "- Do NOT translate to English.",
+            "- Do NOT guess missing moves.",
+            "- IMPORTANT: If a cell is completely crossed out, heavily scribbled over, empty, or unreadable, return an empty string.",
+        ]
+    )
+
+    return "\n".join(lines)
+
+
+def call_gemini_rows(
+    image_bytes: bytes,
+    mime_type: str,
+    sheet_format: str = DEFAULT_SHEET_FORMAT,
+) -> Dict[str, Any]:
     if not GEMINI_API_KEY:
         raise RuntimeError("GEMINI_API_KEY (or GOOGLE_API_KEY) env var not set")
 
     client = genai.Client(api_key=GEMINI_API_KEY)
+    rows_prompt = build_sheet_structure_prompt(sheet_format)
 
     prompt = (
         "Strict OCR task for a Catalan chess scoresheet.\n"
@@ -274,24 +365,7 @@ def call_gemini_rows(image_bytes: bytes, mime_type: str) -> Dict[str, Any]:
         "- Read ONLY the handwritten top fields.\n"
         "- IMPORTANT: Site must be the handwritten playing site/club if present.\n"
         "- DO NOT use printed federation address as Site.\n\n"
-        "ROWS:\n"
-        "- The moves table is split into THREE vertical blocks:\n"
-        "  Block 1 = moves 1..25 (left)\n"
-        "  Block 2 = moves 26..50 (middle)\n"
-        "  Block 3 = moves 51..75 (right)\n"
-        "- Read blocks STRICTLY in this order: LEFT, then MIDDLE, then RIGHT.\n"
-        "- Inside each block, read rows from TOP to BOTTOM.\n"
-        "- Each row has move number, white move, black move.\n"
-        "- Return rows in final reading order.\n"
-        "- For each row return:\n"
-        '  {"n": <move_number>, "w": "<exact white cell text>", "b": "<exact black cell text>"}\n'
-        "- Read ONLY the handwritten move cell contents.\n"
-        "- Keep EXACT OCR text when possible.\n"
-        "- Do NOT validate chess legality.\n"
-        "- Do NOT normalize notation.\n"
-        "- Do NOT translate to English.\n"
-        "- Do NOT guess missing moves.\n"
-        "- IMPORTANT: If a cell is completely crossed out, heavily scribbled over, empty, or unreadable, return an empty string.\n\n"
+        f"{rows_prompt}\n\n"
         "Return ONLY valid JSON. No markdown. No extra text.\n\n"
         'Schema example: {"headers":{"Event":"","Site":"","Date":"","Round":"","White":"","Black":"","Result":""},"rows":[{"n":1,"w":"","b":""},{"n":2,"w":"","b":""}]}'
     )
@@ -1170,15 +1244,18 @@ def build_meta_out(
 # =========================================================
 
 
-def process_initial(image_path: str) -> Dict[str, Any]:
+def process_initial(
+    image_path: str,
+    sheet_format: str = DEFAULT_SHEET_FORMAT,
+) -> Dict[str, Any]:
     ocr_image_path, preprocessing_meta = preprocess_image_for_ocr(image_path)
-
+    sheet_profile = get_sheet_format_profile(sheet_format)
     try:
         image_bytes = read_image_bytes(ocr_image_path)
         mime_type = guess_mime_type(ocr_image_path)
 
         log("calling gemini rows OCR...")
-        ocr = call_gemini_rows(image_bytes, mime_type)
+        ocr = call_gemini_rows(image_bytes, mime_type, sheet_format=sheet_format)
         log("gemini returned")
 
         meta = ocr["meta"]
@@ -1196,11 +1273,21 @@ def process_initial(image_path: str) -> Dict[str, Any]:
 
         if isinstance(result.get("meta"), dict):
             result["meta"]["ocr_preprocessing"] = preprocessing_meta
+            result["meta"]["sheet_format_profile"] = {
+                "sheet_format": sheet_format,
+                "name": sheet_profile["name"],
+                "total_rows": sheet_profile["total_rows"],
+            }
 
         if isinstance(result.get("ocr"), dict) and isinstance(
             result["ocr"].get("meta"), dict
         ):
             result["ocr"]["meta"]["ocr_preprocessing"] = preprocessing_meta
+            result["ocr"]["meta"]["sheet_format_profile"] = {
+                "sheet_format": sheet_format,
+                "name": sheet_profile["name"],
+                "total_rows": sheet_profile["total_rows"],
+            }
 
         return result
 
@@ -1345,6 +1432,12 @@ def main() -> None:
 
             payload = load_json_file(payload_path)
             mode = str(payload.get("mode") or "").strip()
+
+            if mode == "initial":
+                sheet_format = str(payload.get("sheetFormat") or DEFAULT_SHEET_FORMAT)
+                result = process_initial(image_path, sheet_format=sheet_format)
+                jprint(result)
+                return
 
             if mode == "resume":
                 result = process_resume(payload)

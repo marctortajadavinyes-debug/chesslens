@@ -68,11 +68,15 @@ const SHEET_FORMAT_OPTIONS: { value: SheetFormat; label: string }[] = [
   },
   {
     value: "fide_60_3x20",
-    label: "FEDA / FIDE · 60 jugades · 3 columnes x 20",
+    label: "FEDA / FIDE / US · 60 jugades · 3 columnes x 20",
+  },
+  {
+    value: "standard_60_2x30",
+    label: "Estàndard club/escolar · 60 jugades · 2 columnes x 30",
   },
   {
     value: "generic_40_2x20",
-    label: "Genèrica · 40 jugades · 2 columnes x 20",
+    label: "Genèrica / escolar · 40 jugades · 2 columnes x 20",
   },
 ];
 
