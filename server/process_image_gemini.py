@@ -8,7 +8,7 @@ import json
 import time
 import tempfile
 
-from typing import Any, Dict, List, Optional, Tuple, Set
+from typing import Any, Dict, List, Optional, Tuple, Set, NamedTuple
 
 import chess
 
@@ -41,6 +41,14 @@ OCR_TARGET_LONG_SIDE = int(os.environ.get("CHESSLENS_OCR_TARGET_LONG_SIDE", "220
 OCR_MAX_UPSCALE = float(os.environ.get("CHESSLENS_OCR_MAX_UPSCALE", "2.0"))
 OCR_CONTRAST = float(os.environ.get("CHESSLENS_OCR_CONTRAST", "1.35"))
 OCR_SHARPNESS = float(os.environ.get("CHESSLENS_OCR_SHARPNESS", "1.25"))
+
+OCR_BLOCK_ZOOM_ENABLED = os.environ.get("CHESSLENS_OCR_BLOCK_ZOOM", "0") == "1"
+OCR_BLOCK_ZOOM_ONLY_IF_UPSCALED = (
+    os.environ.get("CHESSLENS_OCR_BLOCK_ZOOM_ONLY_IF_UPSCALED", "1") != "0"
+)
+OCR_BLOCK_ZOOM_OVERLAP_RATIO = float(
+    os.environ.get("CHESSLENS_OCR_BLOCK_ZOOM_OVERLAP_RATIO", "0.025")
+)
 
 DEFAULT_SHEET_FORMAT = "fce_75_3x25"
 
@@ -170,6 +178,13 @@ def read_image_bytes(image_path: str) -> bytes:
         return f.read()
 
 
+class OcrImageInput(NamedTuple):
+    path: str
+    mime_type: str
+    label: str
+    temporary: bool
+
+
 def guess_mime_type(image_path: str) -> str:
     p = image_path.lower()
     if p.endswith(".png"):
@@ -271,6 +286,142 @@ def preprocess_image_for_ocr(image_path: str) -> Tuple[str, Dict[str, Any]]:
         return image_path, meta
 
 
+def build_block_zoom_inputs(
+    image_path: str,
+    sheet_format: str,
+    preprocessing_meta: Dict[str, Any],
+) -> Tuple[List[OcrImageInput], Dict[str, Any]]:
+    meta: Dict[str, Any] = {
+        "enabled": False,
+        "reason": "",
+        "sheet_format": sheet_format,
+        "blocks_count": 0,
+        "only_if_upscaled": OCR_BLOCK_ZOOM_ONLY_IF_UPSCALED,
+        "crops": [],
+    }
+
+    if not OCR_BLOCK_ZOOM_ENABLED:
+        meta["reason"] = "disabled_by_env"
+        return [], meta
+
+    if Image is None:
+        meta["reason"] = "pillow_not_available"
+        return [], meta
+
+    if OCR_BLOCK_ZOOM_ONLY_IF_UPSCALED:
+        scale = preprocessing_meta.get("scale")
+        try:
+            scale_value = float(scale)
+        except Exception:
+            scale_value = 1.0
+
+        if scale_value <= 1.05:
+            meta["reason"] = "not_upscaled"
+            return [], meta
+
+    profile = get_sheet_format_profile(sheet_format)
+    blocks = profile.get("blocks") or []
+
+    if len(blocks) <= 1:
+        meta["reason"] = "single_block_format"
+        return [], meta
+
+    try:
+        img = Image.open(image_path)
+        img = ImageOps.exif_transpose(img)
+        img = img.convert("RGB")
+
+        width, height = img.size
+        if width <= 0 or height <= 0:
+            meta["reason"] = "invalid_image_size"
+            return [], meta
+
+        block_count = len(blocks)
+        overlap_px = int(round(width * OCR_BLOCK_ZOOM_OVERLAP_RATIO))
+
+        outputs: List[OcrImageInput] = []
+
+        for idx, block in enumerate(blocks):
+            raw_x0 = int(round(width * idx / block_count))
+            raw_x1 = int(round(width * (idx + 1) / block_count))
+
+            x0 = max(0, raw_x0 - overlap_px)
+            x1 = min(width, raw_x1 + overlap_px)
+
+            if x1 <= x0:
+                continue
+
+            crop = img.crop((x0, 0, x1, height))
+
+            fd, tmp_path = tempfile.mkstemp(
+                prefix=f"chesslens_block_{idx + 1}_",
+                suffix=".jpg",
+            )
+            os.close(fd)
+
+            crop.save(tmp_path, "JPEG", quality=95, optimize=True)
+
+            label = (
+                f"{block.get('label', f'Block {idx + 1}')}: "
+                f"moves {block.get('from')}..{block.get('to')} "
+                f"({block.get('position')})"
+            )
+
+            outputs.append(
+                OcrImageInput(
+                    path=tmp_path,
+                    mime_type="image/jpeg",
+                    label=label,
+                    temporary=True,
+                )
+            )
+
+            meta["crops"].append(
+                {
+                    "label": label,
+                    "x0": x0,
+                    "x1": x1,
+                    "y0": 0,
+                    "y1": height,
+                    "width": x1 - x0,
+                    "height": height,
+                }
+            )
+
+        if not outputs:
+            meta["reason"] = "no_valid_crops"
+            return [], meta
+
+        meta["enabled"] = True
+        meta["reason"] = ""
+        meta["blocks_count"] = len(outputs)
+
+        log(
+            "OCR block zoom enabled: "
+            f"{len(outputs)} crop(s), sheet_format={sheet_format}"
+        )
+
+        return outputs, meta
+
+    except Exception as e:
+        meta["reason"] = f"block_zoom_failed: {e}"
+        log(f"OCR block zoom failed; using full image only: {e}")
+        return [], meta
+
+
+def cleanup_temporary_ocr_inputs(inputs: List[OcrImageInput]) -> None:
+    for item in inputs:
+        if not item.temporary:
+            continue
+
+        try:
+            if os.path.exists(item.path):
+                os.unlink(item.path)
+                log(f"deleted temporary OCR image input: {item.label}")
+        except Exception as e:
+            log(f"could not delete temporary OCR image input {item.path}: {e}")
+
+
 def base_result_payload() -> Dict[str, Any]:
     return {
         "ok": False,
@@ -347,17 +498,32 @@ def call_gemini_rows(
     image_bytes: bytes,
     mime_type: str,
     sheet_format: str = DEFAULT_SHEET_FORMAT,
+    block_inputs: Optional[List[OcrImageInput]] = None,
 ) -> Dict[str, Any]:
     if not GEMINI_API_KEY:
         raise RuntimeError("GEMINI_API_KEY (or GOOGLE_API_KEY) env var not set")
 
     client = genai.Client(api_key=GEMINI_API_KEY)
     rows_prompt = build_sheet_structure_prompt(sheet_format)
+    block_inputs = block_inputs or []
+
+    zoom_prompt = ""
+    if block_inputs:
+        zoom_prompt = (
+            "\nIMAGE INPUTS:\n"
+            "- You will receive the full scoresheet image first.\n"
+            "- You will also receive zoomed crop images of the move blocks.\n"
+            "- Use the full image to understand the global layout.\n"
+            "- Use the zoomed block images only as visual help to read the cells more accurately.\n"
+            "- Do NOT duplicate rows from the full image and crop images.\n"
+            "- Return one single rows array in the final reading order described below.\n"
+        )
 
     prompt = (
         "Strict OCR task for a Catalan chess scoresheet.\n"
         "The scoresheet is handwritten and the move notation is in CATALAN.\n"
-        "Return ONLY valid JSON with EXACTLY two top-level keys: headers and rows.\n\n"
+        "Return ONLY valid JSON with EXACTLY two top-level keys: headers and rows.\n"
+        f"{zoom_prompt}\n"
         "HEADERS:\n"
         "- headers MUST contain exactly these keys:\n"
         "  Event, Site, Date, Round, White, Black, Result\n"
@@ -370,21 +536,34 @@ def call_gemini_rows(
         'Schema example: {"headers":{"Event":"","Site":"","Date":"","Round":"","White":"","Black":"","Result":""},"rows":[{"n":1,"w":"","b":""},{"n":2,"w":"","b":""}]}'
     )
 
+    parts: List[Dict[str, Any]] = [
+        {"text": prompt},
+        {"text": "FULL SCORESHEET IMAGE:"},
+        {
+            "inline_data": {
+                "mime_type": mime_type,
+                "data": image_bytes,
+            }
+        },
+    ]
+
+    for block_input in block_inputs:
+        parts.append({"text": f"ZOOMED BLOCK IMAGE - {block_input.label}:"})
+        parts.append(
+            {
+                "inline_data": {
+                    "mime_type": block_input.mime_type,
+                    "data": read_image_bytes(block_input.path),
+                }
+            }
+        )
+
     contents = [
         {
             "role": "user",
-            "parts": [
-                {
-                    "inline_data": {
-                        "mime_type": mime_type,
-                        "data": image_bytes,
-                    }
-                },
-                {"text": prompt},
-            ],
+            "parts": parts,
         }
     ]
-
     resp = client.models.generate_content(
         model=GEMINI_MODEL,
         contents=contents,
@@ -1249,13 +1428,31 @@ def process_initial(
     sheet_format: str = DEFAULT_SHEET_FORMAT,
 ) -> Dict[str, Any]:
     ocr_image_path, preprocessing_meta = preprocess_image_for_ocr(image_path)
-    sheet_profile = get_sheet_format_profile(sheet_format)
+    block_inputs: List[OcrImageInput] = []
+    block_zoom_meta: Dict[str, Any] = {
+        "enabled": False,
+        "reason": "not_initialized",
+    }
+
     try:
+        sheet_profile = get_sheet_format_profile(sheet_format)
+
+        block_inputs, block_zoom_meta = build_block_zoom_inputs(
+            image_path=ocr_image_path,
+            sheet_format=sheet_format,
+            preprocessing_meta=preprocessing_meta,
+        )
+
         image_bytes = read_image_bytes(ocr_image_path)
         mime_type = guess_mime_type(ocr_image_path)
 
         log("calling gemini rows OCR...")
-        ocr = call_gemini_rows(image_bytes, mime_type, sheet_format=sheet_format)
+        ocr = call_gemini_rows(
+            image_bytes,
+            mime_type,
+            sheet_format=sheet_format,
+            block_inputs=block_inputs,
+        )
         log("gemini returned")
 
         meta = ocr["meta"]
@@ -1271,27 +1468,29 @@ def process_initial(
             manual_corrections=[],
         )
 
+        sheet_format_profile_meta = {
+            "sheet_format": sheet_format,
+            "name": sheet_profile["name"],
+            "total_rows": sheet_profile["total_rows"],
+        }
+
         if isinstance(result.get("meta"), dict):
             result["meta"]["ocr_preprocessing"] = preprocessing_meta
-            result["meta"]["sheet_format_profile"] = {
-                "sheet_format": sheet_format,
-                "name": sheet_profile["name"],
-                "total_rows": sheet_profile["total_rows"],
-            }
+            result["meta"]["ocr_block_zoom"] = block_zoom_meta
+            result["meta"]["sheet_format_profile"] = sheet_format_profile_meta
 
         if isinstance(result.get("ocr"), dict) and isinstance(
             result["ocr"].get("meta"), dict
         ):
             result["ocr"]["meta"]["ocr_preprocessing"] = preprocessing_meta
-            result["ocr"]["meta"]["sheet_format_profile"] = {
-                "sheet_format": sheet_format,
-                "name": sheet_profile["name"],
-                "total_rows": sheet_profile["total_rows"],
-            }
+            result["ocr"]["meta"]["ocr_block_zoom"] = block_zoom_meta
+            result["ocr"]["meta"]["sheet_format_profile"] = sheet_format_profile_meta
 
         return result
 
     finally:
+        cleanup_temporary_ocr_inputs(block_inputs)
+
         if ocr_image_path != image_path:
             try:
                 if os.path.exists(ocr_image_path):
