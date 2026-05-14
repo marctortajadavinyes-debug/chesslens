@@ -28,6 +28,45 @@ type ChessLensUserSettings = {
   sheetFormat: SheetFormat;
 };
 
+type UiText = {
+  settingsButton: string;
+  heroTitle: string;
+  heroSubtitle: string;
+  initialSettingsTitle: string;
+  settingsTitle: string;
+  alias: string;
+  email: string;
+  optional: string;
+  appLanguage: string;
+  scoresheetLanguage: string;
+  sheetFormat: string;
+  cancel: string;
+  saveSettings: string;
+  settingsSavedTitle: string;
+  settingsSavedDescription: string;
+  currentSettings: string;
+  app: string;
+  scoresheet: string;
+  format: string;
+  dropActive: string;
+  dropIdle: string;
+  dropHint: string;
+  sheetAddedTitle: string;
+  sheetAddedDescription: (count: number) => string;
+  sheetsSentTitle: string;
+  sheetsSentDescription: string;
+  aiHighDemand: string;
+  connectionProblem: string;
+  scanStartFailedTitle: string;
+  imagesLoaded: (count: number) => string;
+  processingSheet: string;
+  scanGame: string;
+  addAnotherSheet: string;
+  recentGames: string;
+  noGames: string;
+  genericErrorTitle: string;
+};
+
 const SETTINGS_STORAGE_KEY = "chesslens_user_settings_v1";
 
 const DEFAULT_SETTINGS: ChessLensUserSettings = {
@@ -40,8 +79,8 @@ const DEFAULT_SETTINGS: ChessLensUserSettings = {
 
 const APP_LANGUAGE_OPTIONS: { value: AppLanguage; label: string }[] = [
   { value: "ca", label: "Català" },
-  { value: "es", label: "Español" },
   { value: "en", label: "English" },
+  { value: "es", label: "Español" },
 ];
 
 const SCORESHEET_LANGUAGE_OPTIONS: {
@@ -49,42 +88,180 @@ const SCORESHEET_LANGUAGE_OPTIONS: {
   label: string;
 }[] = [
   { value: "ca", label: "Català" },
-  { value: "es", label: "Español" },
   { value: "en", label: "English" },
-  { value: "fr", label: "Français" },
-  { value: "de", label: "Deutsch" },
-  { value: "pt", label: "Português" },
-  { value: "it", label: "Italiano" },
-  { value: "ru", label: "Русский" },
-  { value: "tr", label: "Türkçe" },
-  { value: "zh", label: "中文" },
-  { value: "hi", label: "हिन्दी" },
+  { value: "es", label: "Español" },
 ];
 
-const SHEET_FORMAT_OPTIONS: { value: SheetFormat; label: string }[] = [
-  {
-    value: "fce_75_3x25",
-    label: "FCE · 75 jugades · 3 columnes x 25",
-  },
-  {
-    value: "fide_60_3x20",
-    label: "FEDA / FIDE / US · 60 jugades · 3 columnes x 20",
-  },
-  {
-    value: "standard_60_2x30",
-    label: "Estàndard club/escolar · 60 jugades · 2 columnes x 30",
-  },
-  {
-    value: "generic_40_2x20",
-    label: "Genèrica / escolar · 40 jugades · 2 columnes x 20",
-  },
+const SHEET_FORMAT_OPTIONS: { value: SheetFormat }[] = [
+  { value: "fce_75_3x25" },
+  { value: "fide_60_3x20" },
+  { value: "standard_60_2x30" },
+  { value: "generic_40_2x20" },
 ];
 
-function getOptionLabel<T extends string>(
+const SHEET_FORMAT_LABELS: Record<AppLanguage, Record<SheetFormat, string>> = {
+  ca: {
+    fce_75_3x25: "FCE · 75 jugades · 3 columnes x 25",
+    fide_60_3x20: "FEDA / FIDE / US · 60 jugades · 3 columnes x 20",
+    standard_60_2x30: "Estàndard club/escolar · 60 jugades · 2 columnes x 30",
+    generic_40_2x20: "Genèrica / escolar · 40 jugades · 2 columnes x 20",
+  },
+  en: {
+    fce_75_3x25: "FCE · 75 moves · 3 columns x 25",
+    fide_60_3x20: "FEDA / FIDE / US · 60 moves · 3 columns x 20",
+    standard_60_2x30: "Club/school standard · 60 moves · 2 columns x 30",
+    generic_40_2x20: "Generic / school · 40 moves · 2 columns x 20",
+  },
+  es: {
+    fce_75_3x25: "FCE · 75 jugadas · 3 columnas x 25",
+    fide_60_3x20: "FEDA / FIDE / US · 60 jugadas · 3 columnas x 20",
+    standard_60_2x30: "Estándar club/escolar · 60 jugadas · 2 columnas x 30",
+    generic_40_2x20: "Genérica / escolar · 40 jugadas · 2 columnas x 20",
+  },
+};
+
+const UI_TEXT: Record<AppLanguage, UiText> = {
+  ca: {
+    settingsButton: "Configuració",
+    heroTitle: "Digitalitza la teva partida d'escacs",
+    heroSubtitle: "Puja una o més planelles i genera el PGN automàticament.",
+    initialSettingsTitle: "Configuració inicial de ChessLens",
+    settingsTitle: "Configuració de ChessLens",
+    alias: "Àlies",
+    email: "Correu electrònic",
+    optional: "Opcional",
+    appLanguage: "Idioma de l'aplicació",
+    scoresheetLanguage: "Idioma de la planella",
+    sheetFormat: "Format de planella",
+    cancel: "Cancel·lar",
+    saveSettings: "Desar configuració",
+    settingsSavedTitle: "Configuració desada",
+    settingsSavedDescription:
+      "ChessLens farà servir aquests valors per defecte.",
+    currentSettings: "Configuració actual",
+    app: "App",
+    scoresheet: "Planella",
+    format: "Format",
+    dropActive: "Deixa la planella aquí",
+    dropIdle: "Clica per afegir la teva planella",
+    dropHint: "o arrossega la imatge aquí (JPG, PNG, WEBP)",
+    sheetAddedTitle: "Planella afegida",
+    sheetAddedDescription: (count: number) =>
+      count === 1 ? "1 imatge afegida" : `${count} imatges afegides`,
+    sheetsSentTitle: "Planelles enviades",
+    sheetsSentDescription: "S'està processant la partida.",
+    aiHighDemand:
+      "Els servidors d'intel·ligència artificial estan molt sol·licitats. Si us plau, espera uns segons i torna-ho a provar.",
+    connectionProblem:
+      "Problema de connexió amb el servidor. Comprova la teva xarxa.",
+    scanStartFailedTitle: "No s'ha pogut iniciar l'escaneig",
+    imagesLoaded: (count: number) =>
+      count === 1 ? "1 planella carregada" : `${count} planelles carregades`,
+    processingSheet: "Processant planella...",
+    scanGame: "Escanejar partida",
+    addAnotherSheet: "Afegir una altra planella (opcional)",
+    recentGames: "Partides recents",
+    noGames: "No hi ha partides encara",
+    genericErrorTitle: "Error",
+  },
+  en: {
+    settingsButton: "Settings",
+    heroTitle: "Digitize your chess game",
+    heroSubtitle:
+      "Upload one or more scoresheets and generate PGN automatically.",
+    initialSettingsTitle: "Initial ChessLens settings",
+    settingsTitle: "ChessLens settings",
+    alias: "Alias",
+    email: "Email",
+    optional: "Optional",
+    appLanguage: "App language",
+    scoresheetLanguage: "Scoresheet language",
+    sheetFormat: "Scoresheet format",
+    cancel: "Cancel",
+    saveSettings: "Save settings",
+    settingsSavedTitle: "Settings saved",
+    settingsSavedDescription: "ChessLens will use these values by default.",
+    currentSettings: "Current settings",
+    app: "App",
+    scoresheet: "Scoresheet",
+    format: "Format",
+    dropActive: "Drop the scoresheet here",
+    dropIdle: "Click to add your scoresheet",
+    dropHint: "or drag the image here (JPG, PNG, WEBP)",
+    sheetAddedTitle: "Scoresheet added",
+    sheetAddedDescription: (count: number) =>
+      count === 1 ? "1 image added" : `${count} images added`,
+    sheetsSentTitle: "Scoresheets sent",
+    sheetsSentDescription: "The game is being processed.",
+    aiHighDemand:
+      "The artificial intelligence servers are very busy. Please wait a few seconds and try again.",
+    connectionProblem:
+      "Connection problem with the server. Please check your network.",
+    scanStartFailedTitle: "Could not start the scan",
+    imagesLoaded: (count: number) =>
+      count === 1 ? "1 scoresheet loaded" : `${count} scoresheets loaded`,
+    processingSheet: "Processing scoresheet...",
+    scanGame: "Scan game",
+    addAnotherSheet: "Add another scoresheet (optional)",
+    recentGames: "Recent games",
+    noGames: "No games yet",
+    genericErrorTitle: "Error",
+  },
+  es: {
+    settingsButton: "Configuración",
+    heroTitle: "Digitaliza tu partida de ajedrez",
+    heroSubtitle: "Sube una o más planillas y genera el PGN automáticamente.",
+    initialSettingsTitle: "Configuración inicial de ChessLens",
+    settingsTitle: "Configuración de ChessLens",
+    alias: "Alias",
+    email: "Correo electrónico",
+    optional: "Opcional",
+    appLanguage: "Idioma de la aplicación",
+    scoresheetLanguage: "Idioma de la planilla",
+    sheetFormat: "Formato de planilla",
+    cancel: "Cancelar",
+    saveSettings: "Guardar configuración",
+    settingsSavedTitle: "Configuración guardada",
+    settingsSavedDescription: "ChessLens usará estos valores por defecto.",
+    currentSettings: "Configuración actual",
+    app: "App",
+    scoresheet: "Planilla",
+    format: "Formato",
+    dropActive: "Suelta la planilla aquí",
+    dropIdle: "Haz clic para añadir tu planilla",
+    dropHint: "o arrastra la imagen aquí (JPG, PNG, WEBP)",
+    sheetAddedTitle: "Planilla añadida",
+    sheetAddedDescription: (count: number) =>
+      count === 1 ? "1 imagen añadida" : `${count} imágenes añadidas`,
+    sheetsSentTitle: "Planillas enviadas",
+    sheetsSentDescription: "Se está procesando la partida.",
+    aiHighDemand:
+      "Los servidores de inteligencia artificial están muy solicitados. Espera unos segundos y vuelve a intentarlo.",
+    connectionProblem:
+      "Problema de conexión con el servidor. Comprueba tu red.",
+    scanStartFailedTitle: "No se ha podido iniciar el escaneo",
+    imagesLoaded: (count: number) =>
+      count === 1 ? "1 planilla cargada" : `${count} planillas cargadas`,
+    processingSheet: "Procesando planilla...",
+    scanGame: "Escanear partida",
+    addAnotherSheet: "Añadir otra planilla (opcional)",
+    recentGames: "Partidas recientes",
+    noGames: "Todavía no hay partidas",
+    genericErrorTitle: "Error",
+  },
+};
+
+function getLanguageOptionLabel<T extends string>(
   options: { value: T; label: string }[],
   value: T,
 ) {
   return options.find((o) => o.value === value)?.label ?? value;
+}
+
+function getSheetFormatLabel(appLanguage: AppLanguage, value: SheetFormat) {
+  return (
+    SHEET_FORMAT_LABELS[appLanguage]?.[value] ?? SHEET_FORMAT_LABELS.ca[value]
+  );
 }
 
 export default function Home() {
@@ -101,6 +278,8 @@ export default function Home() {
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] =
     useState<ChessLensUserSettings>(DEFAULT_SETTINGS);
+
+  const t = UI_TEXT[settings.appLanguage] ?? UI_TEXT.ca;
 
   useEffect(() => {
     try {
@@ -136,8 +315,8 @@ export default function Home() {
     setShowSettings(false);
 
     toast({
-      title: "Configuració desada",
-      description: "ChessLens farà servir aquests valors per defecte.",
+      title: t.settingsSavedTitle,
+      description: t.settingsSavedDescription,
       duration: 1500,
     });
   };
@@ -159,19 +338,19 @@ export default function Home() {
 
         setImages((prev) => [...prev, ...newImages]);
         toast({
-          title: "Planella afegida",
-          description: `${newImages.length} imatge(s) afegida(es)`,
+          title: t.sheetAddedTitle,
+          description: t.sheetAddedDescription(newImages.length),
           duration: 1500,
         });
       } catch (error) {
         toast({
-          title: "Error",
+          title: t.genericErrorTitle,
           description: (error as Error).message,
           variant: "destructive",
         });
       }
     },
-    [toast],
+    [toast, t],
   );
 
   const handleSubmit = async () => {
@@ -187,8 +366,8 @@ export default function Home() {
       });
 
       toast({
-        title: "Planelles enviades",
-        description: "S'està processant la partida.",
+        title: t.sheetsSentTitle,
+        description: t.sheetsSentDescription,
         duration: 1500,
       });
 
@@ -203,15 +382,13 @@ export default function Home() {
         errorMsg.includes("UNAVAILABLE") ||
         errorMsg.toLowerCase().includes("failed to create game")
       ) {
-        errorMsg =
-          "Els servidors d'intel·ligència artificial estan molt sol·licitats. Si us plau, espera uns segons i torna-ho a provar.";
+        errorMsg = t.aiHighDemand;
       } else if (errorMsg.toLowerCase().includes("failed to fetch")) {
-        errorMsg =
-          "Problema de connexió amb el servidor. Comprova la teva xarxa.";
+        errorMsg = t.connectionProblem;
       }
 
       toast({
-        title: "No s'ha pogut iniciar l'escaneig",
+        title: t.scanStartFailedTitle,
         description: errorMsg,
         variant: "destructive",
       });
@@ -255,7 +432,7 @@ export default function Home() {
               disabled={isUploading}
             >
               <Settings className="w-4 h-4 mr-2" />
-              Configuració
+              {t.settingsButton}
             </Button>
           )}
         </div>
@@ -268,10 +445,10 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
           >
             <h1 className="text-4xl md:text-5xl font-display font-bold mb-4">
-              Digitalitza la teva partida d'escacs
+              {t.heroTitle}
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-              Puja una o més planelles i genera el PGN automàticament.
+              {t.heroSubtitle}
             </p>
           </motion.div>
 
@@ -284,18 +461,16 @@ export default function Home() {
               >
                 <div>
                   <h2 className="text-xl font-bold">
-                    Configuració inicial de ChessLens
+                    {hasSavedSettings
+                      ? t.settingsTitle
+                      : t.initialSettingsTitle}
                   </h2>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    Ho preguntarem només una vegada. Després ho podràs canviar
-                    des de Configuració.
-                  </p>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4">
                   <div>
                     <label className="block text-sm font-medium mb-1">
-                      Àlies
+                      {t.alias}
                     </label>
                     <input
                       value={settings.alias}
@@ -305,14 +480,14 @@ export default function Home() {
                           alias: e.target.value,
                         }))
                       }
-                      placeholder="Opcional"
+                      placeholder={t.optional}
                       className="w-full h-10 rounded-md border bg-background px-3 text-sm"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium mb-1">
-                      Correu electrònic
+                      {t.email}
                     </label>
                     <input
                       type="email"
@@ -323,14 +498,14 @@ export default function Home() {
                           email: e.target.value,
                         }))
                       }
-                      placeholder="Opcional"
+                      placeholder={t.optional}
                       className="w-full h-10 rounded-md border bg-background px-3 text-sm"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium mb-1">
-                      Idioma de l'aplicació
+                      {t.appLanguage}
                     </label>
                     <select
                       value={settings.appLanguage}
@@ -352,7 +527,7 @@ export default function Home() {
 
                   <div>
                     <label className="block text-sm font-medium mb-1">
-                      Idioma de la planella
+                      {t.scoresheetLanguage}
                     </label>
                     <select
                       value={settings.scoresheetLanguage}
@@ -375,7 +550,7 @@ export default function Home() {
 
                   <div>
                     <label className="block text-sm font-medium mb-1">
-                      Format de planella
+                      {t.sheetFormat}
                     </label>
                     <select
                       value={settings.sheetFormat}
@@ -389,17 +564,15 @@ export default function Home() {
                     >
                       {SHEET_FORMAT_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
-                          {option.label}
+                          {getSheetFormatLabel(
+                            settings.appLanguage,
+                            option.value,
+                          )}
                         </option>
                       ))}
                     </select>
                   </div>
                 </div>
-
-                <p className="text-xs text-muted-foreground">
-                  Nota: els formats FEDA/FIDE i genèric queden preparats per al
-                  següent pas del motor.
-                </p>
 
                 <div className="flex gap-2 justify-end">
                   {hasSavedSettings && (
@@ -408,12 +581,12 @@ export default function Home() {
                       variant="ghost"
                       onClick={() => setShowSettings(false)}
                     >
-                      Cancel·lar
+                      {t.cancel}
                     </Button>
                   )}
 
                   <Button type="button" onClick={saveSettings}>
-                    Desar configuració
+                    {t.saveSettings}
                   </Button>
                 </div>
               </motion.div>
@@ -421,21 +594,27 @@ export default function Home() {
               <div className="space-y-6">
                 <div className="text-xs text-muted-foreground bg-muted/30 border rounded-xl p-3 text-left">
                   <div className="font-medium text-foreground mb-1">
-                    Configuració actual
+                    {t.currentSettings}
                   </div>
                   <div>
-                    App:{" "}
-                    {getOptionLabel(APP_LANGUAGE_OPTIONS, settings.appLanguage)}
+                    {t.app}:{" "}
+                    {getLanguageOptionLabel(
+                      APP_LANGUAGE_OPTIONS,
+                      settings.appLanguage,
+                    )}
                     {" · "}
-                    Planella:{" "}
-                    {getOptionLabel(
+                    {t.scoresheet}:{" "}
+                    {getLanguageOptionLabel(
                       SCORESHEET_LANGUAGE_OPTIONS,
                       settings.scoresheetLanguage,
                     )}
                   </div>
                   <div>
-                    Format:{" "}
-                    {getOptionLabel(SHEET_FORMAT_OPTIONS, settings.sheetFormat)}
+                    {t.format}:{" "}
+                    {getSheetFormatLabel(
+                      settings.appLanguage,
+                      settings.sheetFormat,
+                    )}
                   </div>
                 </div>
 
@@ -453,12 +632,10 @@ export default function Home() {
                       <Upload className="w-12 h-12 text-primary" />
                       <div>
                         <p className="text-xl font-medium text-foreground">
-                          {isDragActive
-                            ? "Deixa la planella aquí"
-                            : "Clica per afegir la teva planella"}
+                          {isDragActive ? t.dropActive : t.dropIdle}
                         </p>
                         <p className="text-sm text-muted-foreground mt-2">
-                          o arrossega la imatge aquí (JPG, PNG, WEBP)
+                          {t.dropHint}
                         </p>
                       </div>
                     </div>
@@ -472,10 +649,7 @@ export default function Home() {
                     <div className="flex items-center justify-center gap-3 text-green-600">
                       <CheckCircle2 className="w-6 h-6" />
                       <span className="text-lg font-medium">
-                        {images.length}{" "}
-                        {images.length === 1
-                          ? "planella carregada"
-                          : "planelles carregades"}
+                        {t.imagesLoaded(images.length)}
                       </span>
                     </div>
 
@@ -491,9 +665,7 @@ export default function Home() {
                       ) : (
                         <Play className="w-6 h-6 mr-3 fill-current" />
                       )}
-                      {isUploading
-                        ? "Processant planella..."
-                        : "Escanejar partida"}
+                      {isUploading ? t.processingSheet : t.scanGame}
                     </Button>
 
                     <div {...getRootProps()} className="mt-2">
@@ -506,7 +678,7 @@ export default function Home() {
                         className="text-muted-foreground hover:text-foreground"
                       >
                         <Plus className="w-4 h-4 mr-2" />
-                        Afegir una altra planella (opcional)
+                        {t.addAnotherSheet}
                       </Button>
                     </div>
                   </motion.div>
@@ -517,14 +689,14 @@ export default function Home() {
         </section>
 
         <section>
-          <h2 className="text-2xl font-bold mb-6">Partides recents</h2>
+          <h2 className="text-2xl font-bold mb-6">{t.recentGames}</h2>
           {isLoading ? (
             <div className="flex justify-center p-8">
               <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
             </div>
           ) : games?.length === 0 ? (
             <div className="text-center p-8 border rounded-xl bg-muted/20 text-muted-foreground">
-              No hi ha partides encara
+              {t.noGames}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
