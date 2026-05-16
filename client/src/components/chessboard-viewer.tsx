@@ -13,6 +13,71 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+type AppLanguage = "ca" | "en" | "es";
+
+type ScoresheetLanguage =
+  | "ca"
+  | "es"
+  | "en"
+  | "fr"
+  | "de"
+  | "pt"
+  | "it"
+  | "ru"
+  | "tr"
+  | "zh"
+  | "hi";
+
+type BoardText = {
+  illegalBoardMove: string;
+  processMovesError: string;
+  invalidPgn: string;
+  firstProblemMove: string;
+  noPgnReceived: string;
+  noMovesYet: string;
+  rotateBoard: string;
+  correctionModeTitle: string;
+  playGameTitle: string;
+};
+
+const BOARD_TEXT: Record<AppLanguage, BoardText> = {
+  ca: {
+    illegalBoardMove: "Jugada il·legal al tauler",
+    processMovesError: "Error al processar les jugades",
+    invalidPgn: "PGN invàlid.",
+    firstProblemMove: "Primera jugada problemàtica",
+    noPgnReceived: "No s'ha rebut cap PGN",
+    noMovesYet: "Cap jugada encara",
+    rotateBoard: "Rotar tauler",
+    correctionModeTitle:
+      "En mode correcció, l'escaneig continua automàticament",
+    playGameTitle: "Reproduir partida",
+  },
+  en: {
+    illegalBoardMove: "Illegal move on the board",
+    processMovesError: "Error processing moves",
+    invalidPgn: "Invalid PGN.",
+    firstProblemMove: "First problematic move",
+    noPgnReceived: "No PGN received",
+    noMovesYet: "No moves yet",
+    rotateBoard: "Flip board",
+    correctionModeTitle: "In correction mode, the scan continues automatically",
+    playGameTitle: "Play game",
+  },
+  es: {
+    illegalBoardMove: "Jugada ilegal en el tablero",
+    processMovesError: "Error al procesar las jugadas",
+    invalidPgn: "PGN inválido.",
+    firstProblemMove: "Primera jugada problemática",
+    noPgnReceived: "No se ha recibido ningún PGN",
+    noMovesYet: "Sin jugadas todavía",
+    rotateBoard: "Girar tablero",
+    correctionModeTitle:
+      "En modo corrección, el escaneo continúa automáticamente",
+    playGameTitle: "Reproducir partida",
+  },
+};
+
 interface ChessboardViewerProps {
   pgn?: string | null;
   error?: string | null;
@@ -27,6 +92,8 @@ interface ChessboardViewerProps {
   onMoveIndexChange?: (index: number, maxIndex: number) => void;
   boardOrientation: "white" | "black";
   onOrientationChange: (o: "white" | "black") => void;
+  appLanguage?: AppLanguage;
+  scoresheetLanguage?: ScoresheetLanguage;
 }
 
 function isBadPgn(pgn?: string | null) {
@@ -121,14 +188,23 @@ function fenAtMoveIndex(game: Chess, moveIndex: number): string {
   return temp.fen();
 }
 
-const translateSanToCatalan = (san: string) => {
+function formatSanForScoresheetLanguage(
+  san: string,
+  scoresheetLanguage?: ScoresheetLanguage,
+) {
+  // El PGN interno siempre está en SAN internacional.
+  // Solo cambiamos la visualización de la lista bajo el tablero.
+  if (scoresheetLanguage !== "ca" && scoresheetLanguage !== "es") {
+    return san;
+  }
+
   return san
     .replace(/N/g, "C")
     .replace(/B/g, "A")
     .replace(/R/g, "T")
     .replace(/Q/g, "D")
     .replace(/K/g, "R");
-};
+}
 
 export function ChessboardViewer({
   pgn,
@@ -139,6 +215,8 @@ export function ChessboardViewer({
   onMoveIndexChange,
   boardOrientation,
   onOrientationChange,
+  appLanguage = "ca",
+  scoresheetLanguage = "ca",
 }: ChessboardViewerProps) {
   const [game, setGame] = useState(() => new Chess());
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
@@ -147,6 +225,7 @@ export function ChessboardViewer({
   const [tempPosition, setTempPosition] = useState<string | null>(null);
 
   const { toast } = useToast();
+  const t = BOARD_TEXT[appLanguage] ?? BOARD_TEXT.ca;
 
   const movesListRef = useRef<HTMLDivElement | null>(null);
   const activeMoveRef = useRef<HTMLSpanElement | null>(null);
@@ -259,7 +338,7 @@ export function ChessboardViewer({
       return true;
     } catch {
       toast({
-        title: "Jugada il·legal al tauler",
+        title: t.illegalBoardMove,
         variant: "destructive",
         duration: 2000,
       });
@@ -279,7 +358,7 @@ export function ChessboardViewer({
     }
 
     if (isBadPgn(pgn)) {
-      setUiError(pgn?.trim() ? pgn.trim() : "No PGN received");
+      setUiError(pgn?.trim() ? pgn.trim() : t.noPgnReceived);
       setGame(new Chess());
       setIsPlaying(false);
       setCurrentMoveIndex(0);
@@ -294,12 +373,12 @@ export function ChessboardViewer({
 
     if (firstBad && newGame.history().length === 0) {
       setUiError(
-        `PGN invàlid.\nPrimera jugada problemàtica: "${firstBad.token}".\n${firstBad.message}`,
+        `${t.invalidPgn}\n${t.firstProblemMove}: "${firstBad.token}".\n${firstBad.message}`,
       );
     } else {
       setUiError(null);
     }
-  }, [pgn, error, syncToken]);
+  }, [pgn, error, syncToken, appLanguage]);
 
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined;
@@ -326,7 +405,7 @@ export function ChessboardViewer({
     <div className="flex flex-col space-y-4">
       {uiError ? (
         <div className="rounded-md border p-3 text-sm bg-destructive/10">
-          <div className="font-semibold">Error al processar les jugades</div>
+          <div className="font-semibold">{t.processMovesError}</div>
           <pre className="mt-2 whitespace-pre-wrap">{uiError}</pre>
         </div>
       ) : null}
@@ -354,7 +433,7 @@ export function ChessboardViewer({
               boardOrientation === "white" ? "black" : "white",
             )
           }
-          title="Rotar tauler"
+          title={t.rotateBoard}
         >
           <ArrowUpDown className="w-4 h-4" />
         </Button>
@@ -402,11 +481,7 @@ export function ChessboardViewer({
             }
           }}
           disabled={historySan.length === 0}
-          title={
-            enableInput
-              ? "En mode correcció, l'escaneig continua automàticament"
-              : "Reproduir partida"
-          }
+          title={enableInput ? t.correctionModeTitle : t.playGameTitle}
         >
           {isPlaying ? (
             <Pause className="w-5 h-5" />
@@ -436,7 +511,7 @@ export function ChessboardViewer({
       >
         {historySan.length === 0 ? (
           <p className="text-muted-foreground text-center pt-8">
-            Cap jugada encara
+            {t.noMovesYet}
           </p>
         ) : (
           <div className="flex flex-wrap gap-2">
@@ -463,7 +538,7 @@ export function ChessboardViewer({
                     {i / 2 + 1}.
                   </span>
                 )}
-                {translateSanToCatalan(move)}
+                {formatSanForScoresheetLanguage(move, scoresheetLanguage)}
               </span>
             ))}
           </div>

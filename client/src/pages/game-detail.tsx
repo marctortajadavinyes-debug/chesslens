@@ -5,6 +5,198 @@ import { Button } from "@/components/ui/button";
 import { ChessboardViewer } from "@/components/chessboard-viewer";
 import { ArrowLeft, Save, RefreshCw, Undo2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import type { AppLanguage } from "@shared/schema";
+
+type ReviewSide = "w" | "b";
+
+type GameDetailText = {
+  gameNotFound: string;
+  gameTitle: (id: number) => string;
+  originalScoresheet: string;
+  imageUnavailable: string;
+  showingSheet: (sheetNumber: number) => string;
+  continuing: string;
+  statusLabels: Record<string, string>;
+  processingTitle: string;
+  validatingMoves: string;
+  nextExpectedMove: (moveNumber: number, side: ReviewSide) => string;
+  white: string;
+  black: string;
+  makeCorrectMoveOnBoard: string;
+  reviewSheetRow: (sheetNumber: number, rowNumber: number | null) => string;
+  reviewingBeforeMove: (moveNumber: number, side: ReviewSide) => string;
+  reviewingHelp: string;
+  pgnTitle: string;
+  desktopOnly: string;
+  editPgn: string;
+  cancel: string;
+  save: string;
+  changesSavedTitle: string;
+  changesSavedDescription: string;
+  genericErrorTitle: string;
+  moveAppliedTitle: string;
+  moveAppliedDescription: string;
+  applyMoveErrorTitle: string;
+  resumeErrorFallback: string;
+};
+
+const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
+  ca: {
+    gameNotFound: "Partida no trobada",
+    gameTitle: (id: number) => `Partida #${id}`,
+    originalScoresheet: "Planella original",
+    imageUnavailable: "Imatge no disponible",
+    showingSheet: (sheetNumber: number) => `Mostrant planella ${sheetNumber}`,
+    continuing: "Continuant...",
+    statusLabels: {
+      processing: "Processant",
+      needs_review: "Revisió necessària",
+      completed: "Completada",
+      failed: "Error",
+    },
+    processingTitle: "Processant",
+    validatingMoves: "Validant jugades...",
+    nextExpectedMove: (moveNumber: number, side: ReviewSide) =>
+      `Següent jugada esperada: ${moveNumber} ${
+        side === "w" ? "blanques" : "negres"
+      }`,
+    white: "blanques",
+    black: "negres",
+    makeCorrectMoveOnBoard:
+      "Fes la jugada correcta directament sobre el tauler per continuar l'escaneig.",
+    reviewSheetRow: (sheetNumber: number, rowNumber: number | null) =>
+      rowNumber != null
+        ? `Revisa la planella ${sheetNumber} · fila ${rowNumber}.`
+        : `Revisa la planella ${sheetNumber}.`,
+    reviewingBeforeMove: (moveNumber: number, side: ReviewSide) =>
+      `Estàs revisant la posició abans de la jugada ${moveNumber} ${
+        side === "w" ? "blanques" : "negres"
+      }.`,
+    reviewingHelp:
+      "Fes ara la jugada correcta al tauler i ChessLens continuarà l'escaneig des d'aquí.",
+    pgnTitle: "PGN",
+    desktopOnly: "Visible només en escriptori",
+    editPgn: "Editar PGN",
+    cancel: "Cancel·lar",
+    save: "Desar",
+    changesSavedTitle: "Canvis desats",
+    changesSavedDescription: "El PGN s'ha actualitzat.",
+    genericErrorTitle: "Error",
+    moveAppliedTitle: "Jugada aplicada",
+    moveAppliedDescription: "Continuem l'escaneig des d'aquesta posició.",
+    applyMoveErrorTitle: "Error en aplicar la jugada",
+    resumeErrorFallback: "No s'ha pogut reprendre",
+  },
+  en: {
+    gameNotFound: "Game not found",
+    gameTitle: (id: number) => `Game #${id}`,
+    originalScoresheet: "Original scoresheet",
+    imageUnavailable: "Image unavailable",
+    showingSheet: (sheetNumber: number) => `Showing scoresheet ${sheetNumber}`,
+    continuing: "Continuing...",
+    statusLabels: {
+      processing: "Processing",
+      needs_review: "Review needed",
+      completed: "Completed",
+      failed: "Error",
+    },
+    processingTitle: "Processing",
+    validatingMoves: "Validating moves...",
+    nextExpectedMove: (moveNumber: number, side: ReviewSide) =>
+      `Next expected move: ${moveNumber} ${side === "w" ? "White" : "Black"}`,
+    white: "White",
+    black: "Black",
+    makeCorrectMoveOnBoard:
+      "Make the correct move directly on the board to continue the scan.",
+    reviewSheetRow: (sheetNumber: number, rowNumber: number | null) =>
+      rowNumber != null
+        ? `Check scoresheet ${sheetNumber} · row ${rowNumber}.`
+        : `Check scoresheet ${sheetNumber}.`,
+    reviewingBeforeMove: (moveNumber: number, side: ReviewSide) =>
+      `You are reviewing the position before move ${moveNumber} ${
+        side === "w" ? "White" : "Black"
+      }.`,
+    reviewingHelp:
+      "Now make the correct move on the board and ChessLens will continue the scan from here.",
+    pgnTitle: "PGN",
+    desktopOnly: "Visible on desktop only",
+    editPgn: "Edit PGN",
+    cancel: "Cancel",
+    save: "Save",
+    changesSavedTitle: "Changes saved",
+    changesSavedDescription: "The PGN has been updated.",
+    genericErrorTitle: "Error",
+    moveAppliedTitle: "Move applied",
+    moveAppliedDescription: "Continuing the scan from this position.",
+    applyMoveErrorTitle: "Error applying move",
+    resumeErrorFallback: "Could not resume",
+  },
+  es: {
+    gameNotFound: "Partida no encontrada",
+    gameTitle: (id: number) => `Partida #${id}`,
+    originalScoresheet: "Planilla original",
+    imageUnavailable: "Imagen no disponible",
+    showingSheet: (sheetNumber: number) => `Mostrando planilla ${sheetNumber}`,
+    continuing: "Continuando...",
+    statusLabels: {
+      processing: "Procesando",
+      needs_review: "Revisión necesaria",
+      completed: "Completada",
+      failed: "Error",
+    },
+    processingTitle: "Procesando",
+    validatingMoves: "Validando jugadas...",
+    nextExpectedMove: (moveNumber: number, side: ReviewSide) =>
+      `Siguiente jugada esperada: ${moveNumber} ${
+        side === "w" ? "blancas" : "negras"
+      }`,
+    white: "blancas",
+    black: "negras",
+    makeCorrectMoveOnBoard:
+      "Haz la jugada correcta directamente sobre el tablero para continuar el escaneo.",
+    reviewSheetRow: (sheetNumber: number, rowNumber: number | null) =>
+      rowNumber != null
+        ? `Revisa la planilla ${sheetNumber} · fila ${rowNumber}.`
+        : `Revisa la planilla ${sheetNumber}.`,
+    reviewingBeforeMove: (moveNumber: number, side: ReviewSide) =>
+      `Estás revisando la posición antes de la jugada ${moveNumber} ${
+        side === "w" ? "blancas" : "negras"
+      }.`,
+    reviewingHelp:
+      "Haz ahora la jugada correcta en el tablero y ChessLens continuará el escaneo desde aquí.",
+    pgnTitle: "PGN",
+    desktopOnly: "Visible solo en escritorio",
+    editPgn: "Editar PGN",
+    cancel: "Cancelar",
+    save: "Guardar",
+    changesSavedTitle: "Cambios guardados",
+    changesSavedDescription: "El PGN se ha actualizado.",
+    genericErrorTitle: "Error",
+    moveAppliedTitle: "Jugada aplicada",
+    moveAppliedDescription: "Continuamos el escaneo desde esta posición.",
+    applyMoveErrorTitle: "Error al aplicar la jugada",
+    resumeErrorFallback: "No se ha podido reanudar",
+  },
+};
+
+function getAppLanguageFromGame(game: any): AppLanguage {
+  const lang = game?.meta?.appLanguage;
+
+  if (lang === "ca" || lang === "en" || lang === "es") {
+    return lang;
+  }
+
+  return "ca";
+}
+function getScoresheetLanguageFromGame(game: any) {
+  const lang = game?.meta?.scoresheetLanguage;
+
+  if (lang === "ca" || lang === "en" || lang === "es") {
+    return lang;
+  }
+
+  return "ca";
+}
 
 function getDisplayedSheetIndex(game: any, needsReview: boolean) {
   const blockedSheet =
@@ -30,6 +222,7 @@ function getExpectedTurnFromPlyCount(plyCount: number) {
     side: plyCount % 2 === 0 ? "w" : "b",
   } as const;
 }
+
 function getRowsPerSheetFromGame(game: any) {
   const sheetFormat =
     typeof game?.meta?.sheetFormat === "string"
@@ -50,6 +243,10 @@ export default function GameDetail() {
   const updateGame = useUpdateGame();
   const reviewGame = useReviewGame();
   const { toast } = useToast();
+
+  const appLanguage = getAppLanguageFromGame(game);
+  const scoresheetLanguage = getScoresheetLanguageFromGame(game);
+  const t = GAME_DETAIL_TEXT[appLanguage] ?? GAME_DETAIL_TEXT.ca;
 
   const [pgnText, setPgnText] = useState("");
   const [isEditing, setIsEditing] = useState(false);
@@ -145,6 +342,12 @@ export default function GameDetail() {
       ? game.imageUrls[displayedSheetIndex]
       : game?.imageUrl;
 
+  const getStatusText = () => {
+    if (isResuming) return t.continuing;
+    if (!game?.status) return "";
+    return t.statusLabels[game.status] ?? game.status;
+  };
+
   const handleMoveFromBoard = async ({
     from,
     to,
@@ -175,14 +378,14 @@ export default function GameDetail() {
       });
 
       toast({
-        title: "Jugada aplicada",
-        description: "Continuem l'escaneig des d'aquesta posició.",
+        title: t.moveAppliedTitle,
+        description: t.moveAppliedDescription,
         duration: 1500,
       });
     } catch (e) {
       toast({
-        title: "Error en aplicar la jugada",
-        description: e instanceof Error ? e.message : "No s'ha pogut reprendre",
+        title: t.applyMoveErrorTitle,
+        description: e instanceof Error ? e.message : t.resumeErrorFallback,
         variant: "destructive",
       });
     } finally {
@@ -205,12 +408,12 @@ export default function GameDetail() {
       await updateGame.mutateAsync({ id, pgn: pgnText, status: "completed" });
       setIsEditing(false);
       toast({
-        title: "Canvis desats",
-        description: "El PGN s'ha actualitzat.",
+        title: t.changesSavedTitle,
+        description: t.changesSavedDescription,
       });
     } catch (e) {
       toast({
-        title: "Error",
+        title: t.genericErrorTitle,
         description: String(e),
         variant: "destructive",
       });
@@ -228,7 +431,7 @@ export default function GameDetail() {
   if (error || !game) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <h1 className="text-2xl font-bold">Partida no trobada</h1>
+        <h1 className="text-2xl font-bold">{t.gameNotFound}</h1>
       </div>
     );
   }
@@ -245,7 +448,7 @@ export default function GameDetail() {
             </Button>
 
             <h1 className="font-display font-bold text-xl hidden sm:block">
-              Partida #{game.id}
+              {t.gameTitle(game.id)}
             </h1>
 
             <span
@@ -259,11 +462,7 @@ export default function GameDetail() {
                       : "bg-blue-100 text-blue-700 border-blue-200 animate-pulse"
               }`}
             >
-              {isResuming
-                ? "Continuant..."
-                : game.status === "needs_review"
-                  ? "Revisió necessària"
-                  : game.status}
+              {getStatusText()}
             </span>
           </div>
 
@@ -271,11 +470,11 @@ export default function GameDetail() {
             {isEditing ? (
               <>
                 <Button variant="ghost" onClick={() => setIsEditing(false)}>
-                  Cancel·lar
+                  {t.cancel}
                 </Button>
                 <Button onClick={handleSave}>
                   <Save className="w-4 h-4 mr-2" />
-                  Desar
+                  {t.save}
                 </Button>
               </>
             ) : (
@@ -284,7 +483,7 @@ export default function GameDetail() {
                 onClick={() => setIsEditing(true)}
                 disabled={game.status === "processing" || isResuming}
               >
-                Editar PGN
+                {t.editPgn}
               </Button>
             )}
           </div>
@@ -293,25 +492,25 @@ export default function GameDetail() {
 
       <main className="flex-1 max-w-7xl mx-auto w-full p-4 grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="space-y-4 hidden lg:block">
-          <h2 className="font-semibold text-lg">Planella original</h2>
+          <h2 className="font-semibold text-lg">{t.originalScoresheet}</h2>
 
           <div className="bg-muted/20 border border-border rounded-xl overflow-hidden h-[600px] relative">
             {displayedImageUrl ? (
               <img
                 src={displayedImageUrl}
-                alt="Planella"
+                alt={t.originalScoresheet}
                 className="w-full h-full object-contain"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-sm text-muted-foreground">
-                Imatge no disponible
+                {t.imageUnavailable}
               </div>
             )}
           </div>
 
           {needsReview && hasMultipleSheets ? (
             <p className="text-xs text-muted-foreground">
-              Mostrant planella {displayedSheetIndex + 1}
+              {t.showingSheet(displayedSheetIndex + 1)}
             </p>
           ) : null}
         </div>
@@ -320,8 +519,8 @@ export default function GameDetail() {
           {(game.status === "processing" || isResuming) && (
             <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background/70 backdrop-blur-sm rounded-xl">
               <RefreshCw className="w-12 h-12 text-primary animate-spin mb-4" />
-              <h3 className="text-xl font-bold mb-2">Processant</h3>
-              <p className="text-muted-foreground">Validant jugades...</p>
+              <h3 className="text-xl font-bold mb-2">{t.processingTitle}</h3>
+              <p className="text-muted-foreground">{t.validatingMoves}</p>
             </div>
           )}
 
@@ -330,22 +529,22 @@ export default function GameDetail() {
             !isNavigatingPast && (
               <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm space-y-2">
                 <h4 className="text-sm font-bold text-amber-900">
-                  Següent jugada esperada: {expectedLiveTurn.moveNumber}{" "}
-                  {expectedLiveTurn.side === "w" ? "blanques" : "negres"}
+                  {t.nextExpectedMove(
+                    expectedLiveTurn.moveNumber,
+                    expectedLiveTurn.side,
+                  )}
                 </h4>
 
                 <p className="text-sm text-amber-800">
-                  Fes la jugada correcta directament sobre el tauler per
-                  continuar l'escaneig.
+                  {t.makeCorrectMoveOnBoard}
                 </p>
 
                 {hasMultipleSheets && displayedSheetIndex > 0 && (
                   <p className="text-xs text-amber-700">
-                    Revisa la planella {displayedSheetIndex + 1}
-                    {blockedLocalMoveNumber != null
-                      ? ` · fila ${blockedLocalMoveNumber}`
-                      : ""}
-                    .
+                    {t.reviewSheetRow(
+                      displayedSheetIndex + 1,
+                      blockedLocalMoveNumber,
+                    )}
                   </p>
                 )}
               </div>
@@ -356,14 +555,12 @@ export default function GameDetail() {
               <Undo2 className="w-5 h-5 text-blue-600 shrink-0" />
               <div className="flex-1">
                 <p className="text-sm text-blue-900 font-bold">
-                  Estàs revisant la posició abans de la jugada{" "}
-                  {expectedBoardTurn.moveNumber}{" "}
-                  {expectedBoardTurn.side === "w" ? "blanques" : "negres"}.
+                  {t.reviewingBeforeMove(
+                    expectedBoardTurn.moveNumber,
+                    expectedBoardTurn.side,
+                  )}
                 </p>
-                <p className="text-xs text-blue-700 mt-1">
-                  Fes ara la jugada correcta al tauler i ChessLens continuarà
-                  l'escaneig des d'aquí.
-                </p>
+                <p className="text-xs text-blue-700 mt-1">{t.reviewingHelp}</p>
               </div>
             </div>
           )}
@@ -382,13 +579,15 @@ export default function GameDetail() {
             }}
             boardOrientation={boardOrientation}
             onOrientationChange={setBoardOrientation}
+            appLanguage={appLanguage}
+            scoresheetLanguage={scoresheetLanguage}
           />
 
           <div className="hidden lg:block space-y-2">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-sm">PGN</h3>
+              <h3 className="font-semibold text-sm">{t.pgnTitle}</h3>
               <span className="text-xs text-muted-foreground">
-                Visible només en escriptori
+                {t.desktopOnly}
               </span>
             </div>
 

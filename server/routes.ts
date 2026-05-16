@@ -198,6 +198,7 @@ function buildInitialEnginePayload(settings: GameSettings) {
   return {
     mode: "initial",
     sheetFormat: settings.sheetFormat,
+    scoresheetLanguage: settings.scoresheetLanguage,
   };
 }
 function getRowsPerSheet(sheetFormat: string | null | undefined): number {
@@ -835,6 +836,7 @@ export async function registerRoutes(_httpServer: Server, app: Express) {
           mode: "parse_rows",
           rows: mergedOcr.rows,
           meta: withSettingsMeta(mergedOcr.meta ?? mergedMeta ?? {}, settings),
+          scoresheetLanguage: settings.scoresheetLanguage,
         };
 
         const parsedFinal = await runPythonProcess(
@@ -1021,6 +1023,12 @@ export async function registerRoutes(_httpServer: Server, app: Express) {
         mode: "resume",
         rows: game.ocr.rows,
         meta: game.ocr.meta ?? game.meta ?? {},
+        scoresheetLanguage:
+          game.meta?.scoresheetLanguage === "ca" ||
+          game.meta?.scoresheetLanguage === "en" ||
+          game.meta?.scoresheetLanguage === "es"
+            ? game.meta.scoresheetLanguage
+            : "ca",
         start_fen: startFen,
         start_row: startRow,
         start_side: startSide,
