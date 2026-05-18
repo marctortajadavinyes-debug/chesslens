@@ -96,30 +96,83 @@ def get_sheet_format_profile(sheet_format: str) -> Dict[str, Any]:
     return SHEET_FORMAT_PROFILES[DEFAULT_SHEET_FORMAT]
 
 
-CATALAN_PIECE_MAP = {
-    "C": "N",  # Cavall
-    "A": "B",  # Alfil
-    "T": "R",  # Torre
-    "D": "Q",  # Dama
-    "R": "K",  # Rei
+DEFAULT_SCORESHEET_LANGUAGE = "ca"
+
+NOTATION_PROFILE_BY_LANGUAGE = {
+    # Català / Español:
+    # Las iniciales prácticas son equivalentes en ambas lenguas.
+    # C = Cavall/Caballo -> Knight
+    # A = Alfil -> Bishop
+    # T = Torre -> Rook
+    # D = Dama -> Queen
+    # R = Rei/Rey -> King
+    "ca": "ca_es",
+    "es": "ca_es",
+    # English:
+    # Ya está escrito en SAN internacional.
+    # IMPORTANTE: en inglés R = Rook/Torre, no Rei/Rey.
+    "en": "en",
 }
-# Para promociones escritas en planilla / OCR.
-# IMPORTANTE:
-# - "T" catalán = Torre -> "R" SAN
-# - "R" en SAN = Rook/Torre, NO Rei
-# - No convertir nunca "=R" en "=K"
-PROMOTION_PIECE_MAP = {
-    # Catalán
-    "D": "Q",  # Dama
-    "T": "R",  # Torre
-    "A": "B",  # Alfil
-    "C": "N",  # Cavall
-    # SAN internacional / inglés
-    "Q": "Q",
-    "R": "R",
-    "B": "B",
-    "N": "N",
+
+PIECE_MAP_BY_PROFILE = {
+    "ca_es": {
+        "C": "N",
+        "A": "B",
+        "T": "R",
+        "D": "Q",
+        "R": "K",
+    },
+    "en": {
+        "N": "N",
+        "B": "B",
+        "R": "R",
+        "Q": "Q",
+        "K": "K",
+    },
 }
+
+PROMOTION_PIECE_MAP_BY_PROFILE = {
+    "ca_es": {
+        # Català / Español
+        "D": "Q",
+        "T": "R",
+        "A": "B",
+        "C": "N",
+        # SAN internacional / inglés
+        "Q": "Q",
+        "R": "R",
+        "B": "B",
+        "N": "N",
+    },
+    "en": {
+        "Q": "Q",
+        "R": "R",
+        "B": "B",
+        "N": "N",
+    },
+}
+
+
+def get_notation_profile(scoresheet_language: str = DEFAULT_SCORESHEET_LANGUAGE) -> str:
+    lang = (scoresheet_language or DEFAULT_SCORESHEET_LANGUAGE).strip().lower()
+    return NOTATION_PROFILE_BY_LANGUAGE.get(lang, "ca_es")
+
+
+def get_piece_map_for_profile(profile: str) -> Dict[str, str]:
+    return PIECE_MAP_BY_PROFILE.get(profile, PIECE_MAP_BY_PROFILE["ca_es"])
+
+
+def get_promotion_piece_map_for_profile(profile: str) -> Dict[str, str]:
+    return PROMOTION_PIECE_MAP_BY_PROFILE.get(
+        profile,
+        PROMOTION_PIECE_MAP_BY_PROFILE["ca_es"],
+    )
+
+
+# Alias antiguos para mantener el motor exactamente como hasta ahora
+# mientras incorporamos el perfil inglés paso a paso.
+CATALAN_PIECE_MAP = PIECE_MAP_BY_PROFILE["ca_es"]
+PROMOTION_PIECE_MAP = PROMOTION_PIECE_MAP_BY_PROFILE["ca_es"]
 
 VALID_ENGLISH_PIECES = set("KQRBN")
 VALID_FILES = set("abcdefgh")
@@ -767,11 +820,22 @@ def build_pgn(meta: Dict[str, Any], moves: List[str]) -> str:
 
 
 def looks_like_noise_cell(s: str) -> bool:
-    t = (s or "").strip()
+    t = clean_spacing(s)
     if not t:
         return True
+
     tl = t.lower()
-    return tl in NOISE_TOKENS
+    if tl in NOISE_TOKENS:
+        return True
+
+    # Restos típicos de una celda tachada o incompleta.
+    # Ejemplo real: fila saltada leída como "Nx".
+    # "Nx" / "Bx" / "Rx" / "Qx" / "Kx" no son SAN completas
+    # porque falta la casilla de destino.
+    if re.fullmatch(r"[KQRBNCATDkqrbncatd]x[+#]?", t):
+        return True
+
+    return False
 
 
 def clean_spacing(token: str) -> str:
@@ -794,6 +858,34 @@ def translate_catalan_piece_letters(token: str) -> str:
         return t
     if t[0] in CATALAN_PIECE_MAP:
         t = CATALAN_PIECE_MAP[t[0]] + t[1:]
+    return t
+
+
+def translate_english_piece_letters(token: str) -> str:
+    """
+    English scoresheets are normally already written in SAN.
+
+    Safe behavior:
+    - Keep N, B, R, Q, K unchanged.
+    - Convert lowercase n/r/q/k to uppercase if the player wrote them small.
+    - Do NOT auto-convert lowercase b, because "b" is also a pawn file.
+      Example: b4 / bxa5 must stay pawn notation.
+    """
+    t = clean_spacing(token)
+    if not t:
+        return t
+
+    if t in {"O-O", "O-O-O"}:
+        return t
+
+    first = t[0]
+
+    if first in {"N", "B", "R", "Q", "K"}:
+        return t
+
+    if first in {"n", "r", "q", "k"}:
+        return first.upper() + t[1:]
+
     return t
 
 
@@ -1028,6 +1120,44 @@ def candidate_tokens(raw: str) -> List[str]:
     return dedupe_keep_order(out)
 
 
+def candidate_tokens_for_profile(raw: str, profile: str = "ca_es") -> List[str]:
+    """
+    Profile-aware candidate generation.
+
+    Safety rule:
+    - ca_es keeps using the existing stable candidate_tokens(raw).
+    - en uses English/SAN piece letters without Catalan translation.
+    """
+    if profile != "en":
+        return candidate_tokens(raw)
+
+    base = clean_spacing(raw)
+    if not base or looks_like_noise_cell(base):
+        return []
+
+    out: List[str] = []
+
+    c1 = translate_english_piece_letters(base)
+    c1 = ocr_fixes(c1)
+    out.append(c1)
+
+    m = re.fullmatch(r"([A-Za-z0-9])([A-Za-z0-9])([+#]?)", base)
+    if m:
+        a, b, suf = m.groups()
+        for ff, rr in square_micro_variants(a, b):
+            if is_valid_square(ff, rr):
+                out.append(ff + rr + suf)
+
+    c2 = ocr_fixes(base)
+    out.append(c2)
+
+    translated = translate_english_piece_letters(base)
+    out.extend(expand_embedded_squares(translated))
+    out.extend(expand_embedded_squares(base))
+
+    return dedupe_keep_order(out)
+
+
 # =========================================================
 # Validation helpers
 # =========================================================
@@ -1049,9 +1179,11 @@ def san_capture_semantics_ok(board: chess.Board, san: str, move: chess.Move) -> 
 def try_push_san(
     board: chess.Board,
     raw: str,
+    profile: str = "ca_es",
 ) -> Tuple[bool, Optional[str], Optional[str], List[str]]:
-    cands = candidate_tokens(raw)
+    cands = candidate_tokens_for_profile(raw, profile)
     legal: List[str] = []
+
     last_err: Optional[str] = None
 
     for cand in cands:
@@ -1250,6 +1382,7 @@ def parse_rows_stop_on_first_conflict(
     accepted_prefix_moves: List[str],
     start_index: int = 0,
     manual_corrections: Optional[List[Dict[str, Any]]] = None,
+    profile: str = "ca_es",
 ) -> Dict[str, Any]:
     accepted_moves = list(accepted_prefix_moves)
     manual_corrections = manual_corrections or []
@@ -1337,7 +1470,11 @@ def parse_rows_stop_on_first_conflict(
                 "fen": board.fen(),
             }
 
-        ok, chosen, err, cands = try_push_san(board, raw)
+        ok, chosen, err, cands = try_push_san(
+            board,
+            raw,
+            profile=profile,
+        )
         normalized = cands[0] if cands else ""
 
         if ok and chosen:
@@ -1426,6 +1563,7 @@ def build_meta_out(
 def process_initial(
     image_path: str,
     sheet_format: str = DEFAULT_SHEET_FORMAT,
+    scoresheet_language: str = DEFAULT_SCORESHEET_LANGUAGE,
 ) -> Dict[str, Any]:
     ocr_image_path, preprocessing_meta = preprocess_image_for_ocr(image_path)
     block_inputs: List[OcrImageInput] = []
@@ -1436,6 +1574,7 @@ def process_initial(
 
     try:
         sheet_profile = get_sheet_format_profile(sheet_format)
+        notation_profile = get_notation_profile(scoresheet_language)
 
         block_inputs, block_zoom_meta = build_block_zoom_inputs(
             image_path=ocr_image_path,
@@ -1456,6 +1595,8 @@ def process_initial(
         log("gemini returned")
 
         meta = ocr["meta"]
+        meta["scoresheetLanguage"] = scoresheet_language
+        meta["notation_profile"] = notation_profile
         rows = ocr["rows"]
         board = chess.Board()
 
@@ -1466,6 +1607,7 @@ def process_initial(
             accepted_prefix_moves=[],
             start_index=0,
             manual_corrections=[],
+            profile=notation_profile,
         )
 
         sheet_format_profile_meta = {
@@ -1509,7 +1651,16 @@ def process_parse_rows(payload: Dict[str, Any]) -> Dict[str, Any]:
     if not isinstance(meta, dict):
         raise RuntimeError("payload.meta must be an object")
 
+    scoresheet_language = str(
+        payload.get("scoresheetLanguage")
+        or meta.get("scoresheetLanguage")
+        or DEFAULT_SCORESHEET_LANGUAGE
+    )
+    notation_profile = get_notation_profile(scoresheet_language)
+
     meta_norm = normalize_meta_from_payload(meta)
+    meta_norm["scoresheetLanguage"] = scoresheet_language
+    meta_norm["notation_profile"] = notation_profile
     board = chess.Board()
 
     return parse_rows_stop_on_first_conflict(
@@ -1519,6 +1670,7 @@ def process_parse_rows(payload: Dict[str, Any]) -> Dict[str, Any]:
         accepted_prefix_moves=[],
         start_index=0,
         manual_corrections=[],
+        profile=notation_profile,
     )
 
 
@@ -1547,7 +1699,16 @@ def process_resume(payload: Dict[str, Any]) -> Dict[str, Any]:
     if not isinstance(manual_corrections, list):
         raise RuntimeError("payload.manual_corrections must be a list")
 
+    scoresheet_language = str(
+        payload.get("scoresheetLanguage")
+        or meta.get("scoresheetLanguage")
+        or DEFAULT_SCORESHEET_LANGUAGE
+    )
+    notation_profile = get_notation_profile(scoresheet_language)
+
     meta_norm = normalize_meta_from_payload(meta)
+    meta_norm["scoresheetLanguage"] = scoresheet_language
+    meta_norm["notation_profile"] = notation_profile
     seq = flatten_rows(rows)
 
     try:
@@ -1604,6 +1765,7 @@ def process_resume(payload: Dict[str, Any]) -> Dict[str, Any]:
         accepted_prefix_moves=prefix,
         start_index=next_index,
         manual_corrections=manual_corrections,
+        profile=notation_profile,
     )
 
 
@@ -1634,7 +1796,14 @@ def main() -> None:
 
             if mode == "initial":
                 sheet_format = str(payload.get("sheetFormat") or DEFAULT_SHEET_FORMAT)
-                result = process_initial(image_path, sheet_format=sheet_format)
+                scoresheet_language = str(
+                    payload.get("scoresheetLanguage") or DEFAULT_SCORESHEET_LANGUAGE
+                )
+                result = process_initial(
+                    image_path,
+                    sheet_format=sheet_format,
+                    scoresheet_language=scoresheet_language,
+                )
                 jprint(result)
                 return
 
