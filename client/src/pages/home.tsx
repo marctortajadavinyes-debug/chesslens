@@ -68,6 +68,20 @@ type UiText = {
 };
 
 const SETTINGS_STORAGE_KEY = "chesslens_user_settings_v1";
+const DEVICE_STORAGE_KEY = "chesslens_device_id_v1";
+
+function getOrCreateDeviceId() {
+  const existing = window.localStorage.getItem(DEVICE_STORAGE_KEY);
+  if (existing) return existing;
+
+  const generated =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `device_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+
+  window.localStorage.setItem(DEVICE_STORAGE_KEY, generated);
+  return generated;
+}
 
 const DEFAULT_SETTINGS: ChessLensUserSettings = {
   alias: "",
@@ -360,6 +374,9 @@ export default function Home() {
     try {
       const game = await createGame.mutateAsync({
         imageUrls: images,
+        alias: settings.alias.trim(),
+        email: settings.email.trim(),
+        deviceId: getOrCreateDeviceId(),
         appLanguage: settings.appLanguage,
         scoresheetLanguage: settings.scoresheetLanguage,
         sheetFormat: settings.sheetFormat,

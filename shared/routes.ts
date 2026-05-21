@@ -3,6 +3,7 @@ import {
   createGameRequestSchema,
   gameSchema,
   reviewGameRequestSchema,
+  saveGameRequestSchema,
   updateGameRequestSchema,
 } from "./schema";
 
@@ -51,6 +52,16 @@ export const api = {
       input: updateGameRequestSchema,
       responses: {
         200: gameSchema,
+        404: errorSchemas.notFound,
+      },
+    },
+    save: {
+      method: "POST" as const,
+      path: "/api/games/:id/save" as const,
+      input: saveGameRequestSchema,
+      responses: {
+        200: gameSchema,
+        400: errorSchemas.validation,
         404: errorSchemas.notFound,
       },
     },

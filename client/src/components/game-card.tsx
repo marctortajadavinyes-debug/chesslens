@@ -15,19 +15,22 @@ export function GameCard({ game }: GameCardProps) {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="h-16 w-16 rounded-lg bg-secondary/50 overflow-hidden flex-shrink-0 border border-border/50">
-              <img 
-                src={game.imageUrl} 
+              <img
+                src={game.imageUrl ?? undefined}
                 alt={`Game ${game.id}`}
                 className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity"
               />
             </div>
-            
+
             <div>
               <h3 className="font-display font-bold text-lg text-foreground">
                 Game #{game.id}
               </h3>
               <p className="text-sm text-muted-foreground flex items-center mt-1">
-                {game.createdAt && formatDistanceToNow(new Date(game.createdAt), { addSuffix: true })}
+                {game.createdAt &&
+                  formatDistanceToNow(new Date(game.createdAt), {
+                    addSuffix: true,
+                  })}
               </p>
             </div>
           </div>
@@ -58,10 +61,12 @@ function StatusBadge({ status }: { status: string }) {
   const statusKey = status as keyof typeof styles;
 
   return (
-    <span className={cn(
-      "inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border",
-      styles[statusKey] || styles.processing
-    )}>
+    <span
+      className={cn(
+        "inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border",
+        styles[statusKey] || styles.processing,
+      )}
+    >
       {icons[statusKey]}
       {status.charAt(0).toUpperCase() + status.slice(1)}
     </span>
