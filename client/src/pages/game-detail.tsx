@@ -3,7 +3,15 @@ import { useRoute, Link } from "wouter";
 import { useGame, useReviewGame, useUpdateGame } from "@/hooks/use-games";
 import { Button } from "@/components/ui/button";
 import { ChessboardViewer } from "@/components/chessboard-viewer";
-import { ArrowLeft, Save, RefreshCw, Undo2 } from "lucide-react";
+import { PgnActions } from "@/components/pgn-actions";
+import {
+  ArrowLeft,
+  Save,
+  RefreshCw,
+  Undo2,
+  Image as ImageIcon,
+  EyeOff,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { AppLanguage } from "@shared/schema";
 
@@ -38,6 +46,10 @@ type GameDetailText = {
   moveAppliedDescription: string;
   applyMoveErrorTitle: string;
   resumeErrorFallback: string;
+  showScoresheet: string;
+  hideScoresheet: string;
+  pgnActionsTitle: string;
+  pgnNotReady: string;
 };
 
 const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
@@ -86,6 +98,10 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
     moveAppliedDescription: "Continuem l'escaneig des d'aquesta posició.",
     applyMoveErrorTitle: "Error en aplicar la jugada",
     resumeErrorFallback: "No s'ha pogut reprendre",
+    showScoresheet: "Veure planella",
+    hideScoresheet: "Amagar planella",
+    pgnActionsTitle: "Accions del PGN",
+    pgnNotReady: "El PGN encara s'està generant",
   },
   en: {
     gameNotFound: "Game not found",
@@ -130,6 +146,10 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
     moveAppliedDescription: "Continuing the scan from this position.",
     applyMoveErrorTitle: "Error applying move",
     resumeErrorFallback: "Could not resume",
+    showScoresheet: "Show scoresheet",
+    hideScoresheet: "Hide scoresheet",
+    pgnActionsTitle: "PGN actions",
+    pgnNotReady: "PGN is still being generated",
   },
   es: {
     gameNotFound: "Partida no encontrada",
@@ -176,6 +196,10 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
     moveAppliedDescription: "Continuamos el escaneo desde esta posición.",
     applyMoveErrorTitle: "Error al aplicar la jugada",
     resumeErrorFallback: "No se ha podido reanudar",
+    showScoresheet: "Ver planilla",
+    hideScoresheet: "Ocultar planilla",
+    pgnActionsTitle: "Acciones del PGN",
+    pgnNotReady: "El PGN se está generando",
   },
 };
 
@@ -258,6 +282,7 @@ export default function GameDetail() {
   const [boardOrientation, setBoardOrientation] = useState<"white" | "black">(
     "white",
   );
+  const [showSheetMobile, setShowSheetMobile] = useState(false);
 
   const isNavigatingPast = boardIndex < maxBoardIndex;
   const needsReview = game?.status === "needs_review" || isNavigatingPast;
@@ -452,7 +477,7 @@ export default function GameDetail() {
             </h1>
 
             <span
-              className={`px-2 py-0.5 rounded-full text-xs font-medium border ${
+              className={`px-2 py-0.5 rounded-full text-xs font-medium border truncate max-w-[45vw] sm:max-w-none ${
                 game.status === "completed" && !isResuming
                   ? "bg-green-100 text-green-700 border-green-200"
                   : game.status === "failed"
@@ -491,10 +516,37 @@ export default function GameDetail() {
       </header>
 
       <main className="flex-1 max-w-7xl mx-auto w-full p-4 grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="space-y-4 hidden lg:block">
-          <h2 className="font-semibold text-lg">{t.originalScoresheet}</h2>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-2 lg:block">
+            <h2 className="font-semibold text-lg">{t.originalScoresheet}</h2>
 
-          <div className="bg-muted/20 border border-border rounded-xl overflow-hidden h-[600px] relative">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="lg:hidden shrink-0"
+              onClick={() => setShowSheetMobile((v) => !v)}
+              data-testid="button-toggle-scoresheet-mobile"
+            >
+              {showSheetMobile ? (
+                <>
+                  <EyeOff className="w-4 h-4 mr-2" />
+                  {t.hideScoresheet}
+                </>
+              ) : (
+                <>
+                  <ImageIcon className="w-4 h-4 mr-2" />
+                  {t.showScoresheet}
+                </>
+              )}
+            </Button>
+          </div>
+
+          <div
+            className={`${
+              showSheetMobile ? "block" : "hidden"
+            } lg:block bg-muted/20 border border-border rounded-xl overflow-hidden h-[60vh] lg:h-[600px] relative`}
+          >
             {displayedImageUrl ? (
               <img
                 src={displayedImageUrl}
@@ -509,7 +561,11 @@ export default function GameDetail() {
           </div>
 
           {needsReview && hasMultipleSheets ? (
-            <p className="text-xs text-muted-foreground">
+            <p
+              className={`${
+                showSheetMobile ? "block" : "hidden"
+              } lg:block text-xs text-muted-foreground`}
+            >
               {t.showingSheet(displayedSheetIndex + 1)}
             </p>
           ) : null}
@@ -583,7 +639,20 @@ export default function GameDetail() {
             scoresheetLanguage={scoresheetLanguage}
           />
 
+          <PgnActions
+            pgn={pgnText || game.pgn || ""}
+            gameId={game.id}
+            appLanguage={appLanguage}
+            className="lg:hidden"
+          />
+
           <div className="hidden lg:block space-y-2">
+            <PgnActions
+              pgn={pgnText || game.pgn || ""}
+              gameId={game.id}
+              appLanguage={appLanguage}
+            />
+
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-sm">{t.pgnTitle}</h3>
               <span className="text-xs text-muted-foreground">
