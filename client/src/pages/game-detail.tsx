@@ -11,6 +11,8 @@ import {
   Undo2,
   Image as ImageIcon,
   EyeOff,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { AppLanguage } from "@shared/schema";
@@ -35,7 +37,6 @@ type GameDetailText = {
   reviewingBeforeMove: (moveNumber: number, side: ReviewSide) => string;
   reviewingHelp: string;
   pgnTitle: string;
-  desktopOnly: string;
   editPgn: string;
   cancel: string;
   save: string;
@@ -50,6 +51,9 @@ type GameDetailText = {
   hideScoresheet: string;
   pgnActionsTitle: string;
   pgnNotReady: string;
+  sheetCounter: (current: number, total: number) => string;
+  previousSheet: string;
+  nextSheet: string;
 };
 
 const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
@@ -87,7 +91,6 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
     reviewingHelp:
       "Fes ara la jugada correcta al tauler i ChessLens continuarà l'escaneig des d'aquí.",
     pgnTitle: "PGN",
-    desktopOnly: "Visible només en escriptori",
     editPgn: "Editar PGN",
     cancel: "Cancel·lar",
     save: "Desar",
@@ -102,6 +105,9 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
     hideScoresheet: "Amagar planella",
     pgnActionsTitle: "Accions del PGN",
     pgnNotReady: "El PGN encara s'està generant",
+    sheetCounter: (current, total) => `Planella ${current} / ${total}`,
+    previousSheet: "Planella anterior",
+    nextSheet: "Planella següent",
   },
   en: {
     gameNotFound: "Game not found",
@@ -135,7 +141,6 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
     reviewingHelp:
       "Now make the correct move on the board and ChessLens will continue the scan from here.",
     pgnTitle: "PGN",
-    desktopOnly: "Visible on desktop only",
     editPgn: "Edit PGN",
     cancel: "Cancel",
     save: "Save",
@@ -150,6 +155,9 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
     hideScoresheet: "Hide scoresheet",
     pgnActionsTitle: "PGN actions",
     pgnNotReady: "PGN is still being generated",
+    sheetCounter: (current, total) => `Scoresheet ${current} / ${total}`,
+    previousSheet: "Previous scoresheet",
+    nextSheet: "Next scoresheet",
   },
   es: {
     gameNotFound: "Partida no encontrada",
@@ -185,7 +193,6 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
     reviewingHelp:
       "Haz ahora la jugada correcta en el tablero y ChessLens continuará el escaneo desde aquí.",
     pgnTitle: "PGN",
-    desktopOnly: "Visible solo en escritorio",
     editPgn: "Editar PGN",
     cancel: "Cancelar",
     save: "Guardar",
@@ -200,6 +207,9 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
     hideScoresheet: "Ocultar planilla",
     pgnActionsTitle: "Acciones del PGN",
     pgnNotReady: "El PGN se está generando",
+    sheetCounter: (current, total) => `Planilla ${current} / ${total}`,
+    previousSheet: "Planilla anterior",
+    nextSheet: "Planilla siguiente",
   },
 };
 
@@ -283,6 +293,7 @@ export default function GameDetail() {
     "white",
   );
   const [showSheetMobile, setShowSheetMobile] = useState(false);
+  const [sheetOverride, setSheetOverride] = useState<number | null>(null);
 
   const isNavigatingPast = boardIndex < maxBoardIndex;
   const needsReview = game?.status === "needs_review" || isNavigatingPast;
@@ -362,9 +373,25 @@ export default function GameDetail() {
 
   const displayedSheetIndex = getDisplayedSheetIndex(game, needsReview);
 
+  const totalSheets =
+    Array.isArray(game?.imageUrls) && game.imageUrls.length > 0
+      ? game.imageUrls.length
+      : 1;
+
+  const currentSheetIndex = (() => {
+    if (sheetOverride == null) return displayedSheetIndex;
+    if (sheetOverride < 0) return 0;
+    if (sheetOverride > totalSheets - 1) return totalSheets - 1;
+    return sheetOverride;
+  })();
+
+  useEffect(() => {
+    setSheetOverride(null);
+  }, [game?.id, displayedSheetIndex]);
+
   const displayedImageUrl =
-    Array.isArray(game?.imageUrls) && game.imageUrls[displayedSheetIndex]
-      ? game.imageUrls[displayedSheetIndex]
+    Array.isArray(game?.imageUrls) && game.imageUrls[currentSheetIndex]
+      ? game.imageUrls[currentSheetIndex]
       : game?.imageUrl;
 
   const getStatusText = () => {
@@ -560,13 +587,52 @@ export default function GameDetail() {
             )}
           </div>
 
+          {hasMultipleSheets ? (
+            <div
+              className={`${
+                showSheetMobile ? "flex" : "hidden"
+              } lg:flex items-center justify-between gap-2`}
+            >
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={currentSheetIndex <= 0}
+                onClick={() => setSheetOverride(currentSheetIndex - 1)}
+                aria-label={t.previousSheet}
+                data-testid="button-prev-sheet"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+
+              <span
+                className="text-xs text-muted-foreground"
+                data-testid="text-sheet-counter"
+              >
+                {t.sheetCounter(currentSheetIndex + 1, totalSheets)}
+              </span>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={currentSheetIndex >= totalSheets - 1}
+                onClick={() => setSheetOverride(currentSheetIndex + 1)}
+                aria-label={t.nextSheet}
+                data-testid="button-next-sheet"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </div>
+          ) : null}
+
           {needsReview && hasMultipleSheets ? (
             <p
               className={`${
                 showSheetMobile ? "block" : "hidden"
               } lg:block text-xs text-muted-foreground`}
             >
-              {t.showingSheet(displayedSheetIndex + 1)}
+              {t.showingSheet(currentSheetIndex + 1)}
             </p>
           ) : null}
         </div>
@@ -653,12 +719,7 @@ export default function GameDetail() {
               appLanguage={appLanguage}
             />
 
-            <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-sm">{t.pgnTitle}</h3>
-              <span className="text-xs text-muted-foreground">
-                {t.desktopOnly}
-              </span>
-            </div>
+            <h3 className="font-semibold text-sm">{t.pgnTitle}</h3>
 
             <textarea
               value={pgnText}
