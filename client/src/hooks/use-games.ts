@@ -6,6 +6,7 @@ import type {
   UpdateGameRequest,
   ReviewGameRequest,
 } from "@shared/schema";
+import { getOrCreateDeviceId } from "@/lib/device-id";
 
 export function useGames() {
   return useQuery({
@@ -40,7 +41,12 @@ export function useCreateGame() {
 
   return useMutation({
     mutationFn: async (data: CreateGameRequest) => {
-      const validated = api.games.create.input.parse(data);
+      const withIdentity: CreateGameRequest =
+        data.deviceId && data.deviceId.length > 0
+          ? data
+          : { ...data, deviceId: getOrCreateDeviceId() };
+
+      const validated = api.games.create.input.parse(withIdentity);
 
       const res = await fetch(api.games.create.path, {
         method: api.games.create.method,
