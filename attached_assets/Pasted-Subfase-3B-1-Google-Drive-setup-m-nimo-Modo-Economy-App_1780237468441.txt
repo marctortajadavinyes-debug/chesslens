@@ -1,0 +1,79 @@
+Subfase 3B.1: Google Drive setup mínimo.
+
+Modo: Economy.
+App testing: desactivado.
+
+Objetivo:
+Comprobar que `VITE_GOOGLE_CLIENT_ID` está disponible en el frontend y que Google Identity Services puede pedir un access token con scope Drive, sin tocar motor ni backend.
+
+Puedes modificar:
+
+* client/index.html
+
+Puedes crear:
+
+* client/src/lib/google-drive.ts
+* client/src/components/drive-test-button.tsx
+
+Puedes modificar SOLO si es necesario para mostrar el botón de prueba:
+
+* client/src/pages/home.tsx
+
+No modifiques:
+
+* server/*
+* shared/*
+* client/src/pages/game-detail.tsx
+* client/src/components/chessboard-viewer.tsx
+* client/src/hooks/use-games.ts
+* client/src/components/pgn-actions.tsx
+* package.json
+* vite.config.ts
+* tailwind.config.ts
+
+Implementación:
+
+1. Añadir en `client/index.html` el script oficial de Google Identity Services:
+   `<script src="https://accounts.google.com/gsi/client" async defer></script>`
+
+2. Crear `client/src/lib/google-drive.ts` con:
+
+   * lectura segura de `import.meta.env.VITE_GOOGLE_CLIENT_ID`
+   * función `requestGoogleDriveToken()` que use `google.accounts.oauth2.initTokenClient`
+   * scope exacto: `https://www.googleapis.com/auth/drive.file`
+   * no guardar token en localStorage
+   * devolver access_token o error claro si falta configuración
+
+3. Crear `DriveTestButton`:
+
+   * botón pequeño de prueba: “Provar Google Drive / Probar Google Drive / Test Google Drive”
+   * al pulsar, pide token
+   * si funciona, muestra toast o mensaje “Google Drive conectado”
+   * no subir archivos todavía
+   * no crear carpeta todavía
+   * no tocar PGN todavía
+
+4. Si necesitas insertar el botón de prueba, hazlo en `home.tsx` en una zona secundaria/discreta, sin tocar la lógica de subida ni multi-planilla.
+
+No tocar bajo ningún concepto:
+
+* OCR
+* PGN engine
+* reviewState
+* resume
+* python-chess
+* multi-planilla
+* salto de fila
+* corrección desde tablero
+* idiomas
+* formatos
+
+Después ejecuta:
+npm run check
+npm run build
+python3 -m py_compile server/process_image_gemini.py
+git diff --stat -- server/ shared/
+
+El diff de server/ y shared/ debe estar vacío.
+
+No hagas commit todavía.

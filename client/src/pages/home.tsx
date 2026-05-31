@@ -11,6 +11,7 @@ import {
   Settings,
 } from "lucide-react";
 import { useCreateGame, useGames } from "@/hooks/use-games";
+import { DriveTestButton } from "@/components/drive-test-button";
 import { Button } from "@/components/ui/button";
 import { GameCard } from "@/components/game-card";
 import { useToast } from "@/hooks/use-toast";
@@ -723,6 +724,10 @@ export default function Home() {
             </div>
           )}
         </section>
+
+        <div className="flex justify-center pt-4 pb-2">
+          <DriveTestButton appLanguage={settings.appLanguage} />
+        </div>
       </main>
     </div>
   );
