@@ -34,6 +34,10 @@ export type DriveFolderResult =
   | { ok: true; folderId: string }
   | { ok: false; error: string };
 
+export type DriveUploadResult =
+  | { ok: true; fileId: string }
+  | { ok: false; error: string };
+
 const DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file";
 const FOLDER_CACHE_KEY = "chesslens.driveFolderId.chessGames";
 const DRIVE_FOLDER_NAME = "Chess Games";
@@ -171,6 +175,52 @@ async function verifyFolder(
   return !!data.id && data.trashed !== true;
 }
 
+// --- Drive upload helper ---
+
+async function uploadMultipart(
+  accessToken: string,
+  filename: string,
+  mimeType: string,
+  content: string,
+  folderId: string,
+): Promise<string> {
+  const boundary = "chesslens_boundary_" + Math.random().toString(36).slice(2);
+  const metadata = JSON.stringify({ name: filename, parents: [folderId] });
+
+  const body = [
+    `--${boundary}`,
+    "Content-Type: application/json; charset=UTF-8",
+    "",
+    metadata,
+    `--${boundary}`,
+    `Content-Type: ${mimeType}`,
+    "",
+    content,
+    `--${boundary}--`,
+  ].join("\r\n");
+
+  const res = await fetch(
+    "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": `multipart/related; boundary=${boundary}`,
+      },
+      body,
+    },
+  );
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => `HTTP ${res.status}`);
+    throw new Error(`Drive upload failed: ${text}`);
+  }
+
+  const data: { id?: string } = await res.json();
+  if (!data.id) throw new Error("Drive did not return a file id.");
+  return data.id;
+}
+
 // --- Public: ensure folder ---
 
 export async function ensureChessDriveFolder(
@@ -200,6 +250,46 @@ export async function ensureChessDriveFolder(
   } catch (err: unknown) {
     const msg =
       err instanceof Error ? err.message : "Unknown error accessing Drive.";
+    return { ok: false, error: msg };
+  }
+}
+
+// --- Public: upload PGN ---
+
+const TEST_PGN_CONTENT = `[Event "Chess Games Test"]
+[Site "?"]
+[Date "????.??.??"]
+[Round "?"]
+[White "?"]
+[Black "?"]
+[Result "*"]
+
+*
+`;
+
+export async function uploadPgnToDrive(
+  accessToken: string,
+  opts?: { filename?: string; pgn?: string },
+): Promise<DriveUploadResult> {
+  try {
+    const folderResult = await ensureChessDriveFolder(accessToken);
+    if (!folderResult.ok) return folderResult;
+
+    const filename = opts?.filename ?? "chess-games-test.pgn";
+    const pgn = opts?.pgn ?? TEST_PGN_CONTENT;
+
+    const fileId = await uploadMultipart(
+      accessToken,
+      filename,
+      "application/x-chess-pgn",
+      pgn,
+      folderResult.folderId,
+    );
+
+    return { ok: true, fileId };
+  } catch (err: unknown) {
+    const msg =
+      err instanceof Error ? err.message : "Unknown error uploading PGN.";
     return { ok: false, error: msg };
   }
 }
