@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import {
   requestGoogleDriveToken,
-  ensureChessLensDriveFolder,
+  ensureChessDriveFolder,
 } from "@/lib/google-drive";
 import { CloudIcon, Loader2 } from "lucide-react";
 
@@ -20,9 +20,9 @@ const TOAST_TITLE: Record<string, string> = {
 };
 
 const TOAST_DESC: Record<string, string> = {
-  ca: "Carpeta ChessLens preparada",
-  es: "Carpeta ChessLens preparada",
-  en: "ChessLens folder ready",
+  ca: "carpeta preparada",
+  es: "carpeta preparada",
+  en: "folder ready",
 };
 
 interface DriveTestButtonProps {
@@ -49,7 +49,7 @@ export function DriveTestButton({ appLanguage = "ca" }: DriveTestButtonProps) {
         return;
       }
 
-      const folderResult = await ensureChessLensDriveFolder(
+      const folderResult = await ensureChessDriveFolder(
         tokenResult.accessToken,
       );
       if (!folderResult.ok) {

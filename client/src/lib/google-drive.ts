@@ -35,8 +35,8 @@ export type DriveFolderResult =
   | { ok: false; error: string };
 
 const DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file";
-const FOLDER_CACHE_KEY = "chesslens.driveFolderId";
-const CHESSLENS_FOLDER_NAME = "ChessLens";
+const FOLDER_CACHE_KEY = "chesslens.driveFolderId.chessGames";
+const DRIVE_FOLDER_NAME = "Chess Games";
 const FOLDER_MIME = "application/vnd.google-apps.folder";
 const DRIVE_API = "https://www.googleapis.com/drive/v3";
 
@@ -123,7 +123,7 @@ async function searchFolder(
   accessToken: string,
 ): Promise<string | null> {
   const q = encodeURIComponent(
-    `name='${CHESSLENS_FOLDER_NAME}' and mimeType='${FOLDER_MIME}' and trashed=false`,
+    `name='${DRIVE_FOLDER_NAME}' and mimeType='${FOLDER_MIME}' and trashed=false`,
   );
   const url = `${DRIVE_API}/files?q=${q}&fields=files(id)&pageSize=1`;
   const res = await fetch(url, {
@@ -145,7 +145,7 @@ async function createFolder(accessToken: string): Promise<string> {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      name: CHESSLENS_FOLDER_NAME,
+      name: DRIVE_FOLDER_NAME,
       mimeType: FOLDER_MIME,
     }),
   });
@@ -173,7 +173,7 @@ async function verifyFolder(
 
 // --- Public: ensure folder ---
 
-export async function ensureChessLensDriveFolder(
+export async function ensureChessDriveFolder(
   accessToken: string,
 ): Promise<DriveFolderResult> {
   try {
