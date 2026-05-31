@@ -1,0 +1,81 @@
+Subfase 3B.2: crear o reutilizar carpeta ChessLens en Google Drive.
+
+Modo: Economy.
+App testing: desactivado.
+
+Objetivo:
+Después de conectar con Google Drive, comprobar que ChessLens puede crear o reutilizar una carpeta llamada "ChessLens" en el Drive del usuario.
+
+No subir archivos PGN todavía.
+No integrar todavía en game-detail.
+No tocar motor ni backend.
+
+Puedes modificar:
+
+* client/src/lib/google-drive.ts
+* client/src/components/drive-test-button.tsx
+
+No modifiques:
+
+* server/*
+* shared/*
+* client/src/pages/game-detail.tsx
+* client/src/components/chessboard-viewer.tsx
+* client/src/hooks/use-games.ts
+* client/src/components/pgn-actions.tsx
+* client/src/pages/home.tsx salvo que sea imprescindible
+* package.json
+* vite.config.ts
+* tailwind.config.ts
+
+Implementación:
+
+1. En `google-drive.ts`, añadir una función tipo `ensureChessLensDriveFolder(accessToken)`:
+
+   * buscar carpeta existente llamada "ChessLens"
+   * mimeType exacto: `application/vnd.google-apps.folder`
+   * `trashed=false`
+   * si existe, devolver su `id`
+   * si no existe, crearla y devolver su `id`
+   * guardar el folderId en localStorage solo como cache no sensible, por ejemplo `chesslens.driveFolderId`
+   * si el folderId cacheado falla, limpiar cache y volver a buscar/crear
+
+2. En `DriveTestButton`:
+
+   * al pulsar, pedir token como ahora
+   * luego llamar a `ensureChessLensDriveFolder`
+   * mostrar mensaje/toast tipo:
+
+     * "Google Drive connectat · carpeta ChessLens preparada"
+     * "Google Drive conectado · carpeta ChessLens preparada"
+     * "Google Drive connected · ChessLens folder ready"
+
+3. No subir PGN todavía.
+
+4. No crear SaveToDriveButton todavía.
+
+5. No tocar game-detail todavía.
+
+No tocar bajo ningún concepto:
+
+* OCR
+* PGN engine
+* reviewState
+* resume
+* python-chess
+* multi-planilla
+* salto de fila
+* corrección desde tablero
+* idiomas
+* formatos
+
+Después ejecuta:
+npm run check
+npm run build
+python3 -m py_compile server/process_image_gemini.py
+git diff --stat -- server/ shared/
+
+El diff de server/ y shared/ debe estar vacío.
+
+No hagas push.
+Si Replit crea auto-checkpoint, déjalo tal cual.

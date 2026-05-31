@@ -1,13 +1,28 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { requestGoogleDriveToken } from "@/lib/google-drive";
+import {
+  requestGoogleDriveToken,
+  ensureChessLensDriveFolder,
+} from "@/lib/google-drive";
 import { CloudIcon, Loader2 } from "lucide-react";
 
 const LABEL: Record<string, string> = {
   ca: "Prova Google Drive",
   es: "Probar Google Drive",
   en: "Test Google Drive",
+};
+
+const TOAST_TITLE: Record<string, string> = {
+  ca: "Google Drive connectat",
+  es: "Google Drive conectado",
+  en: "Google Drive connected",
+};
+
+const TOAST_DESC: Record<string, string> = {
+  ca: "Carpeta ChessLens preparada",
+  es: "Carpeta ChessLens preparada",
+  en: "ChessLens folder ready",
 };
 
 interface DriveTestButtonProps {
@@ -18,34 +33,38 @@ export function DriveTestButton({ appLanguage = "ca" }: DriveTestButtonProps) {
   const [pending, setPending] = useState(false);
   const { toast } = useToast();
 
-  const label = LABEL[appLanguage] ?? LABEL.ca;
+  const lang = ["ca", "es", "en"].includes(appLanguage) ? appLanguage : "ca";
+  const label = LABEL[lang];
 
   async function handleClick() {
     setPending(true);
     try {
-      const result = await requestGoogleDriveToken();
-      if (result.ok) {
-        toast({
-          title:
-            appLanguage === "es"
-              ? "Google Drive conectado"
-              : appLanguage === "en"
-                ? "Google Drive connected"
-                : "Google Drive connectat",
-          description:
-            appLanguage === "es"
-              ? "Acceso concedido con scope drive.file"
-              : appLanguage === "en"
-                ? "Access granted with drive.file scope"
-                : "Accés concedit amb scope drive.file",
-        });
-      } else {
+      const tokenResult = await requestGoogleDriveToken();
+      if (!tokenResult.ok) {
         toast({
           variant: "destructive",
           title: "Google Drive",
-          description: result.error,
+          description: tokenResult.error,
         });
+        return;
       }
+
+      const folderResult = await ensureChessLensDriveFolder(
+        tokenResult.accessToken,
+      );
+      if (!folderResult.ok) {
+        toast({
+          variant: "destructive",
+          title: "Google Drive",
+          description: folderResult.error,
+        });
+        return;
+      }
+
+      toast({
+        title: TOAST_TITLE[lang],
+        description: TOAST_DESC[lang],
+      });
     } finally {
       setPending(false);
     }
