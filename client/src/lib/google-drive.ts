@@ -46,7 +46,9 @@ const DRIVE_API = "https://www.googleapis.com/drive/v3";
 
 // --- Token ---
 
-export function requestGoogleDriveToken(): Promise<DriveTokenResult> {
+export function requestGoogleDriveToken(
+  opts?: { prompt?: "" | "consent" },
+): Promise<DriveTokenResult> {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
 
   if (!clientId || clientId.trim() === "") {
@@ -65,32 +67,45 @@ export function requestGoogleDriveToken(): Promise<DriveTokenResult> {
     });
   }
 
-  return new Promise<DriveTokenResult>((resolve) => {
-    const client = window.google!.accounts.oauth2.initTokenClient({
-      client_id: clientId,
-      scope: DRIVE_FILE_SCOPE,
-      callback: (response: GoogleTokenResponse) => {
-        if (response.access_token) {
-          resolve({ ok: true, accessToken: response.access_token });
-        } else {
-          resolve({
-            ok: false,
-            error:
-              response.error_description ??
-              response.error ??
-              "No access token returned.",
-          });
-        }
-      },
-      error_callback: (err: GoogleTokenError) => {
-        resolve({
-          ok: false,
-          error: err.message ?? err.type ?? "Google token request failed.",
-        });
-      },
-    });
+  const initialPrompt: "" | "consent" = opts?.prompt ?? "";
 
-    client.requestAccessToken({ prompt: "consent" });
+  return new Promise<DriveTokenResult>((resolve) => {
+    let retriedWithConsent = false;
+
+    function tryRequest(prompt: "" | "consent") {
+      const client = window.google!.accounts.oauth2.initTokenClient({
+        client_id: clientId as string,
+        scope: DRIVE_FILE_SCOPE,
+        callback: (response: GoogleTokenResponse) => {
+          if (response.access_token) {
+            resolve({ ok: true, accessToken: response.access_token });
+          } else {
+            resolve({
+              ok: false,
+              error:
+                response.error_description ??
+                response.error ??
+                "No access token returned.",
+            });
+          }
+        },
+        error_callback: (err: GoogleTokenError) => {
+          if (!retriedWithConsent && prompt === "") {
+            retriedWithConsent = true;
+            tryRequest("consent");
+          } else {
+            resolve({
+              ok: false,
+              error: err.message ?? err.type ?? "Google token request failed.",
+            });
+          }
+        },
+      });
+
+      client.requestAccessToken({ prompt });
+    }
+
+    tryRequest(initialPrompt);
   });
 }
 

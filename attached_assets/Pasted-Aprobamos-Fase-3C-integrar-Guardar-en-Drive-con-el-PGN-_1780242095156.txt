@@ -1,0 +1,106 @@
+Aprobamos Fase 3C: integrar “Guardar en Drive” con el PGN real.
+
+Modo: Economy.
+App testing: desactivado.
+
+Puedes modificar:
+
+* client/src/components/pgn-actions.tsx
+* client/src/lib/google-drive.ts
+* client/src/pages/home.tsx
+
+Puedes borrar:
+
+* client/src/components/drive-test-button.tsx
+
+No modifiques:
+
+* client/src/pages/game-detail.tsx
+* client/src/components/chessboard-viewer.tsx
+* client/src/hooks/use-games.ts
+* server/*
+* shared/*
+* package.json
+* vite.config.ts
+* tailwind.config.ts
+
+Objetivo:
+Añadir en `pgn-actions.tsx` un botón “Guardar en Drive” que suba el PGN real de la partida completada a la carpeta “Chess Games” del Google Drive del usuario.
+
+Condiciones:
+
+1. Reutiliza `uploadPgnToDrive(accessToken, { filename, pgn })`.
+2. El token de Google debe vivir solo en memoria React. Nunca localStorage.
+3. No subir si el PGN está vacío o empieza por `ERROR:`.
+4. Mantener los botones actuales:
+
+   * Copiar PGN
+   * Compartir si navigator.share existe
+   * Descargar .pgn
+5. Añadir botón:
+
+   * ca: “Guardar a Drive”
+   * es: “Guardar en Drive”
+   * en: “Save to Drive”
+6. Estados mínimos:
+
+   * conectando
+   * guardando/subiendo
+   * guardado
+   * error
+7. Toast de éxito:
+
+   * ca: “PGN guardat a Drive”
+   * es: “PGN guardado en Drive”
+   * en: “PGN saved to Drive”
+
+Nombre del archivo:
+
+* Extrae White, Black y Date del PGN si existen.
+* Usa formato seguro:
+  `White_vs_Black_Date.pgn`
+* Sustituye espacios por `_`.
+* Sustituye puntos de fecha por guiones.
+* Elimina caracteres problemáticos para nombres de archivo.
+* Fallback:
+  `chess-game-<gameId>.pgn`
+
+Importante:
+
+* No uses `*` en el nombre del archivo.
+* Si cambias la lógica de prompt de Google, hazlo de forma compatible:
+
+  * `requestGoogleDriveToken({ prompt?: "" | "consent" })`
+  * primera petición puede pedir consentimiento si hace falta
+  * si falla silencioso, fallback claro a consentimiento
+* No rompas el botón de prueba hasta eliminarlo de Home.
+
+Cleanup:
+
+* Elimina el import de `DriveTestButton` de home.tsx.
+* Elimina el JSX del botón de prueba de Home.
+* Borra `client/src/components/drive-test-button.tsx`.
+
+No tocar bajo ningún concepto:
+
+* OCR
+* PGN engine
+* reviewState
+* resume
+* python-chess
+* multi-planilla
+* salto de fila
+* corrección desde tablero
+* idiomas
+* formatos
+
+Después ejecuta:
+npm run check
+npm run build
+python3 -m py_compile server/process_image_gemini.py
+git diff --stat -- server/ shared/
+
+El diff de server/ y shared/ debe estar vacío.
+
+No hagas push.
+No hagas commit manual si Replit crea checkpoint automático.
