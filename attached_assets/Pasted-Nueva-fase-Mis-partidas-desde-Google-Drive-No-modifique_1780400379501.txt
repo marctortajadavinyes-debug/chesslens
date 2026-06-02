@@ -1,0 +1,83 @@
+Nueva fase: Mis partidas desde Google Drive.
+
+No modifiques archivos todavía. Solo analiza y propón plan.
+
+Contexto:
+Ya funciona:
+
+* conexión con Google Drive
+* carpeta "Chess Games"
+* subida de PGN real
+* diálogo de revisión de metadatos
+* appProperties guardadas con:
+
+  * white
+  * black
+  * date
+  * result
+  * userColor
+  * opponent
+  * firstWhiteMoves
+  * firstBlackMoves
+  * source
+  * type
+
+Objetivo:
+Crear una biblioteca “Mis partidas” que lea los PGN guardados en Google Drive y permita buscar rápidamente.
+
+Filtros deseados:
+
+* rival
+* fecha desde / hasta
+* color del usuario: blancas / negras
+* primeras 4 jugadas blancas
+* primeras 4 jugadas negras
+* resultado, si es sencillo
+
+Principio de producto:
+Las partidas viven en el Drive del usuario, no en una nube propia de ChessLens.
+
+Queremos:
+
+1. Listar archivos `.pgn` dentro de la carpeta "Chess Games".
+2. Leer sus appProperties si existen.
+3. Si faltan appProperties, descargar/parsear el PGN como fallback.
+4. Mostrar una lista de partidas.
+5. Permitir filtros combinables.
+6. Permitir abrir una partida guardada para verla en tablero y PGN.
+7. No tocar motor OCR/PGN.
+8. No tocar backend todavía.
+
+No tocar:
+
+* server/*
+* shared/*
+* client/src/components/chessboard-viewer.tsx
+* client/src/hooks/use-games.ts salvo que expliques por qué sería imprescindible
+* OCR
+* PGN engine
+* reviewState
+* resume
+* python-chess
+* multi-planilla
+* salto de fila
+* corrección desde tablero
+* idiomas de planilla
+* formatos de planilla
+
+Analiza y responde:
+
+1. Qué funciones nuevas habría que añadir a google-drive.ts.
+2. Qué componentes/páginas nuevas crearías.
+3. Cómo listar archivos PGN de Drive usando la carpeta "Chess Games".
+4. Cómo leer appProperties.
+5. Cómo descargar el PGN al abrir una partida.
+6. Cómo cargar una partida guardada en un visor sin pasar por OCR.
+7. Qué filtros implementarías primero.
+8. Qué archivos tocarías.
+9. Qué archivos NO tocarías.
+10. Riesgo de cada cambio.
+11. Plan de implementación en subfases pequeñas.
+12. Checks a ejecutar.
+
+No edites nada.

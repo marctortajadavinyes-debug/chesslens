@@ -274,6 +274,61 @@ export async function ensureChessDriveFolder(
   }
 }
 
+// --- Public: list PGN files ---
+
+export interface DriveGameFile {
+  id: string;
+  name: string;
+  createdTime: string;
+  modifiedTime: string;
+  appProperties: Record<string, string>;
+}
+
+export type DriveListResult =
+  | { ok: true; files: DriveGameFile[] }
+  | { ok: false; error: string };
+
+export async function listPgnFilesFromDrive(
+  accessToken: string,
+): Promise<DriveListResult> {
+  try {
+    const folderResult = await ensureChessDriveFolder(accessToken);
+    if (!folderResult.ok) return folderResult;
+
+    const q = encodeURIComponent(
+      `'${folderResult.folderId}' in parents and name contains '.pgn' and trashed=false`,
+    );
+    const fields = encodeURIComponent(
+      "files(id,name,createdTime,modifiedTime,appProperties)",
+    );
+    const url = `${DRIVE_API}/files?q=${q}&fields=${fields}&pageSize=100&orderBy=createdTime+desc`;
+
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+
+    if (!res.ok) {
+      const text = await res.text().catch(() => `HTTP ${res.status}`);
+      throw new Error(`Drive files.list failed: ${text}`);
+    }
+
+    const data: { files?: Partial<DriveGameFile>[] } = await res.json();
+    const files: DriveGameFile[] = (data.files ?? []).map((f) => ({
+      id: f.id ?? "",
+      name: f.name ?? "",
+      createdTime: f.createdTime ?? "",
+      modifiedTime: f.modifiedTime ?? "",
+      appProperties: f.appProperties ?? {},
+    }));
+
+    return { ok: true, files };
+  } catch (err: unknown) {
+    const msg =
+      err instanceof Error ? err.message : "Unknown error listing Drive files.";
+    return { ok: false, error: msg };
+  }
+}
+
 // --- Public: upload PGN ---
 
 const TEST_PGN_CONTENT = `[Event "Chess Games Test"]

@@ -1,0 +1,141 @@
+Nueva fase: Mis partidas desde Google Drive — Subfase A+B+C.
+
+Modo: Economy.
+App testing: desactivado.
+
+Objetivo:
+Crear una primera página “Mis partidas” que liste los PGN guardados en Google Drive dentro de la carpeta “Chess Games”, usando sus appProperties.
+
+No implementar todavía:
+
+* visor con tablero
+* filtros avanzados
+* descarga de PGN al abrir
+* análisis Stockfish
+* fallback parseando PGN si faltan appProperties
+
+Queremos primero validar que el listado desde Drive funciona.
+
+Puedes modificar:
+
+* client/src/lib/google-drive.ts
+* client/src/App.tsx
+* client/src/pages/home.tsx
+
+Puedes crear:
+
+* client/src/hooks/use-drive-library.ts
+* client/src/pages/library.tsx
+
+No crees todavía:
+
+* client/src/components/drive-game-viewer.tsx
+
+No modifiques:
+
+* server/*
+* shared/*
+* client/src/components/chessboard-viewer.tsx
+* client/src/pages/game-detail.tsx
+* client/src/hooks/use-games.ts
+* client/src/components/pgn-actions.tsx
+* client/src/lib/pgn-metadata.ts salvo que sea imprescindible
+* package.json
+* vite.config.ts
+* tailwind.config.ts
+
+Implementación:
+
+1. En `google-drive.ts`, añadir:
+
+   * tipo `DriveGameFile`
+   * función `listPgnFilesFromDrive(accessToken)`
+   * debe usar `ensureChessDriveFolder(accessToken)`
+   * listar archivos dentro de “Chess Games”
+   * solo archivos `.pgn`
+   * `trashed=false`
+   * pedir fields:
+
+     * id
+     * name
+     * createdTime
+     * modifiedTime
+     * appProperties
+   * pageSize 100
+   * orderBy createdTime desc
+   * no cambiar funciones existentes de subida
+
+2. Crear `use-drive-library.ts`:
+
+   * hook propio para biblioteca Drive
+   * estado:
+
+     * accessToken en memoria
+     * files
+     * loading
+     * error
+   * acciones:
+
+     * connectAndLoad()
+     * refresh()
+   * no usar localStorage para tokens
+   * no tocar backend
+
+3. Crear `library.tsx`:
+
+   * página “Mis partidas”
+   * botón “Conectar con Google Drive”
+   * al conectar, listar partidas
+   * mostrar cada partida con:
+
+     * White vs Black
+     * Date
+     * Result
+     * Opponent/Rival si existe
+     * UserColor si existe
+     * firstWhiteMoves
+     * firstBlackMoves
+     * nombre del archivo
+   * si no hay partidas, mostrar estado vacío
+   * textos en catalán/español/inglés si puedes reutilizar patrón existente; si no, catalán por defecto y lo refinamos después
+
+4. En `App.tsx`:
+
+   * añadir ruta `/library`
+
+5. En `home.tsx`:
+
+   * añadir botón/enlace discreto a “Mis partidas”
+   * no tocar lógica de subida
+   * no tocar multi-planilla
+   * no tocar configuración salvo el enlace
+
+Fecha:
+
+* En filtros futuros usaremos YYYY-MM-DD.
+* Para esta subfase, solo mostrar la fecha tal como venga en appProperties.
+* Si viene con puntos o guiones, no transformes todavía.
+
+No tocar bajo ningún concepto:
+
+* OCR
+* PGN engine
+* reviewState
+* resume
+* python-chess
+* multi-planilla
+* salto de fila
+* corrección desde tablero
+* idiomas de planilla
+* formatos de planilla
+
+Después ejecuta:
+npm run check
+npm run build
+python3 -m py_compile server/process_image_gemini.py
+git diff --stat -- server/ shared/
+
+El diff de server/ y shared/ debe estar vacío.
+
+No hagas push.
+No hagas commit manual si Replit crea checkpoint automático.

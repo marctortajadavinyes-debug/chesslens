@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 import { useDropzone } from "react-dropzone";
 import { motion } from "framer-motion";
 import {
@@ -9,6 +9,7 @@ import {
   Play,
   CheckCircle2,
   Settings,
+  Library,
 } from "lucide-react";
 import { useCreateGame, useGames } from "@/hooks/use-games";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ type ChessLensUserSettings = {
 };
 
 type UiText = {
+  library: string;
   settingsButton: string;
   heroTitle: string;
   heroSubtitle: string;
@@ -136,6 +138,7 @@ const SHEET_FORMAT_LABELS: Record<AppLanguage, Record<SheetFormat, string>> = {
 
 const UI_TEXT: Record<AppLanguage, UiText> = {
   ca: {
+    library: "Les meves partides",
     settingsButton: "Configuració",
     heroTitle: "Digitalitza la teva partida d'escacs",
     heroSubtitle: "Puja una o més planelles i genera el PGN automàticament.",
@@ -179,6 +182,7 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     genericErrorTitle: "Error",
   },
   en: {
+    library: "My games",
     settingsButton: "Settings",
     heroTitle: "Digitize your chess game",
     heroSubtitle:
@@ -222,6 +226,7 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     genericErrorTitle: "Error",
   },
   es: {
+    library: "Mis partidas",
     settingsButton: "Configuración",
     heroTitle: "Digitaliza tu partida de ajedrez",
     heroSubtitle: "Sube una o más planillas y genera el PGN automáticamente.",
@@ -440,18 +445,31 @@ export default function Home() {
             <span className="font-display font-bold text-xl">ChessLens</span>
           </div>
 
-          {hasSavedSettings && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowSettings(true)}
-              disabled={isUploading}
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              {t.settingsButton}
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            <Link href="/library">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                data-testid="link-library"
+              >
+                <Library className="w-4 h-4 mr-2" />
+                {t.library}
+              </Button>
+            </Link>
+            {hasSavedSettings && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowSettings(true)}
+                disabled={isUploading}
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                {t.settingsButton}
+              </Button>
+            )}
+          </div>
         </div>
       </header>
 
