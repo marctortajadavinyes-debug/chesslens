@@ -1,0 +1,143 @@
+Hay que corregir la fase de metadatos antes de seguir.
+
+Problemas detectados en prueba real:
+
+1. En el diálogo cambié el rival a “Magnus Carlsen” y añadí fecha, pero el archivo subido a Drive siguió llamándose `Hikaro_Nakamura_vs_Marc_Tortajada.pgn`.
+2. El PGN subido también conserva headers originales:
+
+   * `[White "Hikaro Nakamura"]`
+   * `[Date ""]`
+3. Por tanto, las correcciones del diálogo NO se están aplicando ni al nombre del archivo ni al PGN subido.
+4. Queremos guardar 4 primeras jugadas por color, no 3.
+5. Queremos simplificar el diálogo.
+
+Puedes modificar:
+
+* client/src/lib/pgn-metadata.ts
+* client/src/components/save-game-metadata-dialog.tsx
+* client/src/components/pgn-actions.tsx
+* client/src/lib/google-drive.ts solo si es imprescindible
+
+No modifiques:
+
+* server/*
+* shared/*
+* client/src/pages/game-detail.tsx
+* client/src/components/chessboard-viewer.tsx
+* client/src/hooks/use-games.ts
+* package.json
+* vite.config.ts
+* tailwind.config.ts
+
+Correcciones obligatorias:
+
+1. Aplicar las correcciones del diálogo al PGN subido
+
+   * Si el usuario edita White, Black, Date o Result en el diálogo, el PGN subido debe actualizar esos headers.
+   * Crear función pura en `pgn-metadata.ts`, por ejemplo:
+     `applyMetadataToPgn(pgn, meta)`
+   * Debe actualizar o crear headers:
+
+     * Event
+     * Site
+     * Date
+     * Round
+     * White
+     * Black
+     * Result
+   * Si Result cambia, actualizar también el resultado final al final del PGN si existe.
+
+2. El nombre del archivo debe generarse desde los datos corregidos del diálogo
+
+   * No desde el PGN original.
+   * Si el usuario cambia White/Black/Date, el filename debe reflejarlo.
+   * Ejemplo esperado:
+     `Magnus_Carlsen_vs_Marc_Tortajada_2026-05-20.pgn`
+   * Sanear bien:
+
+     * espacios → `_`
+     * puntos de fecha → guiones
+     * eliminar caracteres problemáticos
+     * no usar `*`
+
+3. Metadatos Drive
+
+   * `appProperties` deben construirse desde los datos corregidos del diálogo, no desde el PGN original.
+   * Deben incluir:
+
+     * white
+     * black
+     * date
+     * result
+     * userColor
+     * opponent
+     * firstWhiteMoves
+     * firstBlackMoves
+     * source
+     * type
+
+4. Primeras jugadas
+
+   * Cambiar de 3 a 4 primeras jugadas por color.
+   * Extraer correctamente por color:
+
+     * blanca 1, negra 1
+     * blanca 2, negra 2
+     * blanca 3, negra 3
+     * blanca 4, negra 4
+   * Mostrar 4 jugadas en el diálogo.
+
+5. Simplificar el diálogo cuando el color se detecta
+
+   * Si `userColor` es `white`:
+
+     * junto al campo White mostrar badge “Jo / Yo / Me”
+     * junto al campo Black mostrar badge “Rival”
+     * no mostrar campos separados “Color del jugador” ni “Rival”
+   * Si `userColor` es `black`:
+
+     * junto al campo White mostrar badge “Rival”
+     * junto al campo Black mostrar badge “Jo / Yo / Me”
+     * no mostrar campos separados “Color del jugador” ni “Rival”
+   * Si `userColor` es `unknown`, mostrar un selector compacto:
+
+     * ca: “Jo jugava amb”
+     * es: “Yo jugaba con”
+     * en: “I played as”
+     * opciones blancas/negras
+     * al elegir, calcular automáticamente el rival.
+
+6. Etiqueta de fecha
+
+   * Cambiar la etiqueta a:
+
+     * ca: `Data (AAAA-MM-DD)`
+     * es: `Fecha (AAAA-MM-DD)`
+     * en: `Date (YYYY-MM-DD)`
+
+7. No añadir todavía la funcionalidad “Suggeriments”
+
+   * La dejamos para una fase separada.
+
+No tocar bajo ningún concepto:
+
+* OCR
+* PGN engine
+* reviewState
+* resume
+* python-chess
+* multi-planilla
+* salto de fila
+* corrección desde tablero
+* idiomas de planilla
+* formatos de planilla
+
+Después ejecuta:
+npm run check
+npm run build
+python3 -m py_compile server/process_image_gemini.py
+git diff --stat -- server/ shared/
+
+El diff de server/ y shared/ debe estar vacío.
+
+No hagas push.

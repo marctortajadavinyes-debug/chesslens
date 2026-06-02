@@ -21,29 +21,7 @@ export function extractPgnHeader(pgn: string, tag: string): string {
   return m ? m[1].trim() : "";
 }
 
-// --- Move extraction ---
-
-function stripBraces(text: string): string {
-  let result = "";
-  let depth = 0;
-  for (const ch of text) {
-    if (ch === "{") { depth++; continue; }
-    if (ch === "}") { depth > 0 && depth--; continue; }
-    if (depth === 0) result += ch;
-  }
-  return result;
-}
-
-function stripParens(text: string): string {
-  let result = "";
-  let depth = 0;
-  for (const ch of text) {
-    if (ch === "(") { depth++; continue; }
-    if (ch === ")") { depth > 0 && depth--; continue; }
-    if (depth === 0) result += ch;
-  }
-  return result;
-}
+// --- Move section helpers ---
 
 function getMoveSection(pgn: string): string {
   const lines = pgn.split("\n");
@@ -61,39 +39,59 @@ function getMoveSection(pgn: string): string {
   return moveLines.join(" ");
 }
 
+function stripBraces(text: string): string {
+  let result = "";
+  let depth = 0;
+  for (const ch of text) {
+    if (ch === "{") { depth++; continue; }
+    if (ch === "}") { if (depth > 0) depth--; continue; }
+    if (depth === 0) result += ch;
+  }
+  return result;
+}
+
+function stripParens(text: string): string {
+  let result = "";
+  let depth = 0;
+  for (const ch of text) {
+    if (ch === "(") { depth++; continue; }
+    if (ch === ")") { if (depth > 0) depth--; continue; }
+    if (depth === 0) result += ch;
+  }
+  return result;
+}
+
+// --- Move extraction ---
+
 /**
- * Extract the first 3 white and first 3 black moves from a PGN.
- * Returns { white: string[], black: string[] } — each array has up to 3 items.
+ * Extract the first 4 white and first 4 black moves from a PGN.
+ * Returns { white: string[], black: string[] } — each array has up to 4 items.
  *
  * Strategy:
  *   1. Isolate the move section (after headers).
  *   2. Strip comments {}, variations (), NAGs $N.
  *   3. Strip move numbers (e.g. "1.", "2...", "...").
  *   4. Strip result tokens (1-0, 0-1, 1/2-1/2, *).
- *   5. Remaining tokens alternate white/black at indices 0,2,4 / 1,3,5.
+ *   5. Remaining tokens alternate white/black at indices 0,2,4,6 / 1,3,5,7.
  */
 export function extractFirstMoves(pgn: string): { white: string[]; black: string[] } {
   let text = getMoveSection(pgn);
   text = stripBraces(text);
   text = stripParens(text);
-  // Remove NAGs
   text = text.replace(/\$\d+/g, " ");
-  // Remove move numbers: "1.", "12.", "1...", "..."
   text = text.replace(/\d+\s*\.{1,3}/g, " ");
   text = text.replace(/\.\.\./g, " ");
-  // Remove results
   text = text.replace(/\b(1-0|0-1|1\/2-1\/2|\*)\b/g, " ");
-  // Collapse whitespace
   const tokens = text.split(/\s+/).filter((t) => t.length > 0);
 
   const white: string[] = [];
   const black: string[] = [];
 
-  for (let i = 0; i < tokens.length && (white.length < 3 || black.length < 3); i++) {
+  for (let i = 0; i < tokens.length && (white.length < 4 || black.length < 4); i++) {
     if (i % 2 === 0) {
-      if (white.length < 3) white.push(tokens[i]);
+      if (white.length < 4) white.push(tokens[i]);
     } else {
-      if (black.length < 3) black.push(tokens[i]);
+      if (black.length < 4) black.push(tokens[i]);
     }
   }
 
@@ -125,7 +123,7 @@ export function detectUserColor(pgn: string, playerAlias: string): UserColor {
   return "unknown";
 }
 
-// --- Filename builder ---
+// --- Filename builder (from meta, not from raw PGN) ---
 
 function sanitizeForFilename(s: string): string {
   return (s ?? "")
@@ -136,18 +134,19 @@ function sanitizeForFilename(s: string): string {
     .replace(/^_|_$/g, "");
 }
 
-export function buildPgnFilename(pgn: string, gameId: number): string {
-  const rawWhite = extractPgnHeader(pgn, "White");
-  const rawBlack = extractPgnHeader(pgn, "Black");
-  const rawDate = extractPgnHeader(pgn, "Date");
-
-  const white = sanitizeForFilename(rawWhite);
-  const black = sanitizeForFilename(rawBlack);
-  const date = rawDate
+function sanitizeDateForFilename(rawDate: string): string {
+  return (rawDate ?? "")
     .replace(/\./g, "-")
     .replace(/[^0-9\-]/g, "")
     .replace(/-{2,}/g, "-")
     .replace(/^-|-$/g, "");
+}
+
+/** Build filename from corrected dialog metadata (not from raw PGN). */
+export function buildFilenameFromMeta(meta: PgnMetadata, gameId: number): string {
+  const white = sanitizeForFilename(meta.white);
+  const black = sanitizeForFilename(meta.black);
+  const date = sanitizeDateForFilename(meta.date);
 
   if (!white && !black) return `chess-game-${gameId}.pgn`;
 
@@ -160,16 +159,93 @@ export function buildPgnFilename(pgn: string, gameId: number): string {
   return parts.join("_").replace(/_{2,}/g, "_") + ".pgn";
 }
 
+/** Legacy: build filename from raw PGN headers (used for Download). */
+export function buildPgnFilename(pgn: string, gameId: number): string {
+  return buildFilenameFromMeta(
+    {
+      white: extractPgnHeader(pgn, "White"),
+      black: extractPgnHeader(pgn, "Black"),
+      date: extractPgnHeader(pgn, "Date"),
+      result: "",
+      userColor: "unknown",
+      opponent: "",
+      firstWhiteMoves: "",
+      firstBlackMoves: "",
+    },
+    gameId,
+  );
+}
+
+// --- Apply dialog corrections to PGN ---
+
+const STR_ORDER = ["Event", "Site", "Date", "Round", "White", "Black", "Result"];
+
+function extractAllHeaders(pgn: string): Array<[string, string]> {
+  const headers: Array<[string, string]> = [];
+  const re = /\[(\w+)\s+"([^"]*)"\]/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(pgn)) !== null) {
+    headers.push([m[1], m[2]]);
+  }
+  return headers;
+}
+
+/**
+ * Apply corrected metadata to the PGN text.
+ * - Overwrites White, Black, Date, Result headers with meta values.
+ * - Ensures all 7 STR headers are present.
+ * - Updates the result token at the end of the move section.
+ * - Preserves non-STR headers (ECO, Opening, etc.).
+ */
+export function applyMetadataToPgn(pgn: string, meta: PgnMetadata): string {
+  const existing = extractAllHeaders(pgn);
+  const headerMap = new Map<string, string>(existing);
+
+  // Override with meta values
+  if (meta.white !== undefined) headerMap.set("White", meta.white || "?");
+  if (meta.black !== undefined) headerMap.set("Black", meta.black || "?");
+  if (meta.date !== undefined) headerMap.set("Date", meta.date || "????.??.??");
+  if (meta.result !== undefined) headerMap.set("Result", meta.result || "*");
+
+  // Ensure all STR tags exist
+  if (!headerMap.has("Event")) headerMap.set("Event", "?");
+  if (!headerMap.has("Site")) headerMap.set("Site", "?");
+  if (!headerMap.has("Round")) headerMap.set("Round", "?");
+
+  // Build header block: STR first, then extras
+  const strBlock = STR_ORDER.map(
+    (tag) => `[${tag} "${headerMap.get(tag) ?? "?"}"]`,
+  );
+  const extraBlock = existing
+    .filter(([tag]) => !STR_ORDER.includes(tag))
+    .map(([tag]) => `[${tag} "${headerMap.get(tag) ?? ""}"]`);
+
+  const headersBlock = [...strBlock, ...extraBlock].join("\n");
+
+  // Update result token at end of move section
+  const moveSection = getMoveSection(pgn).trim();
+  const resultValue = headerMap.get("Result") ?? "*";
+  const resultPattern = /\s*(1-0|0-1|1\/2-1\/2|\*)\s*$/;
+  const updatedMoves = resultPattern.test(moveSection)
+    ? moveSection.replace(resultPattern, " " + resultValue)
+    : moveSection + " " + resultValue;
+
+  return headersBlock + "\n\n" + updatedMoves.trim() + "\n";
+}
+
 // --- Drive appProperties ---
 
 /**
  * Build appProperties for Google Drive upload.
- * All values must be non-empty strings (Drive requirement).
+ * Built from corrected dialog metadata. All values are non-empty strings.
  */
 export function buildDriveAppProperties(
   meta: PgnMetadata,
 ): Record<string, string> {
-  const props: Record<string, string> = {};
+  const props: Record<string, string> = {
+    source: "chesslens",
+    type: "pgn",
+  };
   if (meta.white) props.white = meta.white;
   if (meta.black) props.black = meta.black;
   if (meta.date) props.date = meta.date;
@@ -185,7 +261,7 @@ export function buildDriveAppProperties(
 
 export function extractPgnMetadata(
   pgn: string,
-  gameId: number,
+  _gameId: number,
   playerAlias?: string,
 ): PgnMetadata {
   const white = extractPgnHeader(pgn, "White");

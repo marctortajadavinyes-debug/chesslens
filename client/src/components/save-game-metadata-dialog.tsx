@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -26,13 +27,13 @@ interface DialogText {
   notice: string;
   white: string;
   black: string;
-  date: string;
+  dateLabel: string;
   result: string;
-  userColor: string;
-  userColorWhite: string;
-  userColorBlack: string;
-  userColorUnknown: string;
-  opponent: string;
+  iPlayedAs: string;
+  colorWhite: string;
+  colorBlack: string;
+  badgeMe: string;
+  badgeRival: string;
   firstWhiteMoves: string;
   firstBlackMoves: string;
   cancel: string;
@@ -46,13 +47,13 @@ const TEXT: Record<AppLanguage, DialogText> = {
       "Revisa aquestes dades. ChessLens les farà servir per trobar ràpidament les teves partides per rival, data, color o obertura.",
     white: "Blanques",
     black: "Negres",
-    date: "Data",
+    dateLabel: "Data (AAAA-MM-DD)",
     result: "Resultat",
-    userColor: "Color del jugador",
-    userColorWhite: "Blanques",
-    userColorBlack: "Negres",
-    userColorUnknown: "Desconegut",
-    opponent: "Rival",
+    iPlayedAs: "Jo jugava amb",
+    colorWhite: "Blanques",
+    colorBlack: "Negres",
+    badgeMe: "Jo",
+    badgeRival: "Rival",
     firstWhiteMoves: "Primeres jugades blanques",
     firstBlackMoves: "Primeres jugades negres",
     cancel: "Cancel·lar",
@@ -64,13 +65,13 @@ const TEXT: Record<AppLanguage, DialogText> = {
       "Review this data. ChessLens will use it to quickly find your games by opponent, date, color, or opening.",
     white: "White",
     black: "Black",
-    date: "Date",
+    dateLabel: "Date (YYYY-MM-DD)",
     result: "Result",
-    userColor: "User color",
-    userColorWhite: "White",
-    userColorBlack: "Black",
-    userColorUnknown: "Unknown",
-    opponent: "Opponent",
+    iPlayedAs: "I played as",
+    colorWhite: "White",
+    colorBlack: "Black",
+    badgeMe: "Me",
+    badgeRival: "Rival",
     firstWhiteMoves: "First white moves",
     firstBlackMoves: "First black moves",
     cancel: "Cancel",
@@ -82,13 +83,13 @@ const TEXT: Record<AppLanguage, DialogText> = {
       "Revisa estos datos. ChessLens los usará para encontrar rápidamente tus partidas por rival, fecha, color o apertura.",
     white: "Blancas",
     black: "Negras",
-    date: "Fecha",
+    dateLabel: "Fecha (AAAA-MM-DD)",
     result: "Resultado",
-    userColor: "Color del usuario",
-    userColorWhite: "Blancas",
-    userColorBlack: "Negras",
-    userColorUnknown: "Desconocido",
-    opponent: "Rival",
+    iPlayedAs: "Yo jugaba con",
+    colorWhite: "Blancas",
+    colorBlack: "Negras",
+    badgeMe: "Yo",
+    badgeRival: "Rival",
     firstWhiteMoves: "Primeras jugadas blancas",
     firstBlackMoves: "Primeras jugadas negras",
     cancel: "Cancelar",
@@ -126,6 +127,19 @@ export function SaveGameMetadataDialog({
     setMeta((prev) => ({ ...prev, [key]: value }));
   }
 
+  function handleColorSelect(color: UserColor) {
+    setMeta((prev) => ({
+      ...prev,
+      userColor: color,
+      opponent:
+        color === "white"
+          ? prev.black
+          : color === "black"
+            ? prev.white
+            : prev.opponent,
+    }));
+  }
+
   const formattedWhiteMoves = meta.firstWhiteMoves
     ? meta.firstWhiteMoves.split(",").join(", ")
     : "—";
@@ -133,11 +147,20 @@ export function SaveGameMetadataDialog({
     ? meta.firstBlackMoves.split(",").join(", ")
     : "—";
 
+  const colorKnown = meta.userColor === "white" || meta.userColor === "black";
+
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v && !isPending) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v && !isPending) onClose();
+      }}
+    >
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle data-testid="drive-meta-dialog-title">{t.title}</DialogTitle>
+          <DialogTitle data-testid="drive-meta-dialog-title">
+            {t.title}
+          </DialogTitle>
           <DialogDescription className="text-xs leading-relaxed">
             {t.notice}
           </DialogDescription>
@@ -146,13 +169,35 @@ export function SaveGameMetadataDialog({
         <div className="space-y-3 py-2">
           {/* White */}
           <div className="space-y-1">
-            <Label htmlFor="meta-white" className="text-xs font-medium">
-              {t.white}
-            </Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="meta-white" className="text-xs font-medium">
+                {t.white}
+              </Label>
+              {colorKnown && (
+                <Badge
+                  variant={meta.userColor === "white" ? "default" : "outline"}
+                  className="text-[10px] px-1.5 py-0 h-4"
+                  data-testid="badge-white-role"
+                >
+                  {meta.userColor === "white" ? t.badgeMe : t.badgeRival}
+                </Badge>
+              )}
+            </div>
             <Input
               id="meta-white"
               value={meta.white}
-              onChange={(e) => field("white", e.target.value)}
+              onChange={(e) => {
+                field("white", e.target.value);
+                if (meta.userColor === "black") {
+                  setMeta((prev) => ({
+                    ...prev,
+                    white: e.target.value,
+                    opponent: e.target.value,
+                  }));
+                } else {
+                  field("white", e.target.value);
+                }
+              }}
               className="h-8 text-sm"
               data-testid="input-meta-white"
               disabled={isPending}
@@ -161,23 +206,67 @@ export function SaveGameMetadataDialog({
 
           {/* Black */}
           <div className="space-y-1">
-            <Label htmlFor="meta-black" className="text-xs font-medium">
-              {t.black}
-            </Label>
+            <div className="flex items-center gap-2">
+              <Label htmlFor="meta-black" className="text-xs font-medium">
+                {t.black}
+              </Label>
+              {colorKnown && (
+                <Badge
+                  variant={meta.userColor === "black" ? "default" : "outline"}
+                  className="text-[10px] px-1.5 py-0 h-4"
+                  data-testid="badge-black-role"
+                >
+                  {meta.userColor === "black" ? t.badgeMe : t.badgeRival}
+                </Badge>
+              )}
+            </div>
             <Input
               id="meta-black"
               value={meta.black}
-              onChange={(e) => field("black", e.target.value)}
+              onChange={(e) => {
+                if (meta.userColor === "white") {
+                  setMeta((prev) => ({
+                    ...prev,
+                    black: e.target.value,
+                    opponent: e.target.value,
+                  }));
+                } else {
+                  field("black", e.target.value);
+                }
+              }}
               className="h-8 text-sm"
               data-testid="input-meta-black"
               disabled={isPending}
             />
           </div>
 
+          {/* Compact color selector — shown only when unknown */}
+          {!colorKnown && (
+            <div className="space-y-1">
+              <Label className="text-xs font-medium">{t.iPlayedAs}</Label>
+              <Select
+                value=""
+                onValueChange={(v) => handleColorSelect(v as UserColor)}
+                disabled={isPending}
+              >
+                <SelectTrigger
+                  className="h-8 text-sm"
+                  data-testid="select-meta-i-played-as"
+                >
+                  <SelectValue placeholder="—" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="white">{t.colorWhite}</SelectItem>
+                  <SelectItem value="black">{t.colorBlack}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {/* Date */}
           <div className="space-y-1">
             <Label htmlFor="meta-date" className="text-xs font-medium">
-              {t.date}
+              {t.dateLabel}
             </Label>
             <Input
               id="meta-date"
@@ -213,56 +302,7 @@ export function SaveGameMetadataDialog({
             </Select>
           </div>
 
-          {/* User color */}
-          <div className="space-y-1">
-            <Label className="text-xs font-medium">{t.userColor}</Label>
-            <Select
-              value={meta.userColor}
-              onValueChange={(v) => {
-                const color = v as UserColor;
-                setMeta((prev) => ({
-                  ...prev,
-                  userColor: color,
-                  opponent:
-                    color === "white"
-                      ? prev.black
-                      : color === "black"
-                        ? prev.white
-                        : prev.opponent,
-                }));
-              }}
-              disabled={isPending}
-            >
-              <SelectTrigger
-                className="h-8 text-sm"
-                data-testid="select-meta-user-color"
-              >
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="white">{t.userColorWhite}</SelectItem>
-                <SelectItem value="black">{t.userColorBlack}</SelectItem>
-                <SelectItem value="unknown">{t.userColorUnknown}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Opponent */}
-          <div className="space-y-1">
-            <Label htmlFor="meta-opponent" className="text-xs font-medium">
-              {t.opponent}
-            </Label>
-            <Input
-              id="meta-opponent"
-              value={meta.opponent}
-              onChange={(e) => field("opponent", e.target.value)}
-              className="h-8 text-sm"
-              data-testid="input-meta-opponent"
-              disabled={isPending}
-            />
-          </div>
-
-          {/* Moves — read only */}
+          {/* First moves — read only */}
           <div className="space-y-1">
             <Label className="text-xs font-medium">{t.firstWhiteMoves}</Label>
             <p

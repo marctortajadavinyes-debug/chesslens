@@ -9,7 +9,9 @@ import {
 import {
   extractPgnMetadata,
   buildPgnFilename,
+  buildFilenameFromMeta,
   buildDriveAppProperties,
+  applyMetadataToPgn,
 } from "@/lib/pgn-metadata";
 import type { PgnMetadata } from "@/lib/pgn-metadata";
 import { SaveGameMetadataDialog } from "@/components/save-game-metadata-dialog";
@@ -236,11 +238,12 @@ export function PgnActions({
     setShowMetaDialog(true);
   };
 
-  // Step 2: user confirmed metadata → token → upload
+  // Step 2: user confirmed metadata → apply to PGN → token → upload
   const handleConfirmSave = async (meta: PgnMetadata) => {
     setShowMetaDialog(false);
 
-    const filename = buildPgnFilename(trimmedPgn, gameId);
+    const correctedPgn = applyMetadataToPgn(trimmedPgn, meta);
+    const filename = buildFilenameFromMeta(meta, gameId);
     const appProperties = buildDriveAppProperties(meta);
 
     try {
@@ -261,7 +264,7 @@ export function PgnActions({
       setDriveState("uploading");
       const uploadResult = await uploadPgnToDrive(token, {
         filename,
-        pgn: trimmedPgn,
+        pgn: correctedPgn,
         appProperties,
       });
 
