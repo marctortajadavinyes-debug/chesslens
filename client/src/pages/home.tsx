@@ -449,7 +449,7 @@ export default function Home() {
             <Link href="/library">
               <Button
                 type="button"
-                variant="ghost"
+                variant="default"
                 size="sm"
                 data-testid="link-library"
               >

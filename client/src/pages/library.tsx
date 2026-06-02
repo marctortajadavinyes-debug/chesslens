@@ -68,8 +68,8 @@ const TEXT: Record<AppLanguage, PageText> = {
     userColor: "Color",
     colorWhite: "Blanques",
     colorBlack: "Negres",
-    movesWhite: "Jugades blanques",
-    movesBlack: "Jugades negres",
+    movesWhite: "Blanques comencen amb",
+    movesBlack: "Negres responen amb",
     file: "Fitxer",
     me: "Jo",
   },
@@ -91,8 +91,8 @@ const TEXT: Record<AppLanguage, PageText> = {
     userColor: "Color",
     colorWhite: "White",
     colorBlack: "Black",
-    movesWhite: "White moves",
-    movesBlack: "Black moves",
+    movesWhite: "White starts with",
+    movesBlack: "Black replies with",
     file: "File",
     me: "Me",
   },
@@ -114,8 +114,8 @@ const TEXT: Record<AppLanguage, PageText> = {
     userColor: "Color",
     colorWhite: "Blancas",
     colorBlack: "Negras",
-    movesWhite: "Jugadas blancas",
-    movesBlack: "Jugadas negras",
+    movesWhite: "Blancas empiezan con",
+    movesBlack: "Negras responden con",
     file: "Archivo",
     me: "Yo",
   },
@@ -202,7 +202,7 @@ function GameCard({
             <>
               <span className="font-medium text-foreground">{t.movesWhite}</span>
               <span className="font-mono" data-testid={`text-wmoves-${file.id}`}>
-                {firstWhiteMoves.split(",").join(", ")}
+                {firstWhiteMoves.split(",").filter(Boolean).join(", ")}…
               </span>
             </>
           )}
@@ -210,7 +210,7 @@ function GameCard({
             <>
               <span className="font-medium text-foreground">{t.movesBlack}</span>
               <span className="font-mono" data-testid={`text-bmoves-${file.id}`}>
-                {firstBlackMoves.split(",").join(", ")}
+                {firstBlackMoves.split(",").filter(Boolean).join(", ")}…
               </span>
             </>
           )}

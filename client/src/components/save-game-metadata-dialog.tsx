@@ -28,6 +28,7 @@ interface DialogText {
   white: string;
   black: string;
   dateLabel: string;
+  dateError: string;
   result: string;
   iPlayedAs: string;
   colorWhite: string;
@@ -48,14 +49,15 @@ const TEXT: Record<AppLanguage, DialogText> = {
     white: "Blanques",
     black: "Negres",
     dateLabel: "Data (AAAA-MM-DD)",
+    dateError: "Format no vàlid. Utilitza AAAA-MM-DD",
     result: "Resultat",
     iPlayedAs: "Jo jugava amb",
     colorWhite: "Blanques",
     colorBlack: "Negres",
     badgeMe: "Jo",
     badgeRival: "Rival",
-    firstWhiteMoves: "Primeres jugades blanques",
-    firstBlackMoves: "Primeres jugades negres",
+    firstWhiteMoves: "Blanques comencen amb",
+    firstBlackMoves: "Negres responen amb",
     cancel: "Cancel·lar",
     confirm: "Confirmar i guardar a Drive",
   },
@@ -66,14 +68,15 @@ const TEXT: Record<AppLanguage, DialogText> = {
     white: "White",
     black: "Black",
     dateLabel: "Date (YYYY-MM-DD)",
+    dateError: "Invalid format. Use YYYY-MM-DD",
     result: "Result",
     iPlayedAs: "I played as",
     colorWhite: "White",
     colorBlack: "Black",
     badgeMe: "Me",
-    badgeRival: "Rival",
-    firstWhiteMoves: "First white moves",
-    firstBlackMoves: "First black moves",
+    badgeRival: "Opponent",
+    firstWhiteMoves: "White starts with",
+    firstBlackMoves: "Black replies with",
     cancel: "Cancel",
     confirm: "Confirm and save to Drive",
   },
@@ -84,20 +87,42 @@ const TEXT: Record<AppLanguage, DialogText> = {
     white: "Blancas",
     black: "Negras",
     dateLabel: "Fecha (AAAA-MM-DD)",
+    dateError: "Formato no válido. Usa AAAA-MM-DD",
     result: "Resultado",
     iPlayedAs: "Yo jugaba con",
     colorWhite: "Blancas",
     colorBlack: "Negras",
     badgeMe: "Yo",
     badgeRival: "Rival",
-    firstWhiteMoves: "Primeras jugadas blancas",
-    firstBlackMoves: "Primeras jugadas negras",
+    firstWhiteMoves: "Blancas empiezan con",
+    firstBlackMoves: "Negras responden con",
     cancel: "Cancelar",
     confirm: "Confirmar y guardar en Drive",
   },
 };
 
 const RESULTS = ["*", "1-0", "0-1", "1/2-1/2"];
+
+/** Returns true if dateStr is empty (allowed) or is a valid YYYY-MM-DD date. */
+function isValidDate(dateStr: string): boolean {
+  if (!dateStr.trim()) return true;
+  const m = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return false;
+  const year = parseInt(m[1], 10);
+  const month = parseInt(m[2], 10);
+  const day = parseInt(m[3], 10);
+  if (month < 1 || month > 12) return false;
+  if (day < 1) return false;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  return day <= daysInMonth;
+}
+
+function formatMoves(csv: string): string {
+  if (!csv) return "—";
+  const parts = csv.split(",").filter(Boolean);
+  if (parts.length === 0) return "—";
+  return parts.join(", ") + "…";
+}
 
 interface SaveGameMetadataDialogProps {
   open: boolean;
@@ -140,14 +165,9 @@ export function SaveGameMetadataDialog({
     }));
   }
 
-  const formattedWhiteMoves = meta.firstWhiteMoves
-    ? meta.firstWhiteMoves.split(",").join(", ")
-    : "—";
-  const formattedBlackMoves = meta.firstBlackMoves
-    ? meta.firstBlackMoves.split(",").join(", ")
-    : "—";
-
   const colorKnown = meta.userColor === "white" || meta.userColor === "black";
+  const dateInvalid = !isValidDate(meta.date);
+  const canConfirm = !isPending && !dateInvalid;
 
   return (
     <Dialog
@@ -187,7 +207,6 @@ export function SaveGameMetadataDialog({
               id="meta-white"
               value={meta.white}
               onChange={(e) => {
-                field("white", e.target.value);
                 if (meta.userColor === "black") {
                   setMeta((prev) => ({
                     ...prev,
@@ -272,10 +291,21 @@ export function SaveGameMetadataDialog({
               id="meta-date"
               value={meta.date}
               onChange={(e) => field("date", e.target.value)}
-              className="h-8 text-sm"
+              className={[
+                "h-8 text-sm",
+                dateInvalid ? "border-destructive focus-visible:ring-destructive" : "",
+              ].join(" ")}
               data-testid="input-meta-date"
               disabled={isPending}
             />
+            {dateInvalid && (
+              <p
+                className="text-xs text-destructive"
+                data-testid="text-date-error"
+              >
+                {t.dateError}
+              </p>
+            )}
           </div>
 
           {/* Result */}
@@ -309,7 +339,7 @@ export function SaveGameMetadataDialog({
               className="text-sm text-muted-foreground font-mono px-3 py-1.5 bg-muted/40 rounded-md"
               data-testid="text-first-white-moves"
             >
-              {formattedWhiteMoves}
+              {formatMoves(meta.firstWhiteMoves)}
             </p>
           </div>
 
@@ -319,7 +349,7 @@ export function SaveGameMetadataDialog({
               className="text-sm text-muted-foreground font-mono px-3 py-1.5 bg-muted/40 rounded-md"
               data-testid="text-first-black-moves"
             >
-              {formattedBlackMoves}
+              {formatMoves(meta.firstBlackMoves)}
             </p>
           </div>
         </div>
@@ -337,7 +367,7 @@ export function SaveGameMetadataDialog({
           <Button
             type="button"
             onClick={() => onConfirm(meta)}
-            disabled={isPending}
+            disabled={!canConfirm}
             data-testid="button-drive-meta-confirm"
           >
             {t.confirm}

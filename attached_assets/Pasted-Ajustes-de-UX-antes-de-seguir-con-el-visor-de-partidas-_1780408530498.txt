@@ -1,0 +1,124 @@
+Ajustes de UX antes de seguir con el visor de partidas.
+
+Modo: Economy.
+App testing: desactivado.
+
+Objetivo:
+Corregir detalles detectados en “Mis partidas” y en el diálogo de guardado en Drive.
+
+Puedes modificar:
+
+* client/src/pages/home.tsx
+* client/src/pages/library.tsx
+* client/src/components/save-game-metadata-dialog.tsx
+* client/src/lib/pgn-metadata.ts solo si hace falta para validación de fecha
+
+No modifiques:
+
+* server/*
+* shared/*
+* client/src/components/chessboard-viewer.tsx
+* client/src/pages/game-detail.tsx
+* client/src/hooks/use-games.ts
+* client/src/components/pgn-actions.tsx salvo que sea imprescindible
+* package.json
+* vite.config.ts
+* tailwind.config.ts
+
+Cambios:
+
+1. Validación de fecha en el diálogo de guardado en Drive
+
+   * El campo fecha debe aceptar solo formato:
+     AAAA-MM-DD / YYYY-MM-DD
+   * Validar que:
+
+     * mes está entre 01 y 12
+     * día está entre 01 y 31
+     * si puedes, validar también días reales por mes y año bisiesto
+   * Ejemplo inválido:
+     2026-05-2020
+   * Si la fecha es inválida:
+
+     * mostrar mensaje de error debajo del campo
+     * desactivar “Confirmar y guardar en Drive”
+   * Mantener etiqueta:
+
+     * ca: Data (AAAA-MM-DD)
+     * es: Fecha (AAAA-MM-DD)
+     * en: Date (YYYY-MM-DD)
+
+2. Mantener simplificación del diálogo
+
+   * Si la app detecta el jugador:
+
+     * no mostrar campos separados “Color del jugador” ni “Rival”
+     * mostrar badges junto a Blancas/Negras:
+
+       * ca: Jo / Rival
+       * es: Yo / Rival
+       * en: Me / Opponent
+   * Si no detecta el jugador, mantener selector compacto para elegir color.
+
+3. Cambiar textos de primeras jugadas
+   En la página “Mis partidas” y, si aparece también en el diálogo, usar:
+
+   * ca:
+
+     * Blanques comencen amb
+     * Negres responen amb
+   * es:
+
+     * Blancas empiezan con
+     * Negras responden con
+   * en:
+
+     * White starts with
+     * Black replies with
+
+4. Mostrar las 4 jugadas con puntos suspensivos
+
+   * Si hay jugadas, mostrarlas así:
+     e4, Nf3, Bb5, Ba4…
+   * No hace falta si no hay jugadas.
+   * No cambiar la lógica de extracción, solo presentación si ya hay 4.
+
+5. Botón “Les meves partides / Mis partidas / My games” en Home
+
+   * Debe tener misma altura visual que “Configuració”.
+   * Debe estar centrado verticalmente.
+   * Debe ser más protagonista:
+
+     * fondo negro
+     * texto blanco
+     * icono visible
+   * Mantener “Configuració” como botón secundario.
+   * No tocar lógica de subida ni multi-planilla.
+
+6. No cambiar ahora la necesidad de conectar a Google Drive
+
+   * Es correcto que pida conexión porque el token vive solo en memoria.
+   * No guardar tokens en localStorage.
+
+No tocar bajo ningún concepto:
+
+* OCR
+* PGN engine
+* reviewState
+* resume
+* python-chess
+* multi-planilla
+* salto de fila
+* corrección desde tablero
+* idiomas de planilla
+* formatos de planilla
+
+Después ejecuta:
+npm run check
+npm run build
+python3 -m py_compile server/process_image_gemini.py
+git diff --stat -- server/ shared/
+
+El diff de server/ y shared/ debe estar vacío.
+
+No hagas push.
