@@ -1,0 +1,95 @@
+Nueva subfase: filtros combinables en “Mis partidas”.
+
+Modo: Economy.
+App testing: desactivado.
+
+Objetivo:
+Añadir filtros en la página “Mis partidas” para buscar partidas guardadas en Google Drive usando appProperties ya existentes.
+
+Filtros a implementar:
+
+* Rival / Opponent
+* Fecha desde
+* Fecha hasta
+* Color del usuario: todos / blancas / negras
+* Resultado: todos / 1-0 / 0-1 / 1/2-1/2 / *
+* Blanques comencen amb / Blancas empiezan con / White starts with
+* Negres responen amb / Negras responden con / Black replies with
+
+Condiciones:
+
+* Todos los filtros deben ser combinables.
+* Filtrar solo en cliente sobre los archivos ya listados desde Drive.
+* No hacer llamadas extra a Drive para filtrar.
+* Usar appProperties:
+
+  * opponent
+  * date
+  * userColor
+  * result
+  * firstWhiteMoves
+  * firstBlackMoves
+* Normalizar texto:
+
+  * minúsculas
+  * sin tildes si es sencillo
+  * búsqueda parcial con includes()
+* Para primeras jugadas, permitir escribir por ejemplo:
+
+  * e4
+  * e4 Nf3
+  * e4,Nf3
+  * d4 c4
+    y compararlo contra firstWhiteMoves / firstBlackMoves.
+
+Puedes modificar:
+
+* client/src/pages/library.tsx
+* client/src/hooks/use-drive-library.ts si lo ves necesario
+
+No modifiques:
+
+* server/*
+* shared/*
+* client/src/components/chessboard-viewer.tsx
+* client/src/pages/game-detail.tsx
+* client/src/hooks/use-games.ts
+* client/src/pages/home.tsx salvo que sea imprescindible
+* client/src/components/pgn-actions.tsx
+* package.json
+* vite.config.ts
+* tailwind.config.ts
+
+UI:
+
+* Añadir un bloque de filtros arriba de la lista.
+* Debe ser usable en móvil.
+* Añadir botón “Netejar filtres / Limpiar filtros / Clear filters”.
+* Mostrar contador:
+
+  * “X partides” / “X partidas” / “X games”
+* Si no hay resultados, mostrar mensaje de estado vacío filtrado.
+
+No tocar bajo ningún concepto:
+
+* OCR
+* PGN engine
+* reviewState
+* resume
+* python-chess
+* multi-planilla
+* salto de fila
+* corrección desde tablero
+* idiomas de planilla
+* formatos de planilla
+
+Después ejecuta:
+npm run check
+npm run build
+python3 -m py_compile server/process_image_gemini.py
+git diff --stat -- server/ shared/
+
+El diff de server/ y shared/ debe estar vacío.
+
+No hagas push.
+No hagas commit manual si Replit crea checkpoint automático.
