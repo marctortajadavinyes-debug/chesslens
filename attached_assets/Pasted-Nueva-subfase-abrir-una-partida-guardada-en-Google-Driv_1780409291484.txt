@@ -1,0 +1,109 @@
+Nueva subfase: abrir una partida guardada en Google Drive en un visor.
+
+Modo: Economy.
+App testing: desactivado.
+
+Objetivo:
+Desde la página “Mis partidas”, al hacer clic en una partida guardada en Drive, descargar su PGN y mostrarlo en un visor con tablero + lista de jugadas + acciones PGN.
+
+No pasar por OCR.
+No tocar backend.
+No tocar motor.
+
+Puedes modificar:
+
+* client/src/lib/google-drive.ts
+* client/src/hooks/use-drive-library.ts
+* client/src/pages/library.tsx
+
+Puedes crear:
+
+* client/src/components/drive-game-viewer.tsx
+
+No modifiques:
+
+* server/*
+* shared/*
+* client/src/components/chessboard-viewer.tsx
+* client/src/pages/game-detail.tsx
+* client/src/hooks/use-games.ts
+* client/src/pages/home.tsx salvo que sea imprescindible
+* package.json
+* vite.config.ts
+* tailwind.config.ts
+
+Implementación:
+
+1. En `google-drive.ts`, añadir función:
+
+   * `downloadPgnContent(accessToken, fileId)`
+   * debe llamar a:
+     `GET https://www.googleapis.com/drive/v3/files/{fileId}?alt=media`
+   * devolver texto PGN
+   * manejar errores claros
+
+2. En `use-drive-library.ts`:
+
+   * añadir caché en memoria de PGN por fileId
+   * añadir acción `loadPgnContent(file)`
+   * si ya está en caché, reutilizar
+   * no guardar PGN en localStorage
+
+3. Crear `drive-game-viewer.tsx`:
+
+   * recibe:
+
+     * file
+     * pgn
+     * appLanguage
+     * onClose
+   * muestra:
+
+     * cabecera White vs Black
+     * fecha / resultado si existen
+     * tablero usando `ChessboardViewer`
+     * acciones PGN usando `PgnActions`
+   * debe usar `ChessboardViewer` como visor, sin modificarlo
+   * no pasar props de review/corrección/OCR
+
+4. En `library.tsx`:
+
+   * al hacer clic en una partida:
+
+     * descargar PGN
+     * abrir el visor
+   * puede ser un panel, modal o bloque debajo/lista, lo más simple y robusto
+   * mostrar estado “Cargando partida…” mientras descarga
+   * mostrar error si falla
+
+No implementar todavía:
+
+* filtros avanzados
+* análisis Stockfish
+* edición de PGN guardado
+* guardar imagen de planilla
+* borrar archivos de Drive
+
+No tocar bajo ningún concepto:
+
+* OCR
+* PGN engine
+* reviewState
+* resume
+* python-chess
+* multi-planilla
+* salto de fila
+* corrección desde tablero
+* idiomas de planilla
+* formatos de planilla
+
+Después ejecuta:
+npm run check
+npm run build
+python3 -m py_compile server/process_image_gemini.py
+git diff --stat -- server/ shared/
+
+El diff de server/ y shared/ debe estar vacío.
+
+No hagas push.
+No hagas commit manual si Replit crea checkpoint automático.

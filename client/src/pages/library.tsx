@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Link } from "wouter";
-import { CloudDownload, RefreshCw, ArrowLeft, Loader2, FolderOpen } from "lucide-react";
+import { CloudDownload, RefreshCw, ArrowLeft, Loader2, FolderOpen, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useDriveLibrary } from "@/hooks/use-drive-library";
+import { DriveGameViewer } from "@/components/drive-game-viewer";
+import { useToast } from "@/hooks/use-toast";
 import type { DriveGameFile } from "@/lib/google-drive";
 
 type AppLanguage = "ca" | "en" | "es";
@@ -47,6 +49,8 @@ type PageText = {
   movesBlack: string;
   file: string;
   me: string;
+  loadingGame: string;
+  gameLoadError: string;
 };
 
 const TEXT: Record<AppLanguage, PageText> = {
@@ -72,6 +76,8 @@ const TEXT: Record<AppLanguage, PageText> = {
     movesBlack: "Negres responen amb",
     file: "Fitxer",
     me: "Jo",
+    loadingGame: "Carregant partida...",
+    gameLoadError: "Error carregant la partida",
   },
   en: {
     title: "My games",
@@ -95,6 +101,8 @@ const TEXT: Record<AppLanguage, PageText> = {
     movesBlack: "Black replies with",
     file: "File",
     me: "Me",
+    loadingGame: "Loading game...",
+    gameLoadError: "Error loading game",
   },
   es: {
     title: "Mis partidas",
@@ -118,6 +126,8 @@ const TEXT: Record<AppLanguage, PageText> = {
     movesBlack: "Negras responden con",
     file: "Archivo",
     me: "Yo",
+    loadingGame: "Cargando partida...",
+    gameLoadError: "Error al cargar la partida",
   },
 };
 
@@ -133,9 +143,13 @@ function colorBadgeLabel(
 function GameCard({
   file,
   t,
+  onOpen,
+  isLoading,
 }: {
   file: DriveGameFile;
   t: PageText;
+  onOpen: () => void;
+  isLoading: boolean;
 }) {
   const p = file.appProperties;
   const white = p.white ?? "";
@@ -151,9 +165,21 @@ function GameCard({
 
   return (
     <div
-      className="rounded-xl border bg-card p-4 space-y-3"
+      className="rounded-xl border bg-card p-4 space-y-3 cursor-pointer hover:bg-muted/30 active:bg-muted/50 transition-colors relative select-none"
       data-testid={`card-drive-game-${file.id}`}
+      onClick={onOpen}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
     >
+      {/* Loading overlay */}
+      {isLoading && (
+        <div className="absolute inset-0 rounded-xl bg-background/70 flex items-center justify-center z-10">
+          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          <span className="ml-2 text-sm text-muted-foreground">{t.loadingGame}</span>
+        </div>
+      )}
+
       {/* Header row */}
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
@@ -180,6 +206,7 @@ function GameCard({
               {t.me} · {colorBadgeLabel(t, userColor)}
             </Badge>
           )}
+          <ChevronRight className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
         </div>
       </div>
 
@@ -233,8 +260,39 @@ function GameCard({
 export default function Library() {
   const [appLanguage] = useState<AppLanguage>(() => readAppLanguage());
   const t = TEXT[appLanguage] ?? TEXT.ca;
-  const { files, loading, error, connected, connectAndLoad, refresh } =
+  const { toast } = useToast();
+
+  const { files, loading, error, connected, connectAndLoad, refresh, loadPgnContent } =
     useDriveLibrary();
+
+  const [loadingFileId, setLoadingFileId] = useState<string | null>(null);
+  const [viewerFile, setViewerFile] = useState<DriveGameFile | null>(null);
+  const [viewerPgn, setViewerPgn] = useState<string | null>(null);
+
+  const handleOpenGame = useCallback(
+    async (file: DriveGameFile) => {
+      if (loadingFileId) return; // already loading something
+      setLoadingFileId(file.id);
+      const result = await loadPgnContent(file);
+      setLoadingFileId(null);
+      if (result.ok) {
+        setViewerFile(file);
+        setViewerPgn(result.pgn);
+      } else {
+        toast({
+          title: t.gameLoadError,
+          description: result.error,
+          variant: "destructive",
+        });
+      }
+    },
+    [loadingFileId, loadPgnContent, t.gameLoadError, toast],
+  );
+
+  const handleCloseViewer = useCallback(() => {
+    setViewerFile(null);
+    setViewerPgn(null);
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -317,7 +375,13 @@ export default function Library() {
         {connected && !loading && !error && files.length > 0 && (
           <div className="space-y-3" data-testid="library-game-list">
             {files.map((file) => (
-              <GameCard key={file.id} file={file} t={t} />
+              <GameCard
+                key={file.id}
+                file={file}
+                t={t}
+                onOpen={() => handleOpenGame(file)}
+                isLoading={loadingFileId === file.id}
+              />
             ))}
           </div>
         )}
@@ -334,6 +398,16 @@ export default function Library() {
           </div>
         )}
       </main>
+
+      {/* Game viewer */}
+      {viewerFile && viewerPgn !== null && (
+        <DriveGameViewer
+          file={viewerFile}
+          pgn={viewerPgn}
+          appLanguage={appLanguage}
+          onClose={handleCloseViewer}
+        />
+      )}
     </div>
   );
 }

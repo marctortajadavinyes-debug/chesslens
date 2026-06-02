@@ -329,6 +329,34 @@ export async function listPgnFilesFromDrive(
   }
 }
 
+// --- Public: download PGN content ---
+
+export type DriveDownloadResult =
+  | { ok: true; pgn: string }
+  | { ok: false; error: string };
+
+export async function downloadPgnContent(
+  accessToken: string,
+  fileId: string,
+): Promise<DriveDownloadResult> {
+  try {
+    const url = `${DRIVE_API}/files/${fileId}?alt=media`;
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => `HTTP ${res.status}`);
+      throw new Error(`Drive download failed (${res.status}): ${text}`);
+    }
+    const pgn = await res.text();
+    return { ok: true, pgn };
+  } catch (err: unknown) {
+    const msg =
+      err instanceof Error ? err.message : "Unknown error downloading PGN.";
+    return { ok: false, error: msg };
+  }
+}
+
 // --- Public: upload PGN ---
 
 const TEST_PGN_CONTENT = `[Event "Chess Games Test"]
