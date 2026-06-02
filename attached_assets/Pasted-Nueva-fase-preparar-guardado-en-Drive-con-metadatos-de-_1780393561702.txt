@@ -1,0 +1,87 @@
+Nueva fase: preparar guardado en Drive con metadatos de búsqueda.
+
+No modifiques archivos todavía. Solo analiza y propón plan.
+
+Objetivo:
+Cuando el usuario guarde una partida en Drive, ChessLens debe extraer del PGN los datos necesarios para búsquedas futuras:
+
+* jugador con blancas
+* jugador con negras
+* fecha
+* resultado
+* color del usuario: blancas o negras
+* rival
+* primeras 3 jugadas blancas
+* primeras 3 jugadas negras
+
+Principio de producto:
+Simplificar. No queremos que el usuario rellene todo manualmente.
+
+Cambio de concepto:
+En configuración, sustituir visualmente “Alias” por “Nombre del jugador”.
+Ese nombre debe servir para detectar automáticamente si el usuario jugaba con blancas o negras comparándolo con los headers del PGN:
+
+* [White "..."]
+* [Black "..."]
+
+No añadir botón “Yo / Me / Jo” de momento. La app debe intentar detectarlo automáticamente.
+
+Flujo deseado al pulsar “Guardar en Drive”:
+
+1. La app lee el PGN final.
+2. Extrae White, Black, Date, Result y primeras jugadas.
+3. Compara “Nombre del jugador” con White/Black.
+4. Detecta color del usuario y rival.
+5. Antes de subir a Drive, muestra un recuadro/modal de confirmación:
+   “Revisa estos datos. ChessLens los usará para que puedas encontrar rápidamente tus partidas por rival, fecha, color o apertura.”
+6. El usuario puede corregir:
+
+   * nombre del jugador si hace falta
+   * rival
+   * fecha
+   * color: blancas/negras
+7. Al confirmar, se sube el PGN a Drive.
+8. Además del PGN, guardar metadatos de búsqueda en Drive si es viable, por ejemplo appProperties:
+
+   * white
+   * black
+   * date
+   * result
+   * userColor
+   * opponent
+   * firstWhiteMoves
+   * firstBlackMoves
+   * source = chess-app
+   * type = pgn
+
+No tocar:
+
+* server/*
+* shared/*
+* client/src/components/chessboard-viewer.tsx
+* client/src/hooks/use-games.ts
+* OCR
+* PGN engine
+* reviewState
+* resume
+* python-chess
+* multi-planilla
+* salto de fila
+* corrección desde tablero
+* idiomas
+* formatos
+
+Analiza y responde:
+
+1. Dónde está ahora el campo “Alias” o configuración de usuario.
+2. Cómo cambiarlo visualmente a “Nombre del jugador” sin romper contratos internos.
+3. Qué archivos tocarías.
+4. Si conviene crear un componente nuevo tipo `save-game-metadata-dialog.tsx`.
+5. Cómo extraer primeras 3 jugadas blancas/negras del PGN.
+6. Cómo detectar automáticamente el color del usuario.
+7. Cómo guardar esos metadatos en Drive.
+8. Riesgo de cada cambio.
+9. Plan de implementación por pasos pequeños.
+10. Checks a ejecutar.
+
+No edites nada.

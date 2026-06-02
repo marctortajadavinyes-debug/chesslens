@@ -198,9 +198,14 @@ async function uploadMultipart(
   mimeType: string,
   content: string,
   folderId: string,
+  appProperties?: Record<string, string>,
 ): Promise<string> {
   const boundary = "chesslens_boundary_" + Math.random().toString(36).slice(2);
-  const metadata = JSON.stringify({ name: filename, parents: [folderId] });
+  const metaObj: Record<string, unknown> = { name: filename, parents: [folderId] };
+  if (appProperties && Object.keys(appProperties).length > 0) {
+    metaObj.appProperties = appProperties;
+  }
+  const metadata = JSON.stringify(metaObj);
 
   const body = [
     `--${boundary}`,
@@ -284,7 +289,11 @@ const TEST_PGN_CONTENT = `[Event "Chess Games Test"]
 
 export async function uploadPgnToDrive(
   accessToken: string,
-  opts?: { filename?: string; pgn?: string },
+  opts?: {
+    filename?: string;
+    pgn?: string;
+    appProperties?: Record<string, string>;
+  },
 ): Promise<DriveUploadResult> {
   try {
     const folderResult = await ensureChessDriveFolder(accessToken);
@@ -299,6 +308,7 @@ export async function uploadPgnToDrive(
       "application/x-chess-pgn",
       pgn,
       folderResult.folderId,
+      opts?.appProperties,
     );
 
     return { ok: true, fileId };

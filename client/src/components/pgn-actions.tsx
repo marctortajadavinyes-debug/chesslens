@@ -6,6 +6,13 @@ import {
   requestGoogleDriveToken,
   uploadPgnToDrive,
 } from "@/lib/google-drive";
+import {
+  extractPgnMetadata,
+  buildPgnFilename,
+  buildDriveAppProperties,
+} from "@/lib/pgn-metadata";
+import type { PgnMetadata } from "@/lib/pgn-metadata";
+import { SaveGameMetadataDialog } from "@/components/save-game-metadata-dialog";
 
 type AppLanguage = "ca" | "en" | "es";
 
@@ -91,45 +98,22 @@ const TEXT: Record<AppLanguage, ActionsText> = {
 
 type DriveState = "idle" | "connecting" | "uploading" | "saved" | "error";
 
-function sanitizeForFilename(s: string): string {
-  return s
-    .replace(/\*/g, "")
-    .replace(/[/\\:?"<>|]/g, "")
-    .replace(/\s+/g, "_")
-    .replace(/_{2,}/g, "_")
-    .replace(/^_|_$/g, "");
-}
+const SETTINGS_STORAGE_KEY = "chesslens_user_settings_v1";
 
-function pgnHeader(pgn: string, tag: string): string {
-  const m = pgn.match(new RegExp(`\\[${tag}\\s+"([^"]*)"\\]`));
-  return m ? m[1].trim() : "";
-}
-
-function buildPgnFilename(pgn: string, gameId: number): string {
-  const rawWhite = pgnHeader(pgn, "White");
-  const rawBlack = pgnHeader(pgn, "Black");
-  const rawDate = pgnHeader(pgn, "Date");
-
-  const white = sanitizeForFilename(rawWhite);
-  const black = sanitizeForFilename(rawBlack);
-  const date = rawDate
-    .replace(/\./g, "-")
-    .replace(/[^0-9\-]/g, "")
-    .replace(/-{2,}/g, "-")
-    .replace(/^-|-$/g, "");
-
-  if (!white && !black) {
-    return `chess-game-${gameId}.pgn`;
+function readPlayerAlias(): string {
+  try {
+    const raw = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (!raw) return "";
+    const parsed: unknown = JSON.parse(raw);
+    if (parsed && typeof parsed === "object" && "alias" in parsed) {
+      return typeof (parsed as { alias: unknown }).alias === "string"
+        ? ((parsed as { alias: string }).alias ?? "")
+        : "";
+    }
+    return "";
+  } catch {
+    return "";
   }
-
-  const nameParts: string[] = [];
-  if (white) nameParts.push(white);
-  nameParts.push("vs");
-  if (black) nameParts.push(black);
-  if (date) nameParts.push(date);
-
-  const base = nameParts.join("_").replace(/_{2,}/g, "_");
-  return base + ".pgn";
 }
 
 function isErrorPgn(pgn: string) {
@@ -149,7 +133,6 @@ async function copyToClipboard(text: string): Promise<boolean> {
   } catch {
     // Fall through to legacy fallback
   }
-
   try {
     const textarea = document.createElement("textarea");
     textarea.value = text;
@@ -177,9 +160,12 @@ export function PgnActions({
 }: PgnActionsProps) {
   const t = TEXT[appLanguage] ?? TEXT.ca;
   const { toast } = useToast();
+
   const [isWorking, setIsWorking] = useState(false);
   const [driveState, setDriveState] = useState<DriveState>("idle");
   const [driveToken, setDriveToken] = useState<string | null>(null);
+  const [showMetaDialog, setShowMetaDialog] = useState(false);
+  const [pendingMeta, setPendingMeta] = useState<PgnMetadata | null>(null);
 
   const trimmedPgn = useMemo(() => (pgn ?? "").trim(), [pgn]);
   const hasPgn = trimmedPgn.length > 0;
@@ -191,27 +177,19 @@ export function PgnActions({
     typeof navigator !== "undefined" &&
     typeof (navigator as Navigator & { share?: unknown }).share === "function";
 
-  if (!hasPgn) {
-    return null;
-  }
+  if (!hasPgn) return null;
+
+  // --- Handlers ---
 
   const handleCopy = async () => {
     if (disabled) return;
     setIsWorking(true);
     const ok = await copyToClipboard(trimmedPgn);
     setIsWorking(false);
-
     if (ok) {
-      toast({
-        title: t.copiedTitle,
-        description: t.copiedDescription,
-        duration: 1500,
-      });
+      toast({ title: t.copiedTitle, description: t.copiedDescription, duration: 1500 });
     } else {
-      toast({
-        title: t.copyErrorTitle,
-        variant: "destructive",
-      });
+      toast({ title: t.copyErrorTitle, variant: "destructive" });
     }
   };
 
@@ -221,17 +199,11 @@ export function PgnActions({
     try {
       await (navigator as Navigator & {
         share: (data: ShareData) => Promise<void>;
-      }).share({
-        title: `ChessLens #${gameId}`,
-        text: trimmedPgn,
-      });
+      }).share({ title: `ChessLens #${gameId}`, text: trimmedPgn });
     } catch (err) {
       const name = (err as { name?: string })?.name;
       if (name !== "AbortError") {
-        toast({
-          title: t.shareErrorTitle,
-          variant: "destructive",
-        });
+        toast({ title: t.shareErrorTitle, variant: "destructive" });
       }
     } finally {
       setIsWorking(false);
@@ -241,9 +213,7 @@ export function PgnActions({
   const handleDownload = () => {
     if (disabled) return;
     try {
-      const blob = new Blob([trimmedPgn], {
-        type: "application/x-chess-pgn",
-      });
+      const blob = new Blob([trimmedPgn], { type: "application/x-chess-pgn" });
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
       anchor.href = url;
@@ -253,18 +223,25 @@ export function PgnActions({
       document.body.removeChild(anchor);
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch {
-      toast({
-        title: t.copyErrorTitle,
-        variant: "destructive",
-      });
+      toast({ title: t.copyErrorTitle, variant: "destructive" });
     }
   };
 
-  const handleDrive = async () => {
+  // Step 1: open dialog with auto-detected metadata
+  const handleDriveClick = () => {
     if (disabled || drivePending) return;
-    if (invalid) return;
+    const playerAlias = readPlayerAlias();
+    const meta = extractPgnMetadata(trimmedPgn, gameId, playerAlias);
+    setPendingMeta(meta);
+    setShowMetaDialog(true);
+  };
+
+  // Step 2: user confirmed metadata → token → upload
+  const handleConfirmSave = async (meta: PgnMetadata) => {
+    setShowMetaDialog(false);
 
     const filename = buildPgnFilename(trimmedPgn, gameId);
+    const appProperties = buildDriveAppProperties(meta);
 
     try {
       let token = driveToken;
@@ -285,6 +262,7 @@ export function PgnActions({
       const uploadResult = await uploadPgnToDrive(token, {
         filename,
         pgn: trimmedPgn,
+        appProperties,
       });
 
       if (!uploadResult.ok) {
@@ -303,6 +281,10 @@ export function PgnActions({
     }
   };
 
+  const handleMetaClose = () => {
+    if (!drivePending) setShowMetaDialog(false);
+  };
+
   const driveLabel = (() => {
     if (driveState === "connecting") return t.driveConnecting;
     if (driveState === "uploading") return t.driveUploading;
@@ -311,76 +293,89 @@ export function PgnActions({
   })();
 
   return (
-    <div
-      className={[
-        "rounded-xl border bg-card p-3 space-y-2",
-        className ?? "",
-      ].join(" ")}
-      data-testid="pgn-actions"
-    >
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">{t.title}</h3>
-      </div>
+    <>
+      <div
+        className={[
+          "rounded-xl border bg-card p-3 space-y-2",
+          className ?? "",
+        ].join(" ")}
+        data-testid="pgn-actions"
+      >
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold">{t.title}</h3>
+        </div>
 
-      {invalid ? (
-        <p className="text-xs text-muted-foreground">{t.pgnInvalid}</p>
-      ) : null}
+        {invalid ? (
+          <p className="text-xs text-muted-foreground">{t.pgnInvalid}</p>
+        ) : null}
 
-      <div className="flex flex-wrap gap-2">
-        <Button
-          type="button"
-          variant="default"
-          size={size}
-          onClick={handleCopy}
-          disabled={disabled}
-          data-testid="button-pgn-copy"
-        >
-          <Copy className="w-4 h-4 mr-2" />
-          {t.copy}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="default"
+            size={size}
+            onClick={handleCopy}
+            disabled={disabled}
+            data-testid="button-pgn-copy"
+          >
+            <Copy className="w-4 h-4 mr-2" />
+            {t.copy}
+          </Button>
 
-        {canShare && (
+          {canShare && (
+            <Button
+              type="button"
+              variant="outline"
+              size={size}
+              onClick={handleShare}
+              disabled={disabled}
+              data-testid="button-pgn-share"
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              {t.share}
+            </Button>
+          )}
+
           <Button
             type="button"
             variant="outline"
             size={size}
-            onClick={handleShare}
+            onClick={handleDownload}
             disabled={disabled}
-            data-testid="button-pgn-share"
+            data-testid="button-pgn-download"
           >
-            <Share2 className="w-4 h-4 mr-2" />
-            {t.share}
+            <Download className="w-4 h-4 mr-2" />
+            {t.download}
           </Button>
-        )}
 
-        <Button
-          type="button"
-          variant="outline"
-          size={size}
-          onClick={handleDownload}
-          disabled={disabled}
-          data-testid="button-pgn-download"
-        >
-          <Download className="w-4 h-4 mr-2" />
-          {t.download}
-        </Button>
-
-        <Button
-          type="button"
-          variant="outline"
-          size={size}
-          onClick={handleDrive}
-          disabled={disabled || drivePending}
-          data-testid="button-pgn-save-drive"
-        >
-          {driveState === "saved" ? (
-            <Check className="w-4 h-4 mr-2" />
-          ) : (
-            <CloudUpload className="w-4 h-4 mr-2" />
-          )}
-          {driveLabel}
-        </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size={size}
+            onClick={handleDriveClick}
+            disabled={disabled || drivePending}
+            data-testid="button-pgn-save-drive"
+          >
+            {driveState === "saved" ? (
+              <Check className="w-4 h-4 mr-2" />
+            ) : (
+              <CloudUpload className="w-4 h-4 mr-2" />
+            )}
+            {driveLabel}
+          </Button>
+        </div>
       </div>
-    </div>
+
+      {pendingMeta && (
+        <SaveGameMetadataDialog
+          open={showMetaDialog}
+          onClose={handleMetaClose}
+          onConfirm={handleConfirmSave}
+          initialMeta={pendingMeta}
+          appLanguage={appLanguage}
+          isPending={drivePending}
+        />
+      )}
+    </>
   );
 }

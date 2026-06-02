@@ -1,0 +1,165 @@
+Aprobamos la fase de metadatos de búsqueda al guardar en Drive, con ajustes obligatorios.
+
+Modo: Economy.
+App testing: desactivado.
+
+Puedes modificar:
+
+* client/src/pages/home.tsx
+* client/src/components/pgn-actions.tsx
+* client/src/lib/google-drive.ts
+
+Puedes crear:
+
+* client/src/lib/pgn-metadata.ts
+* client/src/components/save-game-metadata-dialog.tsx
+
+No modifiques:
+
+* server/*
+* shared/*
+* client/src/components/chessboard-viewer.tsx
+* client/src/hooks/use-games.ts
+* client/src/pages/game-detail.tsx
+* package.json
+* vite.config.ts
+* tailwind.config.ts
+
+Objetivo:
+Cuando el usuario pulse “Guardar en Drive”, antes de subir el PGN real debe aparecer un diálogo de confirmación con los datos de búsqueda:
+
+* Blancas
+* Negras
+* Fecha
+* Resultado
+* Color del usuario: blancas/negras/desconocido
+* Rival
+* Primeras 3 jugadas blancas
+* Primeras 3 jugadas negras
+
+Principio:
+La app debe rellenar todo automáticamente desde el PGN y el “Nombre del jugador”. El usuario solo revisa/corrige si hace falta.
+
+Cambios concretos:
+
+1. En `home.tsx`:
+
+   * Cambiar solo la etiqueta visual:
+
+     * ca: “Nom del jugador”
+     * es: “Nombre del jugador”
+     * en: “Player name”
+   * No renombres internamente `alias`.
+   * No cambies localStorage ni contratos.
+
+2. Crear `client/src/lib/pgn-metadata.ts`:
+
+   * funciones puras, sin React:
+
+     * extractPgnHeader
+     * extractFirstMoves
+     * detectUserColor
+     * buildPgnFilename
+     * buildDriveAppProperties
+   * Importante: `extractFirstMoves` debe extraer correctamente por color:
+
+     * jugada blanca 1, jugada negra 1
+     * jugada blanca 2, jugada negra 2
+     * jugada blanca 3, jugada negra 3
+   * No hagas una lógica que meta los primeros tres tokens en blancas y los siguientes tres en negras.
+   * Ignorar números de jugada, resultados, comentarios `{...}`, variantes `(...)`, NAGs tipo `$1`.
+   * Guardar las jugadas como arrays o strings seguros:
+
+     * firstWhiteMoves: “e4,Nf3,Bb5”
+     * firstBlackMoves: “e5,Nc6,a6”
+
+3. Detección automática del color:
+
+   * Leer el nombre del jugador desde el campo interno `alias` en localStorage `chesslens_user_settings_v1`.
+   * Normalizar:
+
+     * minúsculas
+     * sin tildes
+     * espacios comprimidos
+   * Si coincide con White → userColor = white y rival = Black.
+   * Si coincide con Black → userColor = black y rival = White.
+   * Si no coincide → userColor = unknown y rival editable.
+
+4. Crear `save-game-metadata-dialog.tsx`:
+
+   * Usar Dialog existente del proyecto.
+   * Mostrar aviso:
+
+     * ca: “Revisa aquestes dades. ChessLens les farà servir per trobar ràpidament les teves partides per rival, data, color o obertura.”
+     * es: “Revisa estos datos. ChessLens los usará para encontrar rápidamente tus partidas por rival, fecha, color o apertura.”
+     * en: “Review this data. ChessLens will use it to quickly find your games by opponent, date, color, or opening.”
+   * Campos editables:
+
+     * White/Blancas/Blanques
+     * Black/Negras/Negres
+     * Date/Fecha/Data
+     * Result/Resultado/Resultat
+     * User color / Color del usuario / Color del jugador
+     * Opponent / Rival
+   * Mostrar primeras 3 jugadas blancas/negras como dato revisable, pero no hace falta que sean editables en esta subfase.
+   * Botones:
+
+     * Cancelar
+     * Confirmar y guardar en Drive
+
+5. En `google-drive.ts`:
+
+   * Ampliar `uploadPgnToDrive(accessToken, { filename, pgn, appProperties })`.
+   * Añadir `appProperties` al metadata del upload.
+   * Todo valor de appProperties debe ser string.
+   * Mantener compatibilidad con el upload de prueba si todavía existe.
+
+6. En `pgn-actions.tsx`:
+
+   * El botón “Guardar en Drive” ya no debe subir directamente.
+   * Primero abre el diálogo de revisión de metadatos.
+   * Al confirmar:
+
+     * pedir token si no existe
+     * subir PGN real con `uploadPgnToDrive`
+     * usar filename generado desde PGN/metadatos
+     * pasar appProperties
+   * El token debe vivir solo en memoria React.
+   * Nunca guardar token en localStorage.
+   * No subir si PGN está vacío o empieza por `ERROR:`.
+   * Mantener Copiar / Compartir / Descargar intactos.
+
+Nombre de archivo:
+
+* Formato preferente:
+  `White_vs_Black_Date.pgn`
+* Sustituir espacios por `_`.
+* Sustituir puntos de fecha por guiones.
+* Eliminar caracteres problemáticos.
+* No usar `*`.
+* Fallback:
+  `chess-game-<gameId>.pgn`
+
+No tocar bajo ningún concepto:
+
+* OCR
+* PGN engine
+* reviewState
+* resume
+* python-chess
+* multi-planilla
+* salto de fila
+* corrección desde tablero
+* idiomas de planilla
+* formatos de planilla
+
+Después ejecuta:
+npm run check
+npm run build
+python3 -m py_compile server/process_image_gemini.py
+git diff --stat -- server/ shared/
+
+El diff de server/ y shared/ debe estar vacío.
+
+No hagas push.
+No hagas integración de biblioteca/buscador todavía.
