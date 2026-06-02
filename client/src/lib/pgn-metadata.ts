@@ -144,9 +144,9 @@ function sanitizeDateForFilename(rawDate: string): string {
 
 /** Build filename from corrected dialog metadata (not from raw PGN). */
 export function buildFilenameFromMeta(meta: PgnMetadata, gameId: number): string {
-  const white = sanitizeForFilename(meta.white);
-  const black = sanitizeForFilename(meta.black);
-  const date = sanitizeDateForFilename(meta.date);
+  const white = sanitizeForFilename(meta.white.trim());
+  const black = sanitizeForFilename(meta.black.trim());
+  const date = sanitizeDateForFilename(meta.date.trim());
 
   if (!white && !black) return `chess-game-${gameId}.pgn`;
 
@@ -201,11 +201,11 @@ export function applyMetadataToPgn(pgn: string, meta: PgnMetadata): string {
   const existing = extractAllHeaders(pgn);
   const headerMap = new Map<string, string>(existing);
 
-  // Override with meta values
-  if (meta.white !== undefined) headerMap.set("White", meta.white || "?");
-  if (meta.black !== undefined) headerMap.set("Black", meta.black || "?");
-  if (meta.date !== undefined) headerMap.set("Date", meta.date || "????.??.??");
-  if (meta.result !== undefined) headerMap.set("Result", meta.result || "*");
+  // Override with trimmed meta values
+  if (meta.white !== undefined) headerMap.set("White", meta.white.trim() || "?");
+  if (meta.black !== undefined) headerMap.set("Black", meta.black.trim() || "?");
+  if (meta.date !== undefined) headerMap.set("Date", meta.date.trim() || "????.??.??");
+  if (meta.result !== undefined) headerMap.set("Result", meta.result.trim() || "*");
 
   // Ensure all STR tags exist
   if (!headerMap.has("Event")) headerMap.set("Event", "?");
@@ -246,12 +246,12 @@ export function buildDriveAppProperties(
     source: "chesslens",
     type: "pgn",
   };
-  if (meta.white) props.white = meta.white;
-  if (meta.black) props.black = meta.black;
-  if (meta.date) props.date = meta.date;
-  if (meta.result) props.result = meta.result;
+  if (meta.white) props.white = meta.white.trim();
+  if (meta.black) props.black = meta.black.trim();
+  if (meta.date) props.date = meta.date.trim();
+  if (meta.result) props.result = meta.result.trim();
   if (meta.userColor) props.userColor = meta.userColor;
-  if (meta.opponent) props.opponent = meta.opponent;
+  if (meta.opponent) props.opponent = meta.opponent.trim();
   if (meta.firstWhiteMoves) props.firstWhiteMoves = meta.firstWhiteMoves;
   if (meta.firstBlackMoves) props.firstBlackMoves = meta.firstBlackMoves;
   return props;
