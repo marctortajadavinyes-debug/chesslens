@@ -10,6 +10,7 @@ import {
   CheckCircle2,
   Settings,
   Library,
+  MessageSquare,
 } from "lucide-react";
 import { useCreateGame, useGames } from "@/hooks/use-games";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,12 @@ type UiText = {
   recentGames: string;
   noGames: string;
   genericErrorTitle: string;
+  suggestionsTitle: string;
+  suggestionsDescription: string;
+  suggestionsPlaceholder: string;
+  suggestionsButton: string;
+  suggestionsEmpty: string;
+  suggestionsSent: string;
 };
 
 const SETTINGS_STORAGE_KEY = "chesslens_user_settings_v1";
@@ -180,6 +187,13 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     recentGames: "Partides recents",
     noGames: "No hi ha partides encara",
     genericErrorTitle: "Error",
+    suggestionsTitle: "Suggeriments",
+    suggestionsDescription:
+      "Ajuda'ns a millorar ChessLens. Escriu-nos qualsevol idea, problema o millora que vulguis proposar.",
+    suggestionsPlaceholder: "Escriu el teu suggeriment\u2026",
+    suggestionsButton: "Enviar suggeriment",
+    suggestionsEmpty: "Escriu un suggeriment abans d'enviar.",
+    suggestionsSent: "Suggeriment preparat. S'obrirà el teu client de correu.",
   },
   en: {
     library: "My games",
@@ -224,6 +238,13 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     recentGames: "Recent games",
     noGames: "No games yet",
     genericErrorTitle: "Error",
+    suggestionsTitle: "Suggestions",
+    suggestionsDescription:
+      "Help us improve ChessLens. Send us any idea, issue, or improvement you would like to suggest.",
+    suggestionsPlaceholder: "Write your suggestion\u2026",
+    suggestionsButton: "Send suggestion",
+    suggestionsEmpty: "Write a suggestion before sending.",
+    suggestionsSent: "Suggestion ready. Your email client will open.",
   },
   es: {
     library: "Mis partidas",
@@ -267,6 +288,13 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     recentGames: "Partidas recientes",
     noGames: "Todavía no hay partidas",
     genericErrorTitle: "Error",
+    suggestionsTitle: "Sugerencias",
+    suggestionsDescription:
+      "Ayúdanos a mejorar ChessLens. Escríbenos cualquier idea, problema o mejora que quieras proponer.",
+    suggestionsPlaceholder: "Escribe tu sugerencia\u2026",
+    suggestionsButton: "Enviar sugerencia",
+    suggestionsEmpty: "Escribe una sugerencia antes de enviar.",
+    suggestionsSent: "Sugerencia preparada. Se abrirá tu cliente de correo.",
   },
 };
 
@@ -297,6 +325,7 @@ export default function Home() {
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] =
     useState<ChessLensUserSettings>(DEFAULT_SETTINGS);
+  const [suggestionText, setSuggestionText] = useState("");
 
   const t = UI_TEXT[settings.appLanguage] ?? UI_TEXT.ca;
 
@@ -607,6 +636,59 @@ export default function Home() {
                       ))}
                     </select>
                   </div>
+                </div>
+
+                {/* Suggestions section */}
+                <div className="border border-border rounded-xl p-4 space-y-3 bg-muted/20">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare className="w-4 h-4 text-muted-foreground" />
+                    <h3 className="text-sm font-semibold">{t.suggestionsTitle}</h3>
+                  </div>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    {t.suggestionsDescription}
+                  </p>
+                  <textarea
+                    value={suggestionText}
+                    onChange={(e) => setSuggestionText(e.target.value)}
+                    placeholder={t.suggestionsPlaceholder}
+                    rows={3}
+                    className="w-full rounded-md border bg-background px-3 py-2 text-sm resize-none"
+                    data-testid="textarea-suggestion"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => {
+                      const trimmed = suggestionText.trim();
+                      if (!trimmed) {
+                        toast({
+                          title: t.suggestionsEmpty,
+                          variant: "destructive",
+                          duration: 2000,
+                        });
+                        return;
+                      }
+                      const subject =
+                        settings.appLanguage === "ca"
+                          ? "Suggeriment ChessLens"
+                          : settings.appLanguage === "es"
+                            ? "Sugerencia ChessLens"
+                            : "ChessLens suggestion";
+                      const mailto = `mailto:chessproapp.mvp@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(trimmed)}`;
+                      window.location.href = mailto;
+                      toast({
+                        title: t.suggestionsSent,
+                        duration: 2000,
+                      });
+                      setSuggestionText("");
+                    }}
+                    data-testid="button-send-suggestion"
+                  >
+                    <MessageSquare className="w-4 h-4 mr-2" />
+                    {t.suggestionsButton}
+                  </Button>
                 </div>
 
                 <div className="flex gap-2 justify-end">

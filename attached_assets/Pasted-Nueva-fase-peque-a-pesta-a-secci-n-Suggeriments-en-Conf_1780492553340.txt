@@ -1,0 +1,96 @@
+Nueva fase pequeña: pestaña/sección “Suggeriments” en Configuración.
+
+Modo: Lite.
+App testing: desactivado.
+
+Objetivo:
+Añadir dentro de Configuración una sección para que los usuarios puedan enviar sugerencias a:
+
+[chessproapp.mvp@gmail.com](mailto:chessproapp.mvp@gmail.com)
+
+Implementación MVP:
+
+* No usar backend.
+* No enviar emails automáticamente desde servidor.
+* Usar `mailto:` para abrir el cliente de correo del usuario con:
+
+  * destinatario: [chessproapp.mvp@gmail.com](mailto:chessproapp.mvp@gmail.com)
+  * asunto: Suggeriment ChessLens / Sugerencia ChessLens / ChessLens suggestion
+  * cuerpo: texto escrito por el usuario
+
+Puedes modificar:
+
+* client/src/pages/home.tsx
+
+No modifiques:
+
+* server/*
+* shared/*
+* client/src/pages/game-detail.tsx
+* client/src/components/chessboard-viewer.tsx
+* client/src/hooks/use-games.ts
+* client/src/lib/google-drive.ts
+* client/src/pages/library.tsx
+* package.json
+* vite.config.ts
+* tailwind.config.ts
+
+Cambios deseados:
+
+1. En Configuración, añadir una sección/pestaña visual llamada:
+
+   * ca: “Suggeriments”
+   * es: “Sugerencias”
+   * en: “Suggestions”
+
+2. Añadir texto explicativo:
+
+   * ca: “Ajuda’ns a millorar ChessLens. Escriu-nos qualsevol idea, problema o millora que vulguis proposar.”
+   * es: “Ayúdanos a mejorar ChessLens. Escríbenos cualquier idea, problema o mejora que quieras proponer.”
+   * en: “Help us improve ChessLens. Send us any idea, issue, or improvement you would like to suggest.”
+
+3. Añadir textarea:
+
+   * ca: “Escriu el teu suggeriment…”
+   * es: “Escribe tu sugerencia…”
+   * en: “Write your suggestion…”
+
+4. Añadir botón:
+
+   * ca: “Enviar suggeriment”
+   * es: “Enviar sugerencia”
+   * en: “Send suggestion”
+
+5. Al pulsar el botón:
+
+   * si el textarea está vacío, mostrar aviso/toast o mensaje breve;
+   * si tiene texto, abrir `mailto:` con destinatario, asunto y cuerpo codificados;
+   * no guardar el texto en ningún servidor.
+
+6. Mantener el diseño simple y móvil-friendly.
+
+7. No tocar lógica de escaneo, configuración de idioma, formato de planilla ni subida de imágenes.
+
+No tocar bajo ningún concepto:
+
+* OCR
+* PGN engine
+* reviewState
+* resume
+* python-chess
+* multi-planilla
+* salto de fila
+* corrección desde tablero
+* idiomas de planilla
+* formatos de planilla
+
+Después ejecuta:
+npm run check
+npm run build
+python3 -m py_compile server/process_image_gemini.py
+git diff --stat -- server/ shared/
+
+El diff de server/ y shared/ debe estar vacío.
+
+No hagas push.
+No hagas commit manual si Replit crea checkpoint automático.
