@@ -79,6 +79,9 @@ type PageText = {
   filterDateTo: string;
   filterColor: string;
   filterColorAll: string;
+  filterColorWhiteOption: string;
+  filterColorBlackOption: string;
+  filterDateError: string;
   filterResult: string;
   filterResultAll: string;
   filterWhiteMoves: string;
@@ -115,11 +118,14 @@ const TEXT: Record<AppLanguage, PageText> = {
     gameLoadError: "Error carregant la partida",
     filters: "Filtres",
     clearFilters: "Netejar filtres",
-    filterOpponent: "Rival",
+    filterOpponent: "Jugador o rival",
     filterDateFrom: "Data des de",
     filterDateTo: "Data fins a",
-    filterColor: "Color",
+    filterColor: "El meu color",
     filterColorAll: "Tots",
+    filterColorWhiteOption: "Jo amb blanques",
+    filterColorBlackOption: "Jo amb negres",
+    filterDateError: "Format no vàlid. Utilitza AAAA-MM-DD",
     filterResult: "Resultat",
     filterResultAll: "Tots",
     filterWhiteMoves: "Blanques comencen amb",
@@ -154,11 +160,14 @@ const TEXT: Record<AppLanguage, PageText> = {
     gameLoadError: "Error loading game",
     filters: "Filters",
     clearFilters: "Clear filters",
-    filterOpponent: "Opponent",
+    filterOpponent: "Player or opponent",
     filterDateFrom: "Date from",
     filterDateTo: "Date to",
-    filterColor: "Color",
+    filterColor: "My color",
     filterColorAll: "All",
+    filterColorWhiteOption: "I played White",
+    filterColorBlackOption: "I played Black",
+    filterDateError: "Invalid format. Use YYYY-MM-DD",
     filterResult: "Result",
     filterResultAll: "All",
     filterWhiteMoves: "White starts with",
@@ -193,11 +202,14 @@ const TEXT: Record<AppLanguage, PageText> = {
     gameLoadError: "Error al cargar la partida",
     filters: "Filtros",
     clearFilters: "Limpiar filtros",
-    filterOpponent: "Rival",
+    filterOpponent: "Jugador o rival",
     filterDateFrom: "Fecha desde",
     filterDateTo: "Fecha hasta",
-    filterColor: "Color",
+    filterColor: "Mi color",
     filterColorAll: "Todos",
+    filterColorWhiteOption: "Yo con blancas",
+    filterColorBlackOption: "Yo con negras",
+    filterDateError: "Formato no válido. Usa AAAA-MM-DD",
     filterResult: "Resultado",
     filterResultAll: "Todos",
     filterWhiteMoves: "Blancas empiezan con",
@@ -276,23 +288,44 @@ function matchMoves(csvMoves: string, query: string): boolean {
   return true;
 }
 
+/** Returns true if dateStr is empty (allowed) or is a valid YYYY-MM-DD date. */
+function isValidDate(s: string): boolean {
+  if (!s.trim()) return true;
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return false;
+  const year = parseInt(m[1], 10);
+  const month = parseInt(m[2], 10);
+  const day = parseInt(m[3], 10);
+  if (month < 1 || month > 12) return false;
+  if (day < 1) return false;
+  return day <= new Date(year, month, 0).getDate();
+}
+
 function applyFilters(files: DriveGameFile[], f: Filters): DriveGameFile[] {
   if (!hasActiveFilters(f)) return files;
 
   return files.filter((file) => {
     const p = file.appProperties;
 
+    // Search in white, black, opponent, and filename
     if (f.opponent.trim()) {
-      const opp = normalize(p.opponent ?? "");
-      if (!opp.includes(normalize(f.opponent.trim()))) return false;
+      const q = normalize(f.opponent.trim());
+      const searchable = [
+        normalize(p.white ?? ""),
+        normalize(p.black ?? ""),
+        normalize(p.opponent ?? ""),
+        normalize(file.name ?? ""),
+      ];
+      if (!searchable.some((s) => s.includes(q))) return false;
     }
 
-    if (f.dateFrom.trim()) {
+    // Only apply date filter when the entered value is a valid date
+    if (f.dateFrom.trim() && isValidDate(f.dateFrom)) {
       const d = p.date ?? "";
       if (!d || d < f.dateFrom.trim()) return false;
     }
 
-    if (f.dateTo.trim()) {
+    if (f.dateTo.trim() && isValidDate(f.dateTo)) {
       const d = p.date ?? "";
       if (!d || d > f.dateTo.trim()) return false;
     }
@@ -390,20 +423,40 @@ function FilterBar({
           <Input
             value={filters.dateFrom}
             onChange={(e) => set("dateFrom", e.target.value)}
-            className="h-8 text-sm"
+            className={[
+              "h-8 text-sm",
+              filters.dateFrom && !isValidDate(filters.dateFrom)
+                ? "border-destructive focus-visible:ring-destructive"
+                : "",
+            ].join(" ")}
             placeholder="YYYY-MM-DD"
             data-testid="input-filter-date-from"
           />
+          {filters.dateFrom && !isValidDate(filters.dateFrom) && (
+            <p className="text-xs text-destructive" data-testid="text-filter-date-from-error">
+              {t.filterDateError}
+            </p>
+          )}
         </div>
         <div className="space-y-1">
           <Label className="text-xs">{t.filterDateTo}</Label>
           <Input
             value={filters.dateTo}
             onChange={(e) => set("dateTo", e.target.value)}
-            className="h-8 text-sm"
+            className={[
+              "h-8 text-sm",
+              filters.dateTo && !isValidDate(filters.dateTo)
+                ? "border-destructive focus-visible:ring-destructive"
+                : "",
+            ].join(" ")}
             placeholder="YYYY-MM-DD"
             data-testid="input-filter-date-to"
           />
+          {filters.dateTo && !isValidDate(filters.dateTo) && (
+            <p className="text-xs text-destructive" data-testid="text-filter-date-to-error">
+              {t.filterDateError}
+            </p>
+          )}
         </div>
       </div>
 
@@ -422,8 +475,8 @@ function FilterBar({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="_all">{t.filterColorAll}</SelectItem>
-              <SelectItem value="white">{t.colorWhite}</SelectItem>
-              <SelectItem value="black">{t.colorBlack}</SelectItem>
+              <SelectItem value="white">{t.filterColorWhiteOption}</SelectItem>
+              <SelectItem value="black">{t.filterColorBlackOption}</SelectItem>
             </SelectContent>
           </Select>
         </div>

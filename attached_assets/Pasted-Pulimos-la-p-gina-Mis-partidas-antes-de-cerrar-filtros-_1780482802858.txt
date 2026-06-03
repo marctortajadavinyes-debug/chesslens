@@ -1,0 +1,116 @@
+Pulimos la página “Mis partidas” antes de cerrar filtros.
+
+Modo: Economy.
+App testing: desactivado.
+
+Objetivo:
+Mejorar filtros de biblioteca Drive sin tocar motor ni backend.
+
+Puedes modificar:
+
+* client/src/pages/library.tsx
+
+No modifiques:
+
+* server/*
+* shared/*
+* client/src/components/chessboard-viewer.tsx
+* client/src/pages/game-detail.tsx
+* client/src/hooks/use-games.ts
+* client/src/pages/home.tsx
+* client/src/components/pgn-actions.tsx
+* package.json
+* vite.config.ts
+* tailwind.config.ts
+
+Cambios:
+
+1. Validación de fechas en filtros
+
+   * Los campos “Fecha desde” y “Fecha hasta” deben aceptar solo formato:
+     AAAA-MM-DD / YYYY-MM-DD
+   * Validar:
+
+     * regex exacta `^\d{4}-\d{2}-\d{2}$`
+     * mes 01–12
+     * día real del mes, incluyendo años bisiestos
+   * Ejemplos inválidos:
+
+     * 2026-13-05
+     * 2026-02-31
+     * 2026-05-2020
+   * Si una fecha es inválida:
+
+     * mostrar mensaje de error debajo del campo
+     * no aplicar ese filtro inválido
+     * mantener el resto de filtros funcionando
+
+2. Cambiar filtro “Rival” por búsqueda más amplia
+
+   * Cambiar etiqueta:
+
+     * ca: “Jugador o rival”
+     * es: “Jugador o rival”
+     * en: “Player or opponent”
+   * Este filtro debe buscar en:
+
+     * appProperties.white
+     * appProperties.black
+     * appProperties.opponent
+     * file.name como fallback
+   * Debe funcionar con búsqueda parcial y normalizada:
+
+     * minúsculas
+     * sin tildes
+     * includes()
+   * Ejemplo:
+     Si existe partida “Unai Bergaretxe vs Guillem Villablanca”,
+     debe encontrarla buscando:
+
+     * Unai
+     * Bergaretxe
+     * Guillem
+     * Villablanca
+
+3. Aclarar filtro de color
+
+   * Cambiar etiqueta:
+
+     * ca: “El meu color”
+     * es: “Mi color”
+     * en: “My color”
+   * Cambiar opciones:
+
+     * ca: “Tots”, “Jo amb blanques”, “Jo amb negres”
+     * es: “Todos”, “Yo con blancas”, “Yo con negras”
+     * en: “All”, “I played White”, “I played Black”
+   * El filtro sigue usando appProperties.userColor.
+
+4. No cambiar todavía lógica de Drive ni appProperties.
+
+5. No tocar visor de partidas.
+
+6. No añadir filtros nuevos.
+
+No tocar bajo ningún concepto:
+
+* OCR
+* PGN engine
+* reviewState
+* resume
+* python-chess
+* multi-planilla
+* salto de fila
+* corrección desde tablero
+* idiomas de planilla
+* formatos de planilla
+
+Después ejecuta:
+npm run check
+npm run build
+python3 -m py_compile server/process_image_gemini.py
+git diff --stat -- server/ shared/
+
+El diff de server/ y shared/ debe estar vacío.
+
+No hagas push.
