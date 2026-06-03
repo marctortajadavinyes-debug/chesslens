@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import {
   requestGoogleDriveToken,
   uploadPgnToDrive,
+  uploadImageToDrive,
 } from "@/lib/google-drive";
 import {
   extractPgnMetadata,
@@ -24,6 +25,7 @@ interface PgnActionsProps {
   appLanguage: AppLanguage;
   className?: string;
   size?: "sm" | "default";
+  imageUrls?: string[];
 }
 
 type ActionsText = {
@@ -41,7 +43,10 @@ type ActionsText = {
   driveSavedTitle: string;
   driveConnecting: string;
   driveUploading: string;
+  driveUploadingSheet: (current: number, total: number) => string;
   driveSaved: string;
+  driveImageErrorTitle: string;
+  driveImageErrorDescription: string;
 };
 
 const TEXT: Record<AppLanguage, ActionsText> = {
@@ -60,7 +65,12 @@ const TEXT: Record<AppLanguage, ActionsText> = {
     driveSavedTitle: "PGN guardat a Drive",
     driveConnecting: "Connectant...",
     driveUploading: "Pujant...",
+    driveUploadingSheet: (current, total) =>
+      `Pujant planella ${current}/${total}...`,
     driveSaved: "Guardat",
+    driveImageErrorTitle: "Error en pujar la planella",
+    driveImageErrorDescription:
+      "El PGN s'ha guardat, però no s'ha pogut pujar alguna imatge.",
   },
   en: {
     title: "PGN actions",
@@ -77,7 +87,12 @@ const TEXT: Record<AppLanguage, ActionsText> = {
     driveSavedTitle: "PGN saved to Drive",
     driveConnecting: "Connecting...",
     driveUploading: "Uploading...",
+    driveUploadingSheet: (current, total) =>
+      `Uploading scoresheet ${current}/${total}...`,
     driveSaved: "Saved",
+    driveImageErrorTitle: "Error uploading scoresheet",
+    driveImageErrorDescription:
+      "The PGN was saved, but one or more images could not be uploaded.",
   },
   es: {
     title: "Acciones del PGN",
@@ -94,7 +109,12 @@ const TEXT: Record<AppLanguage, ActionsText> = {
     driveSavedTitle: "PGN guardado en Drive",
     driveConnecting: "Conectando...",
     driveUploading: "Subiendo...",
+    driveUploadingSheet: (current, total) =>
+      `Subiendo planilla ${current}/${total}...`,
     driveSaved: "Guardado",
+    driveImageErrorTitle: "Error al subir la planilla",
+    driveImageErrorDescription:
+      "El PGN se ha guardado, pero no se ha podido subir alguna imagen.",
   },
 };
 
@@ -153,12 +173,20 @@ async function copyToClipboard(text: string): Promise<boolean> {
   }
 }
 
+/** Derive image file extension from a data URI. Defaults to .jpg. */
+function imageExtFromDataUrl(dataUrl: string): string {
+  if (dataUrl.startsWith("data:image/png")) return ".png";
+  if (dataUrl.startsWith("data:image/webp")) return ".webp";
+  return ".jpg";
+}
+
 export function PgnActions({
   pgn,
   gameId,
   appLanguage,
   className,
   size = "sm",
+  imageUrls = [],
 }: PgnActionsProps) {
   const t = TEXT[appLanguage] ?? TEXT.ca;
   const { toast } = useToast();
@@ -168,12 +196,18 @@ export function PgnActions({
   const [driveToken, setDriveToken] = useState<string | null>(null);
   const [showMetaDialog, setShowMetaDialog] = useState(false);
   const [pendingMeta, setPendingMeta] = useState<PgnMetadata | null>(null);
+  const [sheetProgress, setSheetProgress] = useState<{
+    current: number;
+    total: number;
+  } | null>(null);
 
   const trimmedPgn = useMemo(() => (pgn ?? "").trim(), [pgn]);
   const hasPgn = trimmedPgn.length > 0;
   const invalid = hasPgn && isErrorPgn(trimmedPgn);
   const disabled = !hasPgn || invalid || isWorking;
   const drivePending = driveState === "connecting" || driveState === "uploading";
+
+  const hasImages = imageUrls.length > 0;
 
   const canShare =
     typeof navigator !== "undefined" &&
@@ -238,13 +272,18 @@ export function PgnActions({
     setShowMetaDialog(true);
   };
 
-  // Step 2: user confirmed metadata → apply to PGN → token → upload
-  const handleConfirmSave = async (meta: PgnMetadata) => {
+  // Step 2: user confirmed metadata → apply to PGN → token → upload PGN → optionally upload images
+  const handleConfirmSave = async (meta: PgnMetadata, saveImages: boolean) => {
     setShowMetaDialog(false);
 
     const correctedPgn = applyMetadataToPgn(trimmedPgn, meta);
     const filename = buildFilenameFromMeta(meta, gameId);
     const appProperties = buildDriveAppProperties(meta);
+
+    // Base name for image filenames (strip .pgn extension)
+    const baseName = filename.endsWith(".pgn")
+      ? filename.slice(0, -4)
+      : filename;
 
     try {
       let token = driveToken;
@@ -262,6 +301,8 @@ export function PgnActions({
       }
 
       setDriveState("uploading");
+      setSheetProgress(null);
+
       const uploadResult = await uploadPgnToDrive(token, {
         filename,
         pgn: correctedPgn,
@@ -275,11 +316,59 @@ export function PgnActions({
         return;
       }
 
+      const pgnFileId = uploadResult.fileId;
+
+      // Upload scoresheet images if the user opted in
+      if (saveImages && hasImages) {
+        let imageError = false;
+
+        for (let i = 0; i < imageUrls.length; i++) {
+          const dataUrl = imageUrls[i];
+          if (!dataUrl || !dataUrl.startsWith("data:")) continue;
+
+          setSheetProgress({ current: i + 1, total: imageUrls.length });
+
+          const ext = imageExtFromDataUrl(dataUrl);
+          const imageFilename = `${baseName}_scoresheet-${i + 1}${ext}`;
+
+          const imageAppProperties: Record<string, string> = {
+            source: "chesslens",
+            type: "scoresheet",
+            relatedPgnFileId: pgnFileId,
+            relatedPgnName: filename,
+            sheetIndex: String(i + 1),
+          };
+
+          const imageResult = await uploadImageToDrive(
+            token,
+            dataUrl,
+            imageFilename,
+            imageAppProperties,
+          );
+
+          if (!imageResult.ok) {
+            imageError = true;
+            // Continue uploading remaining images even if one fails
+          }
+        }
+
+        setSheetProgress(null);
+
+        if (imageError) {
+          toast({
+            variant: "destructive",
+            title: t.driveImageErrorTitle,
+            description: t.driveImageErrorDescription,
+          });
+        }
+      }
+
       setDriveState("saved");
       toast({ title: t.driveSavedTitle });
     } catch {
       setDriveToken(null);
       setDriveState("error");
+      setSheetProgress(null);
       toast({ variant: "destructive", title: "Google Drive", description: "Unexpected error." });
     }
   };
@@ -290,7 +379,12 @@ export function PgnActions({
 
   const driveLabel = (() => {
     if (driveState === "connecting") return t.driveConnecting;
-    if (driveState === "uploading") return t.driveUploading;
+    if (driveState === "uploading") {
+      if (sheetProgress) {
+        return t.driveUploadingSheet(sheetProgress.current, sheetProgress.total);
+      }
+      return t.driveUploading;
+    }
     if (driveState === "saved") return t.driveSaved;
     return t.saveToDrive;
   })();
@@ -377,6 +471,8 @@ export function PgnActions({
           initialMeta={pendingMeta}
           appLanguage={appLanguage}
           isPending={drivePending}
+          hasImages={hasImages}
+          imageCount={imageUrls.length}
         />
       )}
     </>

@@ -1,0 +1,149 @@
+Nueva fase: guardar opcionalmente imagen de planilla en Google Drive.
+
+Modo: Economy.
+App testing: desactivado.
+
+Objetivo:
+Cuando el usuario guarde un PGN en Drive, ofrecer una opción opcional para guardar también las imágenes de la planilla en el Drive del usuario.
+
+Principios:
+
+* Checkbox desactivado por defecto.
+* El usuario debe decidir expresamente guardar imágenes.
+* Las imágenes se guardan en el Drive del usuario, no en nube propia.
+* No tocar motor OCR/PGN.
+* No cambiar el flujo de corrección, reviewState, resume ni tablero.
+
+Puedes modificar:
+
+* client/src/lib/google-drive.ts
+* client/src/components/save-game-metadata-dialog.tsx
+* client/src/components/pgn-actions.tsx
+* client/src/pages/game-detail.tsx
+
+No modifiques:
+
+* server/*
+* shared/*
+* client/src/components/chessboard-viewer.tsx
+* client/src/hooks/use-games.ts
+* client/src/pages/library.tsx
+* client/src/hooks/use-drive-library.ts
+* client/src/pages/home.tsx
+* package.json
+* vite.config.ts
+* tailwind.config.ts
+
+Implementación:
+
+1. `game-detail.tsx`
+
+   * Cambio mínimo y quirúrgico.
+   * En los 2 `<PgnActions>` existentes, pasar:
+     `imageUrls={game?.imageUrls ?? []}`
+   * No tocar nada más de `game-detail.tsx`.
+   * No tocar props de `ChessboardViewer`.
+   * No tocar reviewState, resume, displayedImageUrl, sheetOverride, handleMoveFromBoard ni nada del motor.
+
+2. `pgn-actions.tsx`
+
+   * Añadir prop opcional:
+     `imageUrls?: string[]`
+   * Pasar al diálogo:
+
+     * `hasImages={imageUrls.length > 0}`
+     * `imageCount={imageUrls.length}`
+   * Al confirmar guardado:
+
+     * subir primero el PGN como ahora;
+     * si `saveImages === true`, subir después las imágenes una a una.
+   * Mostrar estado mientras sube:
+
+     * ca: `Pujant planella 1/2...`
+     * es: `Subiendo planilla 1/2...`
+     * en: `Uploading scoresheet 1/2...`
+   * Si falla la subida de una imagen pero el PGN ya se guardó, mostrar error claro, pero no deshacer el PGN.
+
+3. `save-game-metadata-dialog.tsx`
+
+   * Añadir checkbox solo si `hasImages === true`.
+   * OFF por defecto cada vez que se abre.
+   * Textos:
+
+     * 1 imagen:
+
+       * ca: `Guardar també la imatge de la planella`
+       * es: `Guardar también la imagen de la planilla`
+       * en: `Also save the scoresheet image`
+     * varias imágenes:
+
+       * ca: `Guardar també les imatges de les planelles`
+       * es: `Guardar también las imágenes de las planillas`
+       * en: `Also save the scoresheet images`
+   * El checkbox debe quedar cerca del botón de confirmar, con texto breve de privacidad:
+
+     * ca: `Es guardaran només al teu Google Drive.`
+     * es: `Se guardarán solo en tu Google Drive.`
+     * en: `They will be saved only in your Google Drive.`
+   * Cambiar firma `onConfirm(meta)` a `onConfirm(meta, saveImages)`.
+
+4. `google-drive.ts`
+
+   * Añadir función `uploadImageToDrive(accessToken, dataUrl, filename, appProperties?)`.
+   * Debe:
+
+     * usar `ensureChessDriveFolder(accessToken)`;
+     * convertir `dataUrl` a Blob de forma segura, preferiblemente con `fetch(dataUrl).then(r => r.blob())`;
+     * subir con multipart upload;
+     * conservar mimeType de la imagen si existe;
+     * devolver fileId o error claro.
+   * No tocar la subida de PGN salvo lo necesario para reutilizar helpers.
+
+5. Nombres de imagen
+
+   * Si el PGN se llama:
+     `Magnus_Carlsen_vs_Marc_Tortajada_2026-05-20.pgn`
+   * Las imágenes deben llamarse:
+     `Magnus_Carlsen_vs_Marc_Tortajada_2026-05-20_scoresheet-1.jpg`
+     `Magnus_Carlsen_vs_Marc_Tortajada_2026-05-20_scoresheet-2.jpg`
+   * Si el mimeType es PNG, usar `.png`; si no sabes, `.jpg`.
+
+6. appProperties de las imágenes
+
+   * Si `uploadPgnToDrive` devuelve `fileId`, usarlo para relacionar:
+
+     * source: `chesslens`
+     * type: `scoresheet`
+     * relatedPgnFileId: `<fileId del PGN>`
+     * relatedPgnName: `<nombre del PGN>`
+     * sheetIndex: `1`, `2`, etc.
+   * No hace falta todavía mostrar las imágenes en la biblioteca.
+
+7. No crear subcarpetas todavía
+
+   * Para MVP, guardar en la misma carpeta `Chess Games`.
+   * La relación se hace por nombre y appProperties.
+
+No tocar bajo ningún concepto:
+
+* OCR
+* PGN engine
+* reviewState
+* resume
+* python-chess
+* multi-planilla
+* salto de fila
+* corrección desde tablero
+* idiomas de planilla
+* formatos de planilla
+
+Después ejecuta:
+npm run check
+npm run build
+python3 -m py_compile server/process_image_gemini.py
+git diff --stat -- server/ shared/
+
+El diff de server/ y shared/ debe estar vacío.
+
+No hagas push.
+No hagas commit manual si Replit crea checkpoint automático.

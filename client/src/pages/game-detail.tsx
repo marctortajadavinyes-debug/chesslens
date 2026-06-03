@@ -709,6 +709,7 @@ export default function GameDetail() {
             pgn={pgnText || game.pgn || ""}
             gameId={game.id}
             appLanguage={appLanguage}
+            imageUrls={game?.imageUrls ?? []}
             className="lg:hidden"
           />
 
@@ -717,6 +718,7 @@ export default function GameDetail() {
               pgn={pgnText || game.pgn || ""}
               gameId={game.id}
               appLanguage={appLanguage}
+              imageUrls={game?.imageUrls ?? []}
             />
 
             <h3 className="font-semibold text-sm">{t.pgnTitle}</h3>

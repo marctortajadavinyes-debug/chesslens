@@ -190,7 +190,7 @@ async function verifyFolder(
   return !!data.id && data.trashed !== true;
 }
 
-// --- Drive upload helper ---
+// --- Drive upload helpers ---
 
 async function uploadMultipart(
   accessToken: string,
@@ -218,6 +218,58 @@ async function uploadMultipart(
     content,
     `--${boundary}--`,
   ].join("\r\n");
+
+  const res = await fetch(
+    "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": `multipart/related; boundary=${boundary}`,
+      },
+      body,
+    },
+  );
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => `HTTP ${res.status}`);
+    throw new Error(`Drive upload failed: ${text}`);
+  }
+
+  const data: { id?: string } = await res.json();
+  if (!data.id) throw new Error("Drive did not return a file id.");
+  return data.id;
+}
+
+async function uploadBlobMultipart(
+  accessToken: string,
+  filename: string,
+  mimeType: string,
+  content: Blob,
+  folderId: string,
+  appProperties?: Record<string, string>,
+): Promise<string> {
+  const boundary = "chesslens_boundary_" + Math.random().toString(36).slice(2);
+  const metaObj: Record<string, unknown> = { name: filename, parents: [folderId] };
+  if (appProperties && Object.keys(appProperties).length > 0) {
+    metaObj.appProperties = appProperties;
+  }
+  const metadata = JSON.stringify(metaObj);
+
+  // Build preamble as text ending with the blank line before binary content
+  const preamble = [
+    `--${boundary}`,
+    "Content-Type: application/json; charset=UTF-8",
+    "",
+    metadata,
+    `--${boundary}`,
+    `Content-Type: ${mimeType}`,
+    "",
+    "",
+  ].join("\r\n");
+
+  // Concatenate preamble + binary blob + closing boundary using Blob
+  const body = new Blob([preamble, content, `\r\n--${boundary}--`]);
 
   const res = await fetch(
     "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id",
@@ -398,6 +450,42 @@ export async function uploadPgnToDrive(
   } catch (err: unknown) {
     const msg =
       err instanceof Error ? err.message : "Unknown error uploading PGN.";
+    return { ok: false, error: msg };
+  }
+}
+
+// --- Public: upload scoresheet image ---
+
+export async function uploadImageToDrive(
+  accessToken: string,
+  dataUrl: string,
+  filename: string,
+  appProperties?: Record<string, string>,
+): Promise<DriveUploadResult> {
+  try {
+    const folderResult = await ensureChessDriveFolder(accessToken);
+    if (!folderResult.ok) return folderResult;
+
+    // Extract mime type from data URI header
+    const mimeMatch = dataUrl.match(/^data:([^;]+);/);
+    const mimeType = mimeMatch ? mimeMatch[1] : "image/jpeg";
+
+    // Convert data URI to Blob safely via fetch (works for data: URIs in browsers)
+    const imageBlob = await fetch(dataUrl).then((r) => r.blob());
+
+    const fileId = await uploadBlobMultipart(
+      accessToken,
+      filename,
+      mimeType,
+      imageBlob,
+      folderResult.folderId,
+      appProperties,
+    );
+
+    return { ok: true, fileId };
+  } catch (err: unknown) {
+    const msg =
+      err instanceof Error ? err.message : "Unknown error uploading image.";
     return { ok: false, error: msg };
   }
 }

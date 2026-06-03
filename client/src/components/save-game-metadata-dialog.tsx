@@ -39,6 +39,9 @@ interface DialogText {
   firstBlackMoves: string;
   cancel: string;
   confirm: string;
+  saveImageSingular: string;
+  saveImagePlural: string;
+  saveImagePrivacy: string;
 }
 
 const TEXT: Record<AppLanguage, DialogText> = {
@@ -60,6 +63,9 @@ const TEXT: Record<AppLanguage, DialogText> = {
     firstBlackMoves: "Negres responen amb",
     cancel: "Cancel·lar",
     confirm: "Confirmar i guardar a Drive",
+    saveImageSingular: "Guardar també la imatge de la planella",
+    saveImagePlural: "Guardar també les imatges de les planelles",
+    saveImagePrivacy: "Es guardaran només al teu Google Drive.",
   },
   en: {
     title: "Review game data",
@@ -79,6 +85,9 @@ const TEXT: Record<AppLanguage, DialogText> = {
     firstBlackMoves: "Black replies with",
     cancel: "Cancel",
     confirm: "Confirm and save to Drive",
+    saveImageSingular: "Also save the scoresheet image",
+    saveImagePlural: "Also save the scoresheet images",
+    saveImagePrivacy: "They will be saved only in your Google Drive.",
   },
   es: {
     title: "Revisa los datos de la partida",
@@ -98,6 +107,9 @@ const TEXT: Record<AppLanguage, DialogText> = {
     firstBlackMoves: "Negras responden con",
     cancel: "Cancelar",
     confirm: "Confirmar y guardar en Drive",
+    saveImageSingular: "Guardar también la imagen de la planilla",
+    saveImagePlural: "Guardar también las imágenes de las planillas",
+    saveImagePrivacy: "Se guardarán solo en tu Google Drive.",
   },
 };
 
@@ -127,10 +139,12 @@ function formatMoves(csv: string): string {
 interface SaveGameMetadataDialogProps {
   open: boolean;
   onClose: () => void;
-  onConfirm: (meta: PgnMetadata) => void;
+  onConfirm: (meta: PgnMetadata, saveImages: boolean) => void;
   initialMeta: PgnMetadata;
   appLanguage?: AppLanguage;
   isPending?: boolean;
+  hasImages?: boolean;
+  imageCount?: number;
 }
 
 export function SaveGameMetadataDialog({
@@ -140,12 +154,18 @@ export function SaveGameMetadataDialog({
   initialMeta,
   appLanguage = "ca",
   isPending = false,
+  hasImages = false,
+  imageCount = 0,
 }: SaveGameMetadataDialogProps) {
   const t = TEXT[appLanguage] ?? TEXT.ca;
   const [meta, setMeta] = useState<PgnMetadata>(initialMeta);
+  const [saveImages, setSaveImages] = useState(false);
 
   useEffect(() => {
-    if (open) setMeta(initialMeta);
+    if (open) {
+      setMeta(initialMeta);
+      setSaveImages(false);
+    }
   }, [open, initialMeta]);
 
   function field(key: keyof PgnMetadata, value: string) {
@@ -168,6 +188,9 @@ export function SaveGameMetadataDialog({
   const colorKnown = meta.userColor === "white" || meta.userColor === "black";
   const dateInvalid = !isValidDate(meta.date);
   const canConfirm = !isPending && !dateInvalid;
+
+  const saveImageLabel =
+    imageCount > 1 ? t.saveImagePlural : t.saveImageSingular;
 
   return (
     <Dialog
@@ -352,6 +375,29 @@ export function SaveGameMetadataDialog({
               {formatMoves(meta.firstBlackMoves)}
             </p>
           </div>
+
+          {/* Optional: save scoresheet image(s) */}
+          {hasImages && (
+            <div className="border border-border rounded-lg p-3 space-y-1 bg-muted/20">
+              <label
+                className="flex items-start gap-2.5 cursor-pointer"
+                data-testid="label-save-images"
+              >
+                <input
+                  type="checkbox"
+                  checked={saveImages}
+                  onChange={(e) => setSaveImages(e.target.checked)}
+                  disabled={isPending}
+                  className="mt-0.5 accent-primary"
+                  data-testid="checkbox-save-images"
+                />
+                <span className="text-sm leading-snug">{saveImageLabel}</span>
+              </label>
+              <p className="text-xs text-muted-foreground pl-6">
+                {t.saveImagePrivacy}
+              </p>
+            </div>
+          )}
         </div>
 
         <DialogFooter className="flex gap-2 pt-2">
@@ -366,7 +412,7 @@ export function SaveGameMetadataDialog({
           </Button>
           <Button
             type="button"
-            onClick={() => onConfirm(meta)}
+            onClick={() => onConfirm(meta, saveImages)}
             disabled={!canConfirm}
             data-testid="button-drive-meta-confirm"
           >
