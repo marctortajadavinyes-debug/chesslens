@@ -1,26 +1,62 @@
 /**
  * stockfish-worker.ts
- * Wrapper around Stockfish JS (lite single-threaded WASM) running as a Web Worker.
- * No COOP/COEP headers needed — safe alongside Google OAuth.
+ * Wrapper around Stockfish JS (lite single-threaded WASM) as a Web Worker.
+ * No COOP/COEP needed — safe alongside Google OAuth.
  *
- * Protocol: UCI (Universal Chess Interface)
- *   → send text commands via postMessage
- *   ← receive text lines via onmessage
+ * SF.1  analyze(fen, depth)          → AnalysisResult  (single PV, backward-compat)
+ * SF.2  analyzePosition(fen, opts)   → AnalysisLine[]  (MultiPV, white-normalised)
  */
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface AnalysisResult {
   bestMove: string;
   /** centipawns from the side to move (positive = advantage for side to move) */
   scoreCp?: number;
-  /** mate in N (positive = side to move mates, negative = side to move is mated) */
+  /** mate in N from the side to move */
   scoreMate?: number;
   depth: number;
   raw: string[];
 }
 
+/** One PV line from MultiPV output, evaluation always in White's perspective. */
+export interface AnalysisLine {
+  /** UCI move string of the first move in the principal variation */
+  move: string;
+  /** Centipawns from White's perspective (+= White advantage, -= Black advantage) */
+  scoreCpWhite?: number;
+  /** Mate in N from White's perspective (positive = White mates, negative = Black mates) */
+  mateWhite?: number;
+  /** Full principal variation as UCI moves */
+  pv: string[];
+  /** Search depth at which this line was found */
+  depth: number;
+}
+
+export interface AnalyzePositionOptions {
+  depth?: number;
+  multiPV?: number;
+}
+
 type MessageHandler = (line: string) => void;
 
 const WORKER_PATH = "/stockfish.js";
+/** Centipawn value assigned to a forced mate (for loss calculations). */
+export const MATE_CP = 10_000;
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/** Extract side to move from a FEN string ('w' or 'b'). */
+export function fenSideToMove(fen: string): "w" | "b" {
+  return fen.split(" ")[1] === "b" ? "b" : "w";
+}
+
+/** Normalise a raw engine score (from side-to-move perspective) to White's perspective. */
+export function toWhitePerspective(rawCp: number, fen: string): number {
+  return fenSideToMove(fen) === "b" ? -rawCp : rawCp;
+}
+
+// ─── Worker class ─────────────────────────────────────────────────────────────
 
 export class StockfishWorker {
   private worker: Worker | null = null;
@@ -28,22 +64,21 @@ export class StockfishWorker {
   private ready = false;
   private destroyed = false;
 
-  /** Lazy creation of the Worker. Throws if the script cannot be loaded. */
   private getWorker(): Worker {
     if (this.worker) return this.worker;
 
     try {
       this.worker = new Worker(WORKER_PATH);
     } catch (err) {
-      throw new Error(`[StockfishWorker] Failed to create Worker from ${WORKER_PATH}: ${err}`);
+      throw new Error(
+        `[StockfishWorker] Failed to create Worker from ${WORKER_PATH}: ${err}`,
+      );
     }
 
     this.worker.onmessage = (event: MessageEvent) => {
       const line: string =
         typeof event.data === "string" ? event.data : String(event.data ?? "");
-      for (const handler of this.listeners) {
-        handler(line);
-      }
+      for (const handler of this.listeners) handler(line);
     };
 
     this.worker.onerror = (err) => {
@@ -53,12 +88,10 @@ export class StockfishWorker {
     return this.worker;
   }
 
-  /** Send a raw UCI command to the engine. */
   private send(cmd: string): void {
     this.getWorker().postMessage(cmd);
   }
 
-  /** Register a one-time line listener. Returns a remove function. */
   private addListener(handler: MessageHandler): () => void {
     this.listeners.push(handler);
     return () => {
@@ -66,7 +99,6 @@ export class StockfishWorker {
     };
   }
 
-  /** Wait for a line matching a predicate with an optional timeout (ms). */
   private waitForLine(
     predicate: (line: string) => boolean,
     timeoutMs = 10_000,
@@ -87,14 +119,10 @@ export class StockfishWorker {
     });
   }
 
-  /**
-   * Initialize the UCI handshake.
-   * Sends "uci" → waits for "uciok", then "isready" → waits for "readyok".
-   * Idempotent — safe to call multiple times.
-   */
+  /** UCI handshake — idempotent. */
   async init(): Promise<void> {
     if (this.ready) return;
-    if (this.destroyed) throw new Error("[StockfishWorker] Worker has been destroyed");
+    if (this.destroyed) throw new Error("[StockfishWorker] Worker destroyed");
 
     this.send("uci");
     await this.waitForLine((l) => l.trim() === "uciok", 15_000);
@@ -105,15 +133,14 @@ export class StockfishWorker {
     this.ready = true;
   }
 
-  /**
-   * Analyse a FEN position to the given depth.
-   * Returns the best move and score (cp or mate) from the deepest completed iteration.
-   */
+  // ─── SF.1: single-PV (backward-compatible) ────────────────────────────────
+
   async analyze(fen: string, depth = 12): Promise<AnalysisResult> {
-    if (this.destroyed) throw new Error("[StockfishWorker] Worker has been destroyed");
+    if (this.destroyed) throw new Error("[StockfishWorker] Worker destroyed");
     await this.init();
 
     this.send("stop");
+    this.send("setoption name MultiPV value 1");
     this.send(`position fen ${fen}`);
     this.send(`go depth ${depth}`);
 
@@ -131,7 +158,6 @@ export class StockfishWorker {
       const removeListener = this.addListener((line) => {
         raw.push(line);
 
-        // Parse info lines for score at each depth
         if (line.startsWith("info") && line.includes("depth")) {
           const depthMatch = line.match(/depth (\d+)/);
           const cpMatch = line.match(/score cp (-?\d+)/);
@@ -152,16 +178,11 @@ export class StockfishWorker {
           }
         }
 
-        // bestmove signals end of search
         if (line.startsWith("bestmove")) {
           clearTimeout(timer);
           removeListener();
-
-          const parts = line.split(" ");
-          const bestMove = parts[1] ?? "(none)";
-
           resolve({
-            bestMove,
+            bestMove: line.split(" ")[1] ?? "(none)",
             scoreCp: bestScoreCp,
             scoreMate: bestScoreMate,
             depth: bestDepth,
@@ -172,12 +193,96 @@ export class StockfishWorker {
     });
   }
 
-  /** Send stop to the engine (does not destroy the worker). */
+  // ─── SF.2: multi-PV, white-normalised ─────────────────────────────────────
+
+  /**
+   * Analyse a FEN position and return up to `multiPV` principal variations.
+   * All scores are normalised to White's perspective:
+   *   positive  → White is better
+   *   negative  → Black is better
+   */
+  async analyzePosition(
+    fen: string,
+    { depth = 10, multiPV = 2 }: AnalyzePositionOptions = {},
+  ): Promise<AnalysisLine[]> {
+    if (this.destroyed) throw new Error("[StockfishWorker] Worker destroyed");
+    await this.init();
+
+    const side = fenSideToMove(fen);
+
+    this.send("stop");
+    this.send(`setoption name MultiPV value ${multiPV}`);
+    this.send("isready");
+    await this.waitForLine((l) => l.trim() === "readyok", 10_000);
+
+    this.send(`position fen ${fen}`);
+    this.send(`go depth ${depth}`);
+
+    // Map multipv-index → best info seen so far (at highest depth for that line)
+    const bestByPV = new Map<
+      number,
+      { depth: number; scoreCpWhite?: number; mateWhite?: number; pv: string[] }
+    >();
+
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        removeListener();
+        reject(new Error("[StockfishWorker] Timeout in analyzePosition"));
+      }, 30_000);
+
+      const removeListener = this.addListener((line) => {
+        if (line.startsWith("info") && line.includes("multipv")) {
+          const pvIdx = parseInt(line.match(/multipv (\d+)/)?.[1] ?? "1", 10);
+          const d = parseInt(line.match(/depth (\d+)/)?.[1] ?? "0", 10);
+          const cpMatch = line.match(/score cp (-?\d+)/);
+          const mateMatch = line.match(/score mate (-?\d+)/);
+          const pvMatch = line.match(/ pv (.+)$/);
+
+          const existing = bestByPV.get(pvIdx);
+          if (!existing || d >= existing.depth) {
+            let scoreCpWhite: number | undefined;
+            let mateWhite: number | undefined;
+
+            if (cpMatch) {
+              const raw = parseInt(cpMatch[1], 10);
+              scoreCpWhite = side === "b" ? -raw : raw;
+            } else if (mateMatch) {
+              const raw = parseInt(mateMatch[1], 10);
+              mateWhite = side === "b" ? -raw : raw;
+            }
+
+            const pv = pvMatch ? pvMatch[1].trim().split(/\s+/) : [];
+            bestByPV.set(pvIdx, { depth: d, scoreCpWhite, mateWhite, pv });
+          }
+        }
+
+        if (line.startsWith("bestmove")) {
+          clearTimeout(timer);
+          removeListener();
+
+          const lines: AnalysisLine[] = [];
+          for (let i = 1; i <= multiPV; i++) {
+            const entry = bestByPV.get(i);
+            if (entry && entry.pv.length > 0) {
+              lines.push({
+                move: entry.pv[0],
+                scoreCpWhite: entry.scoreCpWhite,
+                mateWhite: entry.mateWhite,
+                pv: entry.pv,
+                depth: entry.depth,
+              });
+            }
+          }
+          resolve(lines);
+        }
+      });
+    });
+  }
+
   stop(): void {
     if (this.worker) this.send("stop");
   }
 
-  /** Terminate the Worker and release resources. */
   destroy(): void {
     if (this.destroyed) return;
     this.destroyed = true;
@@ -191,7 +296,8 @@ export class StockfishWorker {
   }
 }
 
-/** Singleton instance — lazy, shared across the app. */
+// ─── Singleton ────────────────────────────────────────────────────────────────
+
 let _instance: StockfishWorker | null = null;
 
 export function getStockfishWorker(): StockfishWorker {

@@ -1,0 +1,160 @@
+Nueva tarea ChessLens — Stockfish SF.2: capa de análisis de PGN.
+
+Modo recomendado: Economy.
+App testing automático: OFF.
+
+Contexto:
+SF.1 ya está completada:
+
+* stockfish@18.0.7 instalado;
+* client/public/stockfish.js creado;
+* client/public/stockfish.wasm creado;
+* client/src/lib/stockfish-worker.ts creado;
+* Worker arranca correctamente;
+* devuelve bestmove, scoreCp/scoreMate y depth;
+* npm run check y npm run build pasan.
+
+Objetivo de SF.2:
+Crear la capa de datos para analizar una partida PGN completa, sin hacer todavía el diseño frontend final.
+
+No queremos máxima profundidad ni máximo Elo.
+ChessLens necesita análisis rápido, claro, friendly y que no bloquee la app.
+
+Principios de producto:
+
+* La evaluación se mostrará siempre desde el punto de vista de las blancas.
+* Positivo = blancas mejor.
+* Negativo = negras mejor.
+* Ejemplo:
+
+  * +1.1 = blancas tienen aproximadamente 1 peón y 10 centipeones de ventaja.
+  * -1.1 = negras tienen aproximadamente 1 peón y 10 centipeones de ventaja.
+* Por defecto queremos las 2 mejores jugadas.
+* Más adelante habrá configuración para 1, 2 o 3 mejores jugadas.
+
+Tarea técnica:
+Crear una capa que:
+
+1. Reciba un PGN válido.
+2. Use chess.js para recorrer la partida.
+3. Genere una lista de posiciones/FEN antes y después de cada jugada.
+4. Llame al wrapper Stockfish ya creado.
+5. Use MultiPV = 2 por defecto.
+6. Normalice siempre la evaluación a perspectiva blanca.
+7. Devuelva resultados estructurados por jugada.
+
+Formato sugerido de resultado:
+
+type AnalysisLine = {
+move: string;
+san?: string;
+scoreCpWhite?: number;
+mateWhite?: number;
+bestMoveUci?: string;
+pv?: string[];
+};
+
+type MoveAnalysis = {
+ply: number;
+moveNumber: number;
+side: "w" | "b";
+san: string;
+fenBefore: string;
+fenAfter: string;
+evalBeforeCpWhite?: number;
+evalAfterCpWhite?: number;
+evalLossCp?: number;
+bestLinesBefore: AnalysisLine[];
+bestLinesAfter?: AnalysisLine[];
+label?: "excellent" | "good" | "inaccuracy" | "mistake" | "blunder" | "critical";
+};
+
+Crear preferiblemente:
+
+* client/src/lib/pgn-analysis.ts
+* client/src/hooks/use-stockfish-analysis.ts
+
+O nombres equivalentes si encajan mejor con el proyecto.
+
+Importante sobre la evaluación:
+Si Stockfish devuelve scoreCp desde el punto de vista del bando que mueve, convertirlo a perspectiva blanca:
+
+* si sideToMove en la FEN es "w", scoreCpWhite = rawScoreCp;
+* si sideToMove en la FEN es "b", scoreCpWhite = -rawScoreCp.
+
+El análisis debe ser bajo demanda.
+No debe arrancar automáticamente al cargar una partida.
+
+Por ahora:
+
+* No crear diseño frontend final.
+* No crear barra visual todavía.
+* No guardar análisis en Google Drive todavía.
+* No analizar automáticamente todas las partidas.
+* No tocar OCR.
+* No tocar parser.
+* No tocar reviewState.
+* No tocar resume.
+* No tocar python-chess.
+* No tocar multi-planilla.
+* No tocar formatos de planilla.
+* No tocar idiomas de planilla.
+
+Archivos que puedes crear:
+
+* client/src/lib/pgn-analysis.ts
+* client/src/hooks/use-stockfish-analysis.ts
+* tests/manuales o helpers si son útiles.
+
+Archivos que puedes modificar con cuidado:
+
+* client/src/pages/home.tsx solo si necesitas reutilizar el botón DEV temporal para probar SF.2.
+* client/src/lib/stockfish-worker.ts si hace falta añadir MultiPV o mejorar la salida, pero sin romper el test SF.1.
+
+No tocar:
+
+* server/process_image_gemini.py
+* server/routes.ts
+* server/index.ts
+* server/vite.ts
+* shared/schema.ts
+* client/src/components/chessboard-viewer.tsx
+* client/src/hooks/use-games.ts
+* client/src/lib/google-drive.ts
+* lógica Google Drive
+* OCR/PGN engine
+
+Prueba mínima:
+Usar un PGN corto de prueba, analizar sus primeras posiciones y mostrar en consola:
+
+* número de jugadas detectadas;
+* evaluación siempre en perspectiva blanca;
+* mejor jugada 1;
+* mejor jugada 2;
+* pérdida de evaluación aproximada por jugada;
+* etiqueta provisional si se implementa.
+
+Etiquetas provisionales:
+
+* evalLossCp <= 20: excellent
+* 21–50: good
+* 51–100: inaccuracy
+* 101–200: mistake
+* > 200: blunder
+
+Estas etiquetas son provisionales y más adelante las haremos más friendly en UI.
+
+Checks obligatorios:
+
+* npm run check
+* npm run build si procede
+
+Al final dime:
+
+1. archivos creados;
+2. archivos modificados;
+3. si MultiPV=2 funciona;
+4. cómo probarlo manualmente;
+5. resultado de npm run check;
+6. resultado de npm run build;
+7. si el botón DEV temporal sigue existiendo y dónde.

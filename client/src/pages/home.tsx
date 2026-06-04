@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useCreateGame, useGames } from "@/hooks/use-games";
 import { getStockfishWorker } from "@/lib/stockfish-worker";
+import { analyzePgn } from "@/lib/pgn-analysis";
 import { Button } from "@/components/ui/button";
 import { GameCard } from "@/components/game-card";
 import { useToast } from "@/hooks/use-toast";
@@ -630,37 +631,77 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* [DEV] Stockfish SF.1 test — remove after validation */}
+                {/* [DEV] Stockfish SF.1/SF.2 test — remove after validation */}
                 <div className="border border-dashed border-border rounded-xl p-3 space-y-2 bg-muted/10 opacity-70">
-                  <p className="text-xs text-muted-foreground font-mono">[DEV] Stockfish Worker test</p>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="w-full text-xs"
-                    onClick={async () => {
-                      const sf = getStockfishWorker();
-                      try {
-                        console.log("[SF.1] Initialising worker...");
-                        await sf.init();
-                        console.log("[SF.1] uciok + readyok received ✓");
-                        const fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1";
-                        console.log("[SF.1] Analysing FEN:", fen);
-                        const result = await sf.analyze(fen, 10);
-                        console.log("[SF.1] bestmove:", result.bestMove);
-                        if (result.scoreCp !== undefined) console.log("[SF.1] score cp:", result.scoreCp);
-                        if (result.scoreMate !== undefined) console.log("[SF.1] score mate:", result.scoreMate);
-                        console.log("[SF.1] depth reached:", result.depth);
-                        toast({ title: `SF OK · bestmove: ${result.bestMove}${result.scoreCp !== undefined ? ` · cp: ${result.scoreCp}` : ""}`, duration: 4000 });
-                      } catch (err) {
-                        console.error("[SF.1] Error:", err);
-                        toast({ title: `SF Error: ${(err as Error).message}`, variant: "destructive", duration: 4000 });
-                      }
-                    }}
-                    data-testid="button-dev-stockfish-test"
-                  >
-                    Test Stockfish Worker (consola)
-                  </Button>
+                  <p className="text-xs text-muted-foreground font-mono">[DEV] Stockfish test (SF.1 + SF.2)</p>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="flex-1 text-xs"
+                      onClick={async () => {
+                        const sf = getStockfishWorker();
+                        try {
+                          console.log("[SF.1] Initialising worker...");
+                          await sf.init();
+                          console.log("[SF.1] uciok + readyok received ✓");
+                          const fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1";
+                          const result = await sf.analyze(fen, 10);
+                          console.log("[SF.1] bestmove:", result.bestMove, "· depth:", result.depth, "· cp:", result.scoreCp);
+                          toast({ title: `SF.1 OK · bestmove: ${result.bestMove}`, duration: 3000 });
+                        } catch (err) {
+                          console.error("[SF.1]", err);
+                          toast({ title: `SF.1 Error: ${(err as Error).message}`, variant: "destructive", duration: 3000 });
+                        }
+                      }}
+                      data-testid="button-dev-sf1-test"
+                    >
+                      SF.1 Worker
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="flex-1 text-xs"
+                      onClick={async () => {
+                        const testPgn = `[Event "Test"]
+[White "A"]
+[Black "B"]
+[Result "*"]
+
+1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 *`;
+                        try {
+                          console.log("[SF.2] Starting PGN analysis...");
+                          console.log("[SF.2] PGN:", testPgn.trim());
+                          const result = await analyzePgn(testPgn, {
+                            depth: 10,
+                            multiPV: 2,
+                            onProgress: (p) => console.log(`[SF.2] Progress: ${Math.round(p * 100)}%`),
+                          });
+                          console.log(`[SF.2] Moves analysed: ${result.moves.length}, positions: ${result.positionsAnalysed}`);
+                          for (const mv of result.moves) {
+                            const cp = mv.evalAfterCpWhite !== undefined ? (mv.evalAfterCpWhite / 100).toFixed(2) : "?";
+                            const loss = mv.evalLossCp !== undefined ? mv.evalLossCp : "?";
+                            const best1 = mv.bestLinesBefore[0]?.move ?? "-";
+                            const best2 = mv.bestLinesBefore[1]?.move ?? "-";
+                            console.log(
+                              `[SF.2] #${mv.ply} ${mv.side === "w" ? "White" : "Black"} ${mv.moveNumber}. ${mv.san}` +
+                              ` | eval: ${cp} | loss: ${loss}cp | label: ${mv.label ?? "-"}` +
+                              ` | best1: ${best1} best2: ${best2}`
+                            );
+                          }
+                          toast({ title: `SF.2 OK · ${result.moves.length} moves · see console`, duration: 4000 });
+                        } catch (err) {
+                          console.error("[SF.2]", err);
+                          toast({ title: `SF.2 Error: ${(err as Error).message}`, variant: "destructive", duration: 4000 });
+                        }
+                      }}
+                      data-testid="button-dev-sf2-test"
+                    >
+                      SF.2 PGN
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Suggestions section */}
