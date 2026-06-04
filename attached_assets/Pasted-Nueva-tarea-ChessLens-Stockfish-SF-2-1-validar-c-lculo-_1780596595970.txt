@@ -1,0 +1,87 @@
+Nueva tarea ChessLens — Stockfish SF.2.1: validar cálculo de evaluación y pérdidas.
+
+Modo recomendado: Economy.
+App testing automático: OFF.
+
+Contexto:
+SF.2 ya está implementada:
+
+* PGN → posiciones;
+* Stockfish analiza posiciones;
+* MultiPV=2;
+* evaluación normalizada a perspectiva blanca;
+* etiquetas provisionales;
+* npm run check/build limpios.
+
+Objetivo:
+Antes de crear la UI visual del análisis, validar que los cálculos son correctos.
+
+Regla principal:
+La evaluación visible en ChessLens siempre es desde perspectiva blanca:
+
+* +1.1 = ventaja blanca;
+* 0.0 = igualdad;
+* -1.1 = ventaja negra.
+
+Aunque el usuario juegue con negras, no se cambia el signo.
+
+Validar especialmente:
+
+1. Una buena jugada blanca no debe aparecer como pérdida.
+2. Una mala jugada blanca debe aparecer como pérdida si baja la evaluación blanca.
+3. Una buena jugada negra no debe aparecer como pérdida si baja la evaluación blanca.
+4. Una mala jugada negra debe aparecer como pérdida si sube la evaluación blanca.
+5. Las etiquetas excellent/good/inaccuracy/mistake/blunder no deben invertirse para negras.
+
+Revisar:
+
+* client/src/lib/pgn-analysis.ts
+* client/src/lib/stockfish-worker.ts
+* client/src/hooks/use-stockfish-analysis.ts
+
+Puedes modificar esos archivos si hace falta.
+
+No tocar:
+
+* OCR;
+* parser;
+* reviewState;
+* resume;
+* backend;
+* Google Drive;
+* chessboard-viewer;
+* game-detail;
+* Drive viewer;
+* UI final.
+
+Añadir logs de prueba en el botón DEV de Settings si ayuda, pero mantenerlo claramente temporal.
+
+Prueba mínima:
+Usar 2 o 3 PGNs cortos:
+
+1. apertura normal con jugadas buenas;
+2. una partida con una mala jugada clara de blancas;
+3. una partida con una mala jugada clara de negras.
+
+En consola debe quedar claro:
+
+* ply;
+* lado;
+* SAN;
+* eval antes;
+* eval después;
+* pérdida calculada;
+* etiqueta.
+
+Checks:
+
+* npm run check
+* npm run build
+
+Al final dime:
+
+1. si el cálculo de pérdida estaba correcto o si lo has corregido;
+2. cómo se calcula ahora para blancas y negras;
+3. ejemplos de consola;
+4. resultado de npm run check;
+5. resultado de npm run build.

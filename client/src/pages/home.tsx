@@ -631,9 +631,9 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* [DEV] Stockfish SF.1/SF.2 test — remove after validation */}
+                {/* [DEV] Stockfish SF.1 / SF.2.1 eval validation — remove after validation */}
                 <div className="border border-dashed border-border rounded-xl p-3 space-y-2 bg-muted/10 opacity-70">
-                  <p className="text-xs text-muted-foreground font-mono">[DEV] Stockfish test (SF.1 + SF.2)</p>
+                  <p className="text-xs text-muted-foreground font-mono">[DEV] SF eval validation (SF.1 + SF.2.1)</p>
                   <div className="flex gap-2">
                     <Button
                       type="button"
@@ -643,64 +643,92 @@ export default function Home() {
                       onClick={async () => {
                         const sf = getStockfishWorker();
                         try {
-                          console.log("[SF.1] Initialising worker...");
+                          console.log("[SF.1] Init worker…");
                           await sf.init();
-                          console.log("[SF.1] uciok + readyok received ✓");
+                          console.log("[SF.1] uciok + readyok ✓");
                           const fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1";
-                          const result = await sf.analyze(fen, 10);
-                          console.log("[SF.1] bestmove:", result.bestMove, "· depth:", result.depth, "· cp:", result.scoreCp);
-                          toast({ title: `SF.1 OK · bestmove: ${result.bestMove}`, duration: 3000 });
+                          const r = await sf.analyze(fen, 10);
+                          console.log("[SF.1] bestmove:", r.bestMove, "depth:", r.depth, "cp:", r.scoreCp);
+                          toast({ title: `SF.1 OK · ${r.bestMove}`, duration: 3000 });
                         } catch (err) {
                           console.error("[SF.1]", err);
-                          toast({ title: `SF.1 Error: ${(err as Error).message}`, variant: "destructive", duration: 3000 });
+                          toast({ title: `SF.1 Error`, variant: "destructive", duration: 3000 });
                         }
                       }}
                       data-testid="button-dev-sf1-test"
-                    >
-                      SF.1 Worker
-                    </Button>
+                    >SF.1 Worker</Button>
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
                       className="flex-1 text-xs"
                       onClick={async () => {
-                        const testPgn = `[Event "Test"]
-[White "A"]
-[Black "B"]
-[Result "*"]
+                        // SF.2.1 eval direction validation
+                        // Rule: evalLossCp always ≥ 0; good move → 0; bad move → high positive
+                        // Eval always from White's perspective: + = White better, - = Black better
 
-1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 *`;
-                        try {
-                          console.log("[SF.2] Starting PGN analysis...");
-                          console.log("[SF.2] PGN:", testPgn.trim());
-                          const result = await analyzePgn(testPgn, {
-                            depth: 10,
-                            multiPV: 2,
-                            onProgress: (p) => console.log(`[SF.2] Progress: ${Math.round(p * 100)}%`),
-                          });
-                          console.log(`[SF.2] Moves analysed: ${result.moves.length}, positions: ${result.positionsAnalysed}`);
-                          for (const mv of result.moves) {
-                            const cp = mv.evalAfterCpWhite !== undefined ? (mv.evalAfterCpWhite / 100).toFixed(2) : "?";
-                            const loss = mv.evalLossCp !== undefined ? mv.evalLossCp : "?";
-                            const best1 = mv.bestLinesBefore[0]?.move ?? "-";
-                            const best2 = mv.bestLinesBefore[1]?.move ?? "-";
-                            console.log(
-                              `[SF.2] #${mv.ply} ${mv.side === "w" ? "White" : "Black"} ${mv.moveNumber}. ${mv.san}` +
-                              ` | eval: ${cp} | loss: ${loss}cp | label: ${mv.label ?? "-"}` +
-                              ` | best1: ${best1} best2: ${best2}`
-                            );
-                          }
-                          toast({ title: `SF.2 OK · ${result.moves.length} moves · see console`, duration: 4000 });
-                        } catch (err) {
-                          console.error("[SF.2]", err);
-                          toast({ title: `SF.2 Error: ${(err as Error).message}`, variant: "destructive", duration: 4000 });
+                        function logMove(prefix: string, mv: { ply: number; side: string; san: string; evalBeforeCpWhite?: number; evalAfterCpWhite?: number; evalLossCp?: number; label?: string }) {
+                          const before = mv.evalBeforeCpWhite !== undefined ? (mv.evalBeforeCpWhite / 100).toFixed(2) : "?";
+                          const after  = mv.evalAfterCpWhite  !== undefined ? (mv.evalAfterCpWhite  / 100).toFixed(2) : "?";
+                          const loss   = mv.evalLossCp !== undefined ? mv.evalLossCp : "?";
+                          console.log(
+                            `${prefix} ply=${mv.ply} ${mv.side === "w" ? "W" : "B"} ${mv.san}` +
+                            ` | before=${before} after=${after} loss=${loss}cp label=${mv.label ?? "-"}`
+                          );
                         }
+
+                        // PGN A: normal Ruy Lopez — expect all excellent/good
+                        const pgnA = `[Event "A-Normal"]
+1. d4 d5 2. Nf3 Nf6 3. c4 e6 4. Nc3 Be7 5. e3 O-O *`;
+
+                        // PGN B: White queen blunder on ply 7 (4.Qxg6?? loses the queen to hxg6)
+                        // Expect ply 7 White move: high evalLossCp → blunder
+                        const pgnB = `[Event "B-WhiteBlunder"]
+1. e4 e5 2. Qh5 Nc6 3. Bc4 g6 4. Qxg6 hxg6 *`;
+
+                        // PGN C: Black falls into Legal's Trap (6...Bxd1?? loses to Bxf7+ Ke7 Nd5#)
+                        // Expect ply 12 Black move: high evalLossCp → blunder
+                        const pgnC = `[Event "C-BlackBlunder"]
+1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. Nc3 Bg4 5. h3 Bh5 6. Nxe5 Bxd1 *`;
+
+                        const tests = [
+                          { label: "A (normal)", pgn: pgnA, blunderPly: null as number | null },
+                          { label: "B (White blunder ply 7)", pgn: pgnB, blunderPly: 7 },
+                          { label: "C (Black blunder ply 12)", pgn: pgnC, blunderPly: 12 },
+                        ];
+
+                        let allOk = true;
+                        for (const t of tests) {
+                          try {
+                            console.log(`\n[SF.2.1] ── ${t.label} ──`);
+                            const result = await analyzePgn(t.pgn, { depth: 10, multiPV: 2 });
+                            for (const mv of result.moves) {
+                              logMove(`[SF.2.1]`, mv);
+                            }
+                            if (t.blunderPly !== null) {
+                              const blunder = result.moves.find(m => m.ply === t.blunderPly);
+                              if (blunder) {
+                                const isBlunder = (blunder.evalLossCp ?? 0) > 200;
+                                console.log(`[SF.2.1] ply ${t.blunderPly} evalLossCp=${blunder.evalLossCp} label=${blunder.label} → ${isBlunder ? "✓ BLUNDER detected" : "✗ NOT detected as blunder"}`);
+                                if (!isBlunder) allOk = false;
+                              }
+                            } else {
+                              const maxLoss = Math.max(0, ...result.moves.map(m => m.evalLossCp ?? 0));
+                              console.log(`[SF.2.1] max evalLossCp in normal game = ${maxLoss}cp`);
+                            }
+                          } catch (err) {
+                            console.error(`[SF.2.1] Error in ${t.label}:`, err);
+                            allOk = false;
+                          }
+                        }
+                        toast({
+                          title: allOk ? "SF.2.1 ✓ eval validation passed" : "SF.2.1 ✗ check console",
+                          variant: allOk ? "default" : "destructive",
+                          duration: 5000,
+                        });
                       }}
-                      data-testid="button-dev-sf2-test"
-                    >
-                      SF.2 PGN
-                    </Button>
+                      data-testid="button-dev-sf21-test"
+                    >SF.2.1 Val</Button>
                   </div>
                 </div>
 
