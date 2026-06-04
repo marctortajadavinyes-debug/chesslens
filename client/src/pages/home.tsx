@@ -13,6 +13,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { useCreateGame, useGames } from "@/hooks/use-games";
+import { getStockfishWorker } from "@/lib/stockfish-worker";
 import { Button } from "@/components/ui/button";
 import { GameCard } from "@/components/game-card";
 import { useToast } from "@/hooks/use-toast";
@@ -188,10 +189,8 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     suggestionsTitle: "Suggeriments",
     suggestionsDescription:
       "Ajuda'ns a millorar ChessLens. Escriu-nos qualsevol idea, problema o millora que vulguis proposar.",
-    suggestionsPlaceholder: "Escriu el teu suggeriment\u2026",
     suggestionsButton: "Enviar suggeriment",
-    suggestionsEmpty: "Escriu un suggeriment abans d'enviar.",
-    suggestionsSent: "Suggeriment preparat. S'obrirà el teu client de correu.",
+    suggestionsBody: "Escriu aquí el teu suggeriment:",
   },
   en: {
     library: "My games",
@@ -239,10 +238,8 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     suggestionsTitle: "Suggestions",
     suggestionsDescription:
       "Help us improve ChessLens. Send us any idea, issue, or improvement you would like to suggest.",
-    suggestionsPlaceholder: "Write your suggestion\u2026",
     suggestionsButton: "Send suggestion",
-    suggestionsEmpty: "Write a suggestion before sending.",
-    suggestionsSent: "Suggestion ready. Your email client will open.",
+    suggestionsBody: "Write your suggestion here:",
   },
   es: {
     library: "Mis partidas",
@@ -289,10 +286,8 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     suggestionsTitle: "Sugerencias",
     suggestionsDescription:
       "Ayúdanos a mejorar ChessLens. Escríbenos cualquier idea, problema o mejora que quieras proponer.",
-    suggestionsPlaceholder: "Escribe tu sugerencia\u2026",
     suggestionsButton: "Enviar sugerencia",
-    suggestionsEmpty: "Escribe una sugerencia antes de enviar.",
-    suggestionsSent: "Sugerencia preparada. Se abrirá tu cliente de correo.",
+    suggestionsBody: "Escribe aquí tu sugerencia:",
   },
 };
 
@@ -633,6 +628,39 @@ export default function Home() {
                       ))}
                     </select>
                   </div>
+                </div>
+
+                {/* [DEV] Stockfish SF.1 test — remove after validation */}
+                <div className="border border-dashed border-border rounded-xl p-3 space-y-2 bg-muted/10 opacity-70">
+                  <p className="text-xs text-muted-foreground font-mono">[DEV] Stockfish Worker test</p>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-xs"
+                    onClick={async () => {
+                      const sf = getStockfishWorker();
+                      try {
+                        console.log("[SF.1] Initialising worker...");
+                        await sf.init();
+                        console.log("[SF.1] uciok + readyok received ✓");
+                        const fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1";
+                        console.log("[SF.1] Analysing FEN:", fen);
+                        const result = await sf.analyze(fen, 10);
+                        console.log("[SF.1] bestmove:", result.bestMove);
+                        if (result.scoreCp !== undefined) console.log("[SF.1] score cp:", result.scoreCp);
+                        if (result.scoreMate !== undefined) console.log("[SF.1] score mate:", result.scoreMate);
+                        console.log("[SF.1] depth reached:", result.depth);
+                        toast({ title: `SF OK · bestmove: ${result.bestMove}${result.scoreCp !== undefined ? ` · cp: ${result.scoreCp}` : ""}`, duration: 4000 });
+                      } catch (err) {
+                        console.error("[SF.1] Error:", err);
+                        toast({ title: `SF Error: ${(err as Error).message}`, variant: "destructive", duration: 4000 });
+                      }
+                    }}
+                    data-testid="button-dev-stockfish-test"
+                  >
+                    Test Stockfish Worker (consola)
+                  </Button>
                 </div>
 
                 {/* Suggestions section */}

@@ -1,0 +1,110 @@
+Nueva tarea ChessLens — Subfase SF.1 Stockfish Worker.
+
+Modo recomendado: Economy.
+App testing automático: OFF.
+
+Objetivo:
+Implementar la primera subfase mínima de Stockfish como infraestructura aislada de análisis post-PGN.
+
+Contexto:
+ChessLens ya tiene funcionando:
+
+* OCR/PGN;
+* corrección y resume;
+* Google Drive;
+* biblioteca “Mis partidas”;
+* visor de partidas;
+* filtros;
+* PWA.
+
+Regla de oro:
+No romper el motor. No tocar nada del pipeline imagen → OCR → normalización → validación → reviewState → corrección → resume → PGN.
+
+Decisión técnica:
+Usar Stockfish en frontend mediante Web Worker JS puro, no WASM multi-hilo, para evitar problemas con COOP/COEP y Google OAuth.
+
+Objetivo concreto de esta subfase:
+Confirmar que Stockfish puede arrancar como Web Worker en el entorno actual, responder al protocolo UCI y devolver una mejor jugada para una posición FEN de prueba.
+
+Puedes hacer:
+
+1. Instalar el paquete npm necesario para Stockfish JS.
+2. Copiar o exponer stockfish.js en una ruta pública usable por Vite, preferiblemente:
+   client/public/stockfish.js
+3. Crear un wrapper nuevo:
+   client/src/lib/stockfish-worker.ts
+
+Ese wrapper debe incluir, como mínimo:
+
+* creación lazy del Worker;
+* inicialización UCI;
+* función para analizar una posición FEN con profundidad configurable;
+* lectura de bestmove;
+* lectura básica de score cp o mate si aparece;
+* stop;
+* destroy;
+* manejo de errores si el worker no carga.
+
+No crear todavía el panel visual completo.
+No crear todavía análisis de partida completa.
+No guardar análisis en Drive todavía.
+No tocar Google Drive.
+
+Verificación mínima:
+
+* Añadir una forma muy aislada y temporal de probar el worker en navegador, preferiblemente sin afectar flujos principales.
+* Si necesitas tocar una pantalla existente, que sea el cambio mínimo posible y claramente marcado como temporal/dev.
+* La prueba debe analizar una FEN sencilla y mostrar en consola o UI temporal:
+
+  * que Stockfish responde uciok;
+  * que devuelve bestmove;
+  * si es posible, score.
+
+Archivos que puedes crear:
+
+* client/src/lib/stockfish-worker.ts
+* cualquier archivo auxiliar estrictamente necesario para esta subfase.
+
+Archivos que puedes modificar solo si es imprescindible y con cambio mínimo:
+
+* package.json
+* package-lock.json
+* client/public/stockfish.js
+* una pantalla de frontend solo para botón/test temporal, si no hay otra forma razonable.
+
+No tocar:
+
+* server/process_image_gemini.py
+* server/routes.ts
+* server/index.ts
+* server/vite.ts
+* shared/schema.ts
+* client/src/components/chessboard-viewer.tsx
+* client/src/hooks/use-games.ts
+* OCR
+* parser
+* reviewState
+* resume
+* python-chess
+* multi-planilla
+* salto de fila
+* corrección desde tablero
+* idiomas de planilla
+* formatos de planilla
+* Google Drive logic
+
+Checks obligatorios:
+
+* npm run check
+* npm run build si procede
+* confirmar que el Worker no bloquea la UI
+* confirmar que el flujo principal de la app sigue cargando
+
+Al final, dime:
+
+1. archivos creados;
+2. archivos modificados;
+3. paquete instalado;
+4. cómo probar manualmente Stockfish;
+5. resultado de npm run check;
+6. si has dejado algún botón/test temporal y dónde.
