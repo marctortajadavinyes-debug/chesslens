@@ -118,7 +118,7 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
     previousSheet: "Planella anterior",
     nextSheet: "Planella següent",
     analyze: "Analitzar",
-    hideAnalysis: "Amagar anàlisi",
+    hideAnalysis: "Sortir d'anàlisi",
     showArrows: "Mostrar fletxes",
     hideArrows: "Amagar fletxes",
   },
@@ -172,7 +172,7 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
     previousSheet: "Previous scoresheet",
     nextSheet: "Next scoresheet",
     analyze: "Analyze",
-    hideAnalysis: "Hide analysis",
+    hideAnalysis: "Exit analysis",
     showArrows: "Show arrows",
     hideArrows: "Hide arrows",
   },
@@ -228,7 +228,7 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
     previousSheet: "Planilla anterior",
     nextSheet: "Planilla siguiente",
     analyze: "Analizar",
-    hideAnalysis: "Ocultar análisis",
+    hideAnalysis: "Salir del análisis",
     showArrows: "Mostrar flechas",
     hideArrows: "Ocultar flechas",
   },
@@ -705,54 +705,84 @@ export default function GameDetail() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto w-full p-4 grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 min-h-[36px]">
-            <h2 className="font-semibold text-lg flex-1">{t.originalScoresheet}</h2>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="lg:hidden shrink-0"
-              onClick={() => setShowSheetMobile((v) => !v)}
-              data-testid="button-toggle-scoresheet-mobile"
-            >
-              {showSheetMobile ? (
-                <>
-                  <EyeOff className="w-4 h-4 mr-2" />
-                  {t.hideScoresheet}
-                </>
-              ) : (
-                <>
-                  <ImageIcon className="w-4 h-4 mr-2" />
-                  {t.showScoresheet}
-                </>
-              )}
-            </Button>
-          </div>
+      <main className="flex-1 max-w-7xl mx-auto w-full p-4 flex flex-col gap-4">
 
-          {/* Analysis controls — below header, right-aligned */}
-          {canAnalyze && showAnalysis && (
-            <div className="flex justify-end gap-4">
-              <button
+        {/* ── Shared header bar ─────────────────────────────────────────────────
+            Desktop: left placeholder (aligns w/ scoresheet) + right section (board).
+            Mobile:  right section takes full width → Analitzar centered, Veure planella right. */}
+        <div className="flex items-stretch gap-8">
+          {/* Left placeholder — desktop only */}
+          <div className="hidden lg:block flex-1" />
+          {/* Right section */}
+          <div className="flex-1 flex flex-col gap-1">
+            {/* Main row */}
+            <div className="flex items-center min-h-[36px]">
+              <div className="flex-1 flex justify-center">
+                {canAnalyze && !showAnalysis && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => {
+                      setShowAnalysis(true);
+                      setJumpSignal({ index: 1, counter: Date.now() });
+                    }}
+                    data-testid="button-analyze-game"
+                    className="gap-1.5 bg-black text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+                  >
+                    <TrendingUp className="w-4 h-4" />
+                    {t.analyze}
+                  </Button>
+                )}
+              </div>
+              <Button
                 type="button"
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => setShowArrows((v) => !v)}
-                data-testid="button-toggle-arrows"
+                variant="outline"
+                size="sm"
+                className="lg:hidden shrink-0"
+                onClick={() => setShowSheetMobile((v) => !v)}
+                data-testid="button-toggle-scoresheet-mobile"
               >
-                {showArrows ? t.hideArrows : t.showArrows}
-              </button>
-              <button
-                type="button"
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => { setShowAnalysis(false); posStop(); }}
-                data-testid="button-hide-analysis"
-              >
-                <X className="w-3.5 h-3.5" />
-                {t.hideAnalysis}
-              </button>
+                {showSheetMobile ? (
+                  <>
+                    <EyeOff className="w-4 h-4 mr-2" />
+                    {t.hideScoresheet}
+                  </>
+                ) : (
+                  <>
+                    <ImageIcon className="w-4 h-4 mr-2" />
+                    {t.showScoresheet}
+                  </>
+                )}
+              </Button>
             </div>
-          )}
+            {/* Analysis controls — right-aligned, below Veure planella */}
+            {canAnalyze && showAnalysis && (
+              <div className="flex justify-end gap-4">
+                <button
+                  type="button"
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setShowArrows((v) => !v)}
+                  data-testid="button-toggle-arrows"
+                >
+                  {showArrows ? t.hideArrows : t.showArrows}
+                </button>
+                <button
+                  type="button"
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => { setShowAnalysis(false); posStop(); }}
+                  data-testid="button-hide-analysis"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  {t.hideAnalysis}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── 2-col content grid ───────────────────────────────────────────────── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="space-y-4">
 
           <div
             className={`${
@@ -823,25 +853,6 @@ export default function GameDetail() {
         </div>
 
         <div className="space-y-4 flex flex-col min-h-[600px] relative">
-          {/* Analitzar button — centered above board */}
-          {canAnalyze && !showAnalysis && (
-            <div className="flex justify-center pt-1">
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => {
-                  setShowAnalysis(true);
-                  setJumpSignal({ index: 1, counter: Date.now() });
-                }}
-                data-testid="button-analyze-game"
-                className="gap-1.5 bg-black text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
-              >
-                <TrendingUp className="w-4 h-4" />
-                {t.analyze}
-              </Button>
-            </div>
-          )}
-
           {(game.status === "processing" || isResuming) && (
             <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background/70 backdrop-blur-sm rounded-xl">
               <RefreshCw className="w-12 h-12 text-primary animate-spin mb-4" />
@@ -1010,6 +1021,7 @@ export default function GameDetail() {
             />
           </div>
         </div>
+        </div>{/* end content grid */}
       </main>
     </div>
   );
