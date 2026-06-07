@@ -1,0 +1,168 @@
+Nueva tarea ChessLens — SF.3E: estabilizar UX de análisis y proteger PGN original.
+
+Modo recomendado: Economy.
+App testing automático: OFF.
+
+Contexto:
+SF.3D dejó el análisis por posición funcionando, pero hay varios problemas visuales y un bug crítico.
+
+Prioridad absoluta:
+La partida escaneada/completada debe ser inmutable durante el análisis.
+
+Problema crítico detectado:
+Cuando el usuario intenta hacer en el tablero una jugada sugerida por Stockfish, la app parece sustituir o borrar la partida original y la lista de movimientos escaneados.
+Esto no puede ocurrir.
+
+Regla:
+En modo análisis:
+
+* no modificar game.moves;
+* no modificar PGN;
+* no reescanear;
+* no llamar a resume;
+* no activar flujo de corrección;
+* no reemplazar la lista de movimientos original;
+* no borrar los movimientos escaneados.
+
+Para esta fase:
+
+* Si no hay una capa sandbox de variantes separada, el tablero debe quedar en modo lectura durante análisis.
+* Las flechas muestran sugerencias.
+* El usuario puede navegar por la partida original.
+* Pero mover piezas manualmente no debe alterar la partida original.
+* La exploración de variantes con piezas movibles se hará en fase posterior como “sandbox de análisis”, separado del PGN real.
+
+Cambios UX requeridos:
+
+1. Botón Analitzar
+   Actualmente está en la fila correcta, pero demasiado a la derecha.
+   Debe quedar centrado respecto al tablero, aproximadamente encima de las columnas d/e.
+   Mantenerlo en la misma fila que:
+
+* Planella original;
+* Veure planella.
+
+No debe añadir altura extra.
+
+2. Controles de análisis
+   “× Amagar anàlisi” y “Amagar fletxes / Mostrar fletxes”:
+
+* están bien de tamaño/formato;
+* deben quedar debajo de “Veure planella”;
+* lo más a la derecha posible;
+* alejados de las líneas de análisis para no mezclarse visualmente.
+
+3. Barra de evaluación
+   Ahora la barra ocupa también la zona de movimientos.
+   Debe:
+
+* tener exactamente la misma altura visual que el tablero;
+* estar justo a la izquierda del tablero;
+* separación entre barra y tablero = aproximadamente el grosor de la barra;
+* no ocupar la altura de la lista de movimientos;
+* puntuación a la izquierda de la barra, centrada verticalmente.
+
+4. Orientación de la barra
+   Corregir:
+
+* con blancas abajo: blanco abajo / negro arriba;
+* con negras abajo: negro abajo / blanco arriba.
+  La barra debe permanecer siempre a la izquierda del tablero.
+
+5. Colores de flechas
+   Las dos flechas deben ser naranjas:
+
+* línea 1: naranja un poco más fuerte;
+* línea 2: naranja un poco más suave;
+* que se diferencien, pero sin parecer colores totalmente distintos.
+
+6. Estabilidad visual
+   Al cambiar de movimiento o navegar por la partida, la pantalla “se mueve” demasiado.
+   Objetivo:
+
+* evitar saltos de layout;
+* reservar altura estable para las líneas de análisis;
+* reservar altura estable para barra/tablero;
+* evitar que el análisis cargando cambie dimensiones de forma brusca.
+
+7. Lista de movimientos original
+   La lista de movimientos bajo el tablero debe seguir mostrando la partida real escaneada.
+   En modo análisis:
+
+* no debe ser sustituida por líneas de Stockfish;
+* no debe desaparecer;
+* no debe transformarse en una variante;
+* debe seguir siendo navegable como antes.
+
+8. Líneas de Stockfish
+   Las líneas de análisis deben mostrarse como información separada, no dentro de la lista original de movimientos.
+   Mantenerlas compactas arriba del tablero o en zona de análisis visible.
+
+Archivos probables:
+
+* client/src/pages/game-detail.tsx
+* client/src/components/chessboard-viewer.tsx
+* client/src/hooks/use-position-analysis.ts
+
+Tocar chessboard-viewer.tsx solo con cambios mínimos:
+
+* para bloquear input manual en analysis mode si hace falta;
+* para mostrar flechas;
+* para evitar que una jugada manual en análisis modifique el PGN real.
+
+No tocar:
+
+* server/process_image_gemini.py
+* server/routes.ts
+* server/index.ts
+* shared/schema.ts
+* OCR
+* parser
+* reviewState
+* resume
+* python-chess
+* multi-planilla
+* salto de fila
+* idiomas de planilla backend
+* formatos de planilla
+* Google Drive storage
+
+Muy importante:
+Si para proteger el PGN hay que elegir entre:
+A) permitir mover piezas en análisis ahora;
+B) impedir mover piezas hasta crear sandbox separado;
+elige B.
+
+No implementar sandbox de variantes todavía salvo que sea trivial y totalmente separado.
+Primero proteger la partida real.
+
+Checks obligatorios:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Abrir partida completed.
+2. Pulsar Analitzar.
+3. Confirmar que el botón queda centrado sobre el tablero.
+4. Confirmar que Amagar anàlisi / Amagar fletxes quedan a la derecha bajo Veure planella.
+5. Confirmar barra misma altura que tablero y pegada al tablero.
+6. Confirmar score a la izquierda de la barra, centrado.
+7. Confirmar flechas naranja fuerte/suave.
+8. Navegar por jugadas y confirmar que la pantalla no salta.
+9. Intentar hacer una jugada manual en el tablero siguiendo una flecha.
+10. Confirmar que NO se borra ni reemplaza la partida original.
+11. Confirmar que la lista bajo el tablero sigue mostrando la partida escaneada real.
+12. Confirmar que OCR/review/resume no han cambiado.
+
+Al final dime:
+
+1. archivos modificados;
+2. cómo has protegido el PGN original;
+3. si has desactivado input del tablero en modo análisis;
+4. cómo has ajustado la barra;
+5. cómo has estabilizado el layout;
+6. resultado de npm run check;
+7. resultado de npm run build;
+8. pendientes.

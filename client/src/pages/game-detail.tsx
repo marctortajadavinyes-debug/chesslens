@@ -439,21 +439,23 @@ export default function GameDetail() {
     { index: number; counter: number } | undefined
   >(undefined);
 
-  // Arrows derived from posLines (best moves)
+  // Arrows derived from posLines — both orange, different shades
   const customArrows = useMemo<[string, string, string][]>(() => {
     if (!showAnalysis || !showArrows || posLines.length === 0) return [];
     const arrows: [string, string, string][] = [];
     const pv0 = posLines[0]?.pv[0];
     if (pv0 && pv0.length >= 4)
-      arrows.push([pv0.slice(0, 2), pv0.slice(2, 4), "rgb(255, 170, 0)"]);
+      arrows.push([pv0.slice(0, 2), pv0.slice(2, 4), "rgba(210, 115, 0, 0.90)"]);
     const pv1 = posLines[1]?.pv[0];
     if (pv1 && pv1.length >= 4)
-      arrows.push([pv1.slice(0, 2), pv1.slice(2, 4), "rgb(100, 160, 255)"]);
+      arrows.push([pv1.slice(0, 2), pv1.slice(2, 4), "rgba(255, 185, 75, 0.80)"]);
     return arrows;
   }, [showAnalysis, showArrows, posLines]);
 
   const isNavigatingPast = boardIndex < maxBoardIndex;
   const needsReview = game?.status === "needs_review" || isNavigatingPast;
+  // In analysis mode: board is read-only to protect the original PGN
+  const boardInputEnabled = needsReview && !showAnalysis;
   const canAnalyze =
     game?.status === "completed" &&
     !isResuming &&
@@ -707,46 +709,6 @@ export default function GameDetail() {
         <div className="space-y-4">
           <div className="flex items-center gap-2 min-h-[36px]">
             <h2 className="font-semibold text-lg flex-1">{t.originalScoresheet}</h2>
-
-            {/* Analitzar / analysis controls — same row as header */}
-            {canAnalyze && !showAnalysis && (
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => {
-                  setShowAnalysis(true);
-                  setJumpSignal({ index: 1, counter: Date.now() });
-                }}
-                data-testid="button-analyze-game"
-                className="shrink-0 gap-1.5 bg-black text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
-              >
-                <TrendingUp className="w-4 h-4" />
-                {t.analyze}
-              </Button>
-            )}
-
-            {canAnalyze && showAnalysis && (
-              <div className="flex flex-col items-end gap-0.5 shrink-0">
-                <button
-                  type="button"
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  onClick={() => { setShowAnalysis(false); posStop(); }}
-                  data-testid="button-hide-analysis"
-                >
-                  <X className="w-3.5 h-3.5" />
-                  {t.hideAnalysis}
-                </button>
-                <button
-                  type="button"
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  onClick={() => setShowArrows((v) => !v)}
-                  data-testid="button-toggle-arrows"
-                >
-                  {showArrows ? t.hideArrows : t.showArrows}
-                </button>
-              </div>
-            )}
-
             <Button
               type="button"
               variant="outline"
@@ -768,6 +730,29 @@ export default function GameDetail() {
               )}
             </Button>
           </div>
+
+          {/* Analysis controls — below header, right-aligned */}
+          {canAnalyze && showAnalysis && (
+            <div className="flex justify-end gap-4">
+              <button
+                type="button"
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => setShowArrows((v) => !v)}
+                data-testid="button-toggle-arrows"
+              >
+                {showArrows ? t.hideArrows : t.showArrows}
+              </button>
+              <button
+                type="button"
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => { setShowAnalysis(false); posStop(); }}
+                data-testid="button-hide-analysis"
+              >
+                <X className="w-3.5 h-3.5" />
+                {t.hideAnalysis}
+              </button>
+            </div>
+          )}
 
           <div
             className={`${
@@ -837,7 +822,26 @@ export default function GameDetail() {
           ) : null}
         </div>
 
-        <div className="space-y-6 flex flex-col min-h-[600px] relative">
+        <div className="space-y-4 flex flex-col min-h-[600px] relative">
+          {/* Analitzar button — centered above board */}
+          {canAnalyze && !showAnalysis && (
+            <div className="flex justify-center pt-1">
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  setShowAnalysis(true);
+                  setJumpSignal({ index: 1, counter: Date.now() });
+                }}
+                data-testid="button-analyze-game"
+                className="gap-1.5 bg-black text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+              >
+                <TrendingUp className="w-4 h-4" />
+                {t.analyze}
+              </Button>
+            </div>
+          )}
+
           {(game.status === "processing" || isResuming) && (
             <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background/70 backdrop-blur-sm rounded-xl">
               <RefreshCw className="w-12 h-12 text-primary animate-spin mb-4" />
@@ -887,86 +891,98 @@ export default function GameDetail() {
             </div>
           )}
 
-          {/* ── Best lines — ABOVE board ─────────────────────────────────── */}
-          {showAnalysis && posLines.length > 0 && (
+          {/* ── Stockfish lines — stable reserved height above board ──────── */}
+          {showAnalysis && (
             <div
-              className="space-y-1 bg-muted/30 rounded-lg px-3 py-2"
+              className="min-h-[52px] space-y-1 bg-muted/30 rounded-lg px-3 py-2 overflow-hidden"
               data-testid="analysis-lines"
             >
-              {posLines.map((line, i) => {
-                const san = pvToSan(currentFen, line.pv);
-                const display = sanToDisplay(san, scoresheetLanguage);
-                const ev = evalToString(line.scoreCpWhite, line.mateWhite);
-                return (
-                  <div
-                    key={i}
-                    className="flex items-baseline gap-2 text-xs font-mono"
-                    data-testid={`analysis-line-${i}`}
-                  >
-                    <span className="text-muted-foreground w-12 shrink-0">
-                      {ev}
-                    </span>
-                    <span className="text-foreground/90 leading-relaxed break-all">
-                      {display || line.move}
-                    </span>
-                  </div>
-                );
-              })}
+              {posLines.length > 0 ? (
+                posLines.map((line, i) => {
+                  const san = pvToSan(currentFen, line.pv);
+                  const display = sanToDisplay(san, scoresheetLanguage);
+                  const ev = evalToString(line.scoreCpWhite, line.mateWhite);
+                  return (
+                    <div
+                      key={i}
+                      className="flex items-baseline gap-2 text-xs font-mono"
+                      data-testid={`analysis-line-${i}`}
+                    >
+                      <span className="text-muted-foreground w-12 shrink-0">
+                        {ev}
+                      </span>
+                      <span className="text-foreground/90 leading-relaxed break-all">
+                        {display || line.move}
+                      </span>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="flex items-center gap-2 h-full min-h-[36px]">
+                  <Loader2 className="w-3 h-3 animate-spin text-muted-foreground shrink-0" />
+                  <span className="text-xs text-muted-foreground">
+                    {posStatus === "analyzing" ? "Analitzant…" : "—"}
+                  </span>
+                </div>
+              )}
             </div>
           )}
 
-          {/* ── Board + eval text + eval bar ─────────────────────────────── */}
-          <div className="flex gap-1.5 items-stretch">
-            {showAnalysis && (
-              <>
-                {/* Eval score — left of bar, vertically centered */}
-                <div className="flex items-center justify-center shrink-0">
-                  <span className="text-[10px] font-mono font-semibold tabular-nums leading-none w-7 text-center">
-                    {posStatus === "analyzing" && !evalString ? (
-                      <Loader2 className="w-3 h-3 animate-spin inline" />
-                    ) : (
-                      evalString
-                    )}
-                  </span>
-                </div>
-                {/* Eval bar — orientation mirrors boardOrientation */}
-                <div
-                  className={`w-2 sm:w-3 flex overflow-hidden rounded border border-border/40 shrink-0 self-stretch${boardOrientation === "white" ? " flex-col-reverse" : " flex-col"}`}
-                  data-testid="eval-bar"
-                  title={evalString || undefined}
-                >
-                  {/* White segment */}
+          {/* ── Board (eval bar rendered inside ChessboardViewer) ─────────── */}
+          <ChessboardViewer
+            pgn={pgnText || game.pgn || ""}
+            error={game.status === "failed" ? (game.error ?? null) : null}
+            syncToken={`${game.updatedAt ?? ""}:${game.status ?? ""}:${
+              game.reviewState?.blockedRow ?? ""
+            }:${game.reviewState?.blockedSide ?? ""}`}
+            enableInput={boardInputEnabled}
+            onMove={handleMoveFromBoard}
+            onMoveIndexChange={(idx, maxIdx) => {
+              setBoardIndex(idx);
+              setMaxBoardIndex(maxIdx);
+            }}
+            boardOrientation={boardOrientation}
+            onOrientationChange={setBoardOrientation}
+            appLanguage={appLanguage}
+            scoresheetLanguage={scoresheetLanguage}
+            customArrows={customArrows}
+            jumpSignal={jumpSignal}
+            evalBar={
+              showAnalysis ? (
+                <div className="flex items-stretch h-full gap-1">
+                  {/* Score text — vertically centered left of bar */}
+                  <div className="flex items-center justify-center">
+                    <span className="text-[10px] font-mono font-semibold tabular-nums leading-none w-7 text-center">
+                      {posStatus === "analyzing" && !evalString ? (
+                        <Loader2 className="w-3 h-3 animate-spin inline" />
+                      ) : (
+                        evalString
+                      )}
+                    </span>
+                  </div>
+                  {/* Color bar — flex-grow segments avoid % height issue */}
                   <div
-                    className="bg-gray-100 dark:bg-gray-300 transition-[height] duration-500"
-                    style={{ height: `${evalTopPercent}%` }}
-                  />
-                  {/* Black segment */}
-                  <div className="flex-1 bg-neutral-900 dark:bg-neutral-800" />
+                    className="w-2 sm:w-3 flex overflow-hidden rounded border border-border/40 shrink-0 h-full"
+                    style={{
+                      flexDirection:
+                        boardOrientation === "white" ? "column-reverse" : "column",
+                    }}
+                    data-testid="eval-bar"
+                    title={evalString || undefined}
+                  >
+                    <div
+                      className="bg-gray-100 dark:bg-gray-300"
+                      style={{ flexGrow: evalTopPercent, minHeight: 0 }}
+                    />
+                    <div
+                      className="bg-neutral-900 dark:bg-neutral-800"
+                      style={{ flexGrow: 100 - evalTopPercent, minHeight: 0 }}
+                    />
+                  </div>
                 </div>
-              </>
-            )}
-            <div className={showAnalysis ? "flex-1 min-w-0" : "w-full"}>
-              <ChessboardViewer
-                pgn={pgnText || game.pgn || ""}
-                error={game.status === "failed" ? (game.error ?? null) : null}
-                syncToken={`${game.updatedAt ?? ""}:${game.status ?? ""}:${
-                  game.reviewState?.blockedRow ?? ""
-                }:${game.reviewState?.blockedSide ?? ""}`}
-                enableInput={needsReview}
-                onMove={handleMoveFromBoard}
-                onMoveIndexChange={(idx, maxIdx) => {
-                  setBoardIndex(idx);
-                  setMaxBoardIndex(maxIdx);
-                }}
-                boardOrientation={boardOrientation}
-                onOrientationChange={setBoardOrientation}
-                appLanguage={appLanguage}
-                scoresheetLanguage={scoresheetLanguage}
-                customArrows={customArrows}
-                jumpSignal={jumpSignal}
-              />
-            </div>
-          </div>
+              ) : undefined
+            }
+          />
 
           <PgnActions
             pgn={pgnText || game.pgn || ""}

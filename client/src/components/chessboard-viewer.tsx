@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, type ReactNode } from "react";
 import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
 import { Button } from "@/components/ui/button";
@@ -96,6 +96,7 @@ interface ChessboardViewerProps {
   scoresheetLanguage?: ScoresheetLanguage;
   customArrows?: [string, string, string][];
   jumpSignal?: { index: number; counter: number };
+  evalBar?: React.ReactNode;
 }
 
 function isBadPgn(pgn?: string | null) {
@@ -221,6 +222,7 @@ export function ChessboardViewer({
   scoresheetLanguage = "ca",
   customArrows,
   jumpSignal,
+  evalBar,
 }: ChessboardViewerProps) {
   const [game, setGame] = useState(() => new Chess());
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
@@ -426,19 +428,29 @@ export function ChessboardViewer({
         </div>
       ) : null}
 
-      <div className="relative aspect-square w-full max-w-[400px] mx-auto">
-        <div className="shadow-2xl rounded-lg border-4 border-primary/10 bg-white">
-          <Chessboard
-            position={currentPosition}
-            boardOrientation={boardOrientation}
-            onPieceDrop={handlePieceDrop}
-            arePiecesDraggable={enableInput}
-            customDarkSquareStyle={{ backgroundColor: "#779556" }}
-            customLightSquareStyle={{ backgroundColor: "#ebecd0" }}
-            animationDuration={200}
-            customArrows={(customArrows ?? []) as any}
-            customArrowColor="rgb(255,170,0)"
-          />
+      <div className="flex items-stretch gap-1.5">
+        {evalBar && (
+          <div className="shrink-0 self-stretch flex">{evalBar}</div>
+        )}
+        <div
+          className={cn(
+            "relative aspect-square",
+            evalBar ? "flex-1 min-w-0 max-w-[400px]" : "w-full max-w-[400px] mx-auto",
+          )}
+        >
+          <div className="shadow-2xl rounded-lg border-4 border-primary/10 bg-white">
+            <Chessboard
+              position={currentPosition}
+              boardOrientation={boardOrientation}
+              onPieceDrop={handlePieceDrop}
+              arePiecesDraggable={enableInput}
+              customDarkSquareStyle={{ backgroundColor: "#779556" }}
+              customLightSquareStyle={{ backgroundColor: "#ebecd0" }}
+              animationDuration={200}
+              customArrows={(customArrows ?? []) as any}
+              customArrowColor="rgb(255,170,0)"
+            />
+          </div>
         </div>
       </div>
 

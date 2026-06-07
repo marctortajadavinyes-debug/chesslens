@@ -1,3 +1,4 @@
 - [chess.js v1 quirks](chess-js-v1.md) — load() returns void (not boolean); Arrow type needs `as any` cast for react-chessboard customArrows.
-- [ChessboardViewer external control](chessboard-viewer-external.md) — jumpSignal + customArrows props added; jump uses generation counter ref to avoid double-fire.
-- [SF analysis bar orientation](sf-analysis-bar.md) — flex-col-reverse = white at bottom (boardOrientation=white); flex-col = white at top (boardOrientation=black).
+- [ChessboardViewer external control](chessboard-viewer-external.md) — jumpSignal + customArrows + evalBar props added; evalBar renders left of board square inside ChessboardViewer.
+- [SF analysis bar orientation](sf-analysis-bar.md) — flex-col-reverse = white at bottom (boardOrientation=white); flex-col = white at top (boardOrientation=black); use flexGrow not height% for segments.
+- [Analysis mode PGN protection](analysis-pgn-protection.md) — in analysis mode, boardInputEnabled = needsReview && !showAnalysis; prevents moves from triggering reviewGame mutation.
