@@ -1,0 +1,142 @@
+Nueva tarea ChessLens — Stockfish SF.3B: integrar botón real “Analizar” en partidas completadas y Mis partidas.
+
+Modo recomendado: Economy.
+App testing automático: OFF.
+
+Contexto:
+Ya están completadas:
+
+* SF.1: Stockfish Worker funcionando.
+* SF.2: PGN → análisis completo con MultiPV=2.
+* SF.2.1: cálculo de evaluación validado para blancas/negras.
+* SF.3A: AnalysisPanel visual creado y probado en DEV.
+* Limpieza Configuració: Cancel·lar ya descarta cambios y los botones DEV Stockfish están ocultos.
+* npm run check/build limpios en fases anteriores.
+
+Objetivo:
+Integrar el análisis Stockfish como acción real post-PGN.
+
+Flujo correcto:
+
+1. Primero ChessLens genera un PGN final válido.
+2. Después el usuario puede:
+
+   * guardar/subir a Drive;
+   * analizar con Stockfish;
+   * exportar.
+3. Desde “Mis partidas”, el usuario puede abrir una partida guardada y:
+
+   * analizarla;
+   * exportarla.
+
+Stockfish nunca debe entrar en:
+
+* OCR;
+* parser;
+* reviewState;
+* corrección;
+* resume;
+* generación PGN.
+
+Tareas:
+
+1. Partida recién escaneada/completada
+
+* En la pantalla de detalle de partida, añadir botón:
+
+  * Català: “Analitzar”
+  * Español: “Analizar”
+  * English: “Analyze”
+* Mostrarlo solo si:
+
+  * game.status === "completed"
+  * hay PGN válido
+  * no estamos en needs_review / processing / failed
+* Al pulsar:
+
+  * mostrar AnalysisPanel con el PGN de esa partida.
+* No arrancar análisis automáticamente al cargar la página.
+
+2. Partida guardada desde “Mis partidas”
+
+* Localizar el visor de partidas guardadas desde Drive.
+* Añadir botón:
+
+  * “Analitzar” / “Analizar” / “Analyze”
+* Al pulsar:
+
+  * mostrar AnalysisPanel con el PGN cargado desde Drive.
+* No guardar análisis en Drive todavía.
+* No modificar lógica Google Drive salvo lo mínimo para leer el PGN ya disponible.
+
+3. UX
+
+* El panel debe aparecer debajo de la zona principal de la partida o en una zona clara que no rompa móvil.
+* Debe poder mostrarse/ocultarse si es razonable.
+* No saturar la pantalla.
+* No iniciar Stockfish hasta que el usuario pulse dentro del panel o el flujo actual del panel lo requiera.
+
+4. i18n mínimo
+
+* Si los textos de botones encajan en UI_TEXT existente, añadirlos ahí.
+* Si no, usar textos simples y dejar TODO claro.
+* Preferible no hacer una gran refactorización de i18n en esta fase.
+
+Archivos probables:
+
+* client/src/pages/game-detail.tsx
+* componente/página del visor de “Mis partidas” o Drive game viewer
+* client/src/components/analysis-panel.tsx solo si hace falta adaptar props
+* home.tsx solo si hay que limpiar referencia DEV residual, pero no debería ser necesario
+
+Tocar game-detail.tsx con mucho cuidado:
+
+* No tocar lógica de OCR.
+* No tocar corrección.
+* No tocar resume.
+* No tocar tablero.
+* No tocar lista de jugadas.
+* Solo añadir acción post-PGN cuando la partida esté completed.
+
+No tocar:
+
+* server/process_image_gemini.py
+* server/routes.ts
+* server/index.ts
+* shared/schema.ts
+* client/src/components/chessboard-viewer.tsx
+* client/src/lib/google-drive.ts salvo necesidad mínima
+* OCR/PGN engine
+* reviewState
+* resume
+* multi-planilla
+* salto de fila
+* idiomas de planilla
+* formatos de planilla
+
+Checks obligatorios:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Abrir una partida completed recién escaneada.
+2. Confirmar que aparece “Analitzar/Analizar/Analyze”.
+3. Pulsar y ver AnalysisPanel.
+4. Confirmar que una partida needs_review no muestra análisis.
+5. Abrir una partida desde “Mis partidas”.
+6. Confirmar que aparece botón de análisis.
+7. Pulsar y ver AnalysisPanel.
+8. Confirmar que copiar/descargar/guardar PGN sigue funcionando.
+9. Confirmar que OCR/review/resume no han cambiado.
+
+Al final dime:
+
+1. archivos modificados;
+2. dónde aparece el botón Analizar;
+3. cómo probar en partida recién escaneada;
+4. cómo probar desde Mis partidas;
+5. resultado de npm run check;
+6. resultado de npm run build;
+7. si queda algo pendiente de UI/i18n.

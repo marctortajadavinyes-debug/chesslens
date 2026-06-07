@@ -13,9 +13,12 @@ import {
   EyeOff,
   ChevronLeft,
   ChevronRight,
+  TrendingUp,
+  X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { AppLanguage } from "@shared/schema";
+import { AnalysisPanel } from "@/components/analysis-panel";
 
 type ReviewSide = "w" | "b";
 
@@ -54,6 +57,8 @@ type GameDetailText = {
   sheetCounter: (current: number, total: number) => string;
   previousSheet: string;
   nextSheet: string;
+  analyze: string;
+  hideAnalysis: string;
 };
 
 const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
@@ -108,6 +113,8 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
     sheetCounter: (current, total) => `Planella ${current} / ${total}`,
     previousSheet: "Planella anterior",
     nextSheet: "Planella següent",
+    analyze: "Analitzar",
+    hideAnalysis: "Amagar anàlisi",
   },
   en: {
     gameNotFound: "Game not found",
@@ -158,6 +165,8 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
     sheetCounter: (current, total) => `Scoresheet ${current} / ${total}`,
     previousSheet: "Previous scoresheet",
     nextSheet: "Next scoresheet",
+    analyze: "Analyze",
+    hideAnalysis: "Hide analysis",
   },
   es: {
     gameNotFound: "Partida no encontrada",
@@ -210,6 +219,8 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
     sheetCounter: (current, total) => `Planilla ${current} / ${total}`,
     previousSheet: "Planilla anterior",
     nextSheet: "Planilla siguiente",
+    analyze: "Analizar",
+    hideAnalysis: "Ocultar análisis",
   },
 };
 
@@ -294,9 +305,14 @@ export default function GameDetail() {
   );
   const [showSheetMobile, setShowSheetMobile] = useState(false);
   const [sheetOverride, setSheetOverride] = useState<number | null>(null);
+  const [showAnalysis, setShowAnalysis] = useState(false);
 
   const isNavigatingPast = boardIndex < maxBoardIndex;
   const needsReview = game?.status === "needs_review" || isNavigatingPast;
+  const canAnalyze =
+    game?.status === "completed" &&
+    !isResuming &&
+    !!(pgnText || game?.pgn);
   const hasMultipleSheets =
     Array.isArray(game?.imageUrls) && game.imageUrls.length > 1;
 
@@ -730,6 +746,47 @@ export default function GameDetail() {
               className="w-full h-32 p-4 rounded-lg font-mono text-xs border"
             />
           </div>
+
+          {canAnalyze && !showAnalysis && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAnalysis(true)}
+              data-testid="button-analyze-game"
+              className="gap-1.5"
+            >
+              <TrendingUp className="w-4 h-4" />
+              {t.analyze}
+            </Button>
+          )}
+
+          {canAnalyze && showAnalysis && (
+            <div className="border border-border rounded-xl p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
+                  <TrendingUp className="w-3.5 h-3.5" />
+                  {t.analyze}
+                </span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                  onClick={() => setShowAnalysis(false)}
+                  data-testid="button-hide-analysis"
+                  title={t.hideAnalysis}
+                >
+                  <X className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+              <AnalysisPanel
+                pgn={pgnText || game.pgn || ""}
+                lang={appLanguage}
+                depth={16}
+              />
+            </div>
+          )}
         </div>
       </main>
     </div>
