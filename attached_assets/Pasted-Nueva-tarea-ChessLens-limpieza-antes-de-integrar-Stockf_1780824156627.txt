@@ -1,0 +1,94 @@
+Nueva tarea ChessLens — limpieza antes de integrar Stockfish real.
+
+Modo recomendado: Economy.
+App testing automático: OFF.
+
+Contexto:
+Se han detectado tres problemas en el panel Configuració:
+
+1. Bug real:
+   Si modifico cualquier campo de configuración y pulso “Cancel·lar”, los cambios se guardan igualmente.
+   Comportamiento correcto:
+
+* Los cambios dentro del modal/panel de configuración deben ser temporales.
+* Solo se deben aplicar al pulsar “Desar configuració”.
+* Si se pulsa “Cancel·lar”, debe cerrar el panel y descartar cambios.
+* Al volver a abrir Configuració, deben aparecer los valores guardados reales, no los cambios cancelados.
+
+2. Bloque Stockfish DEV visible:
+   En Configuració aparece un bloque o botones relacionados con Stockfish:
+
+* SF.1 Worker
+* SF.2.1 Val
+* SF.3A Panel
+  o similar.
+
+Eso era temporal para pruebas internas. Debe desaparecer del panel normal de Configuració.
+
+Acción recomendada:
+
+* Eliminar el bloque DEV Stockfish visible de Configuració.
+* Si se quiere conservar para desarrollo, dejarlo detrás de una constante local desactivada por defecto, por ejemplo:
+  const SHOW_STOCKFISH_DEV_TOOLS = false;
+* En ningún caso debe verse en la UI normal.
+
+3. Error al pulsar SF.2.1 Val:
+   Al pulsar SF.2.1 Val aparece un runtime overlay:
+   [plugin:runtime-error-plugin] (unknown runtime error)
+
+Como el bloque DEV ya no debe estar visible, no hace falta arreglar ese botón si lo eliminas/ocultas.
+Lo importante es que no sea accesible para el usuario.
+
+Importante:
+No implementar todavía SF.3B.
+No añadir todavía el botón real “Analizar” en partida completada.
+Primero limpiar Configuració.
+
+Archivos probables:
+
+* client/src/pages/home.tsx
+
+Puedes tocar otros archivos solo si confirmas que ahí vive el estado de configuración.
+
+No tocar:
+
+* server/process_image_gemini.py
+* server/routes.ts
+* server/index.ts
+* shared/schema.ts
+* client/src/components/chessboard-viewer.tsx
+* client/src/lib/pgn-analysis.ts salvo que sea imprescindible
+* client/src/lib/stockfish-worker.ts salvo que sea imprescindible
+* client/src/components/analysis-panel.tsx salvo que sea imprescindible
+* OCR
+* parser
+* reviewState
+* resume
+* Google Drive
+* motor PGN
+
+Checks obligatorios:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Abrir Configuració.
+2. Cambiar idioma de app, idioma de planilla o formato.
+3. Pulsar Cancel·lar.
+4. Volver a abrir Configuració.
+5. Confirmar que NO se guardó el cambio.
+6. Repetir y pulsar Desar configuració.
+7. Confirmar que SÍ se guardó el cambio.
+8. Confirmar que no aparece ningún bloque DEV de Stockfish en Configuració.
+9. Confirmar que no hay runtime overlay.
+
+Al final dime:
+
+1. qué causaba que Cancel·lar guardara cambios;
+2. cómo lo has corregido;
+3. si has eliminado u ocultado los botones DEV de Stockfish;
+4. archivos modificados;
+5. resultado de npm run check;
+6. resultado de npm run build.

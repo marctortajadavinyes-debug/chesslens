@@ -306,6 +306,9 @@ function getSheetFormatLabel(appLanguage: AppLanguage, value: SheetFormat) {
   );
 }
 
+/** Set to true only during local Stockfish dev — never ships enabled. */
+const SHOW_STOCKFISH_DEV_TOOLS = false;
+
 export default function Home() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -319,6 +322,9 @@ export default function Home() {
   const [hasSavedSettings, setHasSavedSettings] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] =
+    useState<ChessLensUserSettings>(DEFAULT_SETTINGS);
+  // draftSettings holds unsaved form changes; only applied to settings on Save.
+  const [draftSettings, setDraftSettings] =
     useState<ChessLensUserSettings>(DEFAULT_SETTINGS);
   const [showDevPanel, setShowDevPanel] = useState(false);
 
@@ -353,7 +359,8 @@ export default function Home() {
   }, []);
 
   const saveSettings = () => {
-    window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+    setSettings(draftSettings);
+    window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(draftSettings));
     setHasSavedSettings(true);
     setShowSettings(false);
 
@@ -486,7 +493,7 @@ export default function Home() {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setShowSettings(true)}
+                onClick={() => { setDraftSettings(settings); setShowSettings(true); }}
                 disabled={isUploading}
               >
                 <Settings className="w-4 h-4 mr-2" />
@@ -532,9 +539,9 @@ export default function Home() {
                       {t.alias}
                     </label>
                     <input
-                      value={settings.alias}
+                      value={draftSettings.alias}
                       onChange={(e) =>
-                        setSettings((prev) => ({
+                        setDraftSettings((prev) => ({
                           ...prev,
                           alias: e.target.value,
                         }))
@@ -550,9 +557,9 @@ export default function Home() {
                     </label>
                     <input
                       type="email"
-                      value={settings.email}
+                      value={draftSettings.email}
                       onChange={(e) =>
-                        setSettings((prev) => ({
+                        setDraftSettings((prev) => ({
                           ...prev,
                           email: e.target.value,
                         }))
@@ -567,9 +574,9 @@ export default function Home() {
                       {t.appLanguage}
                     </label>
                     <select
-                      value={settings.appLanguage}
+                      value={draftSettings.appLanguage}
                       onChange={(e) =>
-                        setSettings((prev) => ({
+                        setDraftSettings((prev) => ({
                           ...prev,
                           appLanguage: e.target.value as AppLanguage,
                         }))
@@ -589,9 +596,9 @@ export default function Home() {
                       {t.scoresheetLanguage}
                     </label>
                     <select
-                      value={settings.scoresheetLanguage}
+                      value={draftSettings.scoresheetLanguage}
                       onChange={(e) =>
-                        setSettings((prev) => ({
+                        setDraftSettings((prev) => ({
                           ...prev,
                           scoresheetLanguage: e.target
                             .value as ScoresheetLanguage,
@@ -612,9 +619,9 @@ export default function Home() {
                       {t.sheetFormat}
                     </label>
                     <select
-                      value={settings.sheetFormat}
+                      value={draftSettings.sheetFormat}
                       onChange={(e) =>
-                        setSettings((prev) => ({
+                        setDraftSettings((prev) => ({
                           ...prev,
                           sheetFormat: e.target.value as SheetFormat,
                         }))
@@ -624,7 +631,7 @@ export default function Home() {
                       {SHEET_FORMAT_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
                           {getSheetFormatLabel(
-                            settings.appLanguage,
+                            draftSettings.appLanguage,
                             option.value,
                           )}
                         </option>
@@ -633,7 +640,8 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* [DEV] Stockfish SF.1 / SF.2.1 / SF.3A — remove after validation */}
+                {/* [DEV] Stockfish tools — hidden in production via SHOW_STOCKFISH_DEV_TOOLS */}
+                {SHOW_STOCKFISH_DEV_TOOLS && (
                 <div className="border border-dashed border-border rounded-xl p-3 space-y-2 bg-muted/10 opacity-70">
                   <p className="text-xs text-muted-foreground font-mono">[DEV] SF eval + panel (SF.1 · SF.2.1 · SF.3A)</p>
                   <div className="flex gap-2">
@@ -753,6 +761,7 @@ export default function Home() {
                     </div>
                   )}
                 </div>
+                )}
 
                 {/* Suggestions section */}
                 <div className="border border-border rounded-xl p-3 space-y-2 bg-muted/20">
@@ -791,7 +800,7 @@ export default function Home() {
                     <Button
                       type="button"
                       variant="ghost"
-                      onClick={() => setShowSettings(false)}
+                      onClick={() => { setDraftSettings(settings); setShowSettings(false); }}
                     >
                       {t.cancel}
                     </Button>
