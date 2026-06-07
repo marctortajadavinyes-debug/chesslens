@@ -416,7 +416,7 @@ export default function GameDetail() {
     if (!showAnalysis) return;
     const timer = setTimeout(() => {
       posAnalyze(currentFen, { depth: 12 });
-    }, 150);
+    }, 350);
     return () => clearTimeout(timer);
     // posAnalyze is stable (useCallback with no deps)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -705,7 +705,7 @@ export default function GameDetail() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto w-full p-4 flex flex-col gap-4">
+      <main className="flex-1 max-w-7xl mx-auto w-full p-4 flex flex-col gap-2">
 
         {/* ── Shared header bar ─────────────────────────────────────────────────
             Desktop: left placeholder (aligns w/ scoresheet) + right section (board).
@@ -715,30 +715,29 @@ export default function GameDetail() {
           <div className="hidden lg:block flex-1" />
           {/* Right section */}
           <div className="flex-1 flex flex-col gap-1">
-            {/* Main row */}
-            <div className="flex items-center min-h-[36px]">
-              <div className="flex-1 flex justify-center">
-                {canAnalyze && !showAnalysis && (
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => {
-                      setShowAnalysis(true);
-                      setJumpSignal({ index: 1, counter: Date.now() });
-                    }}
-                    data-testid="button-analyze-game"
-                    className="gap-1.5 bg-black text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
-                  >
-                    <TrendingUp className="w-4 h-4" />
-                    {t.analyze}
-                  </Button>
-                )}
-              </div>
+            {/* Main row — Analitzar truly centred; Veure planella pinned right */}
+            <div className="relative flex items-center justify-center min-h-[36px]">
+              {canAnalyze && !showAnalysis && (
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => {
+                    posStop();
+                    setShowAnalysis(true);
+                    setJumpSignal({ index: 1, counter: Date.now() });
+                  }}
+                  data-testid="button-analyze-game"
+                  className="gap-1.5 bg-black text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+                >
+                  <TrendingUp className="w-4 h-4" />
+                  {t.analyze}
+                </Button>
+              )}
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                className="lg:hidden shrink-0"
+                className="lg:hidden absolute right-0 shrink-0"
                 onClick={() => setShowSheetMobile((v) => !v)}
                 data-testid="button-toggle-scoresheet-mobile"
               >
@@ -755,17 +754,9 @@ export default function GameDetail() {
                 )}
               </Button>
             </div>
-            {/* Analysis controls — right-aligned, below Veure planella */}
+            {/* Analysis controls — vertical stack, right-aligned, below Veure planella */}
             {canAnalyze && showAnalysis && (
-              <div className="flex justify-end gap-4">
-                <button
-                  type="button"
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  onClick={() => setShowArrows((v) => !v)}
-                  data-testid="button-toggle-arrows"
-                >
-                  {showArrows ? t.hideArrows : t.showArrows}
-                </button>
+              <div className="flex flex-col items-end gap-0.5 mt-0.5">
                 <button
                   type="button"
                   className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
@@ -774,6 +765,14 @@ export default function GameDetail() {
                 >
                   <X className="w-3.5 h-3.5" />
                   {t.hideAnalysis}
+                </button>
+                <button
+                  type="button"
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  onClick={() => setShowArrows((v) => !v)}
+                  data-testid="button-toggle-arrows"
+                >
+                  {showArrows ? t.hideArrows : t.showArrows}
                 </button>
               </div>
             )}
@@ -852,7 +851,7 @@ export default function GameDetail() {
           ) : null}
         </div>
 
-        <div className="space-y-4 flex flex-col min-h-[600px] relative">
+        <div className="space-y-4 flex flex-col relative">
           {(game.status === "processing" || isResuming) && (
             <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background/70 backdrop-blur-sm rounded-xl">
               <RefreshCw className="w-12 h-12 text-primary animate-spin mb-4" />
@@ -932,7 +931,7 @@ export default function GameDetail() {
                 <div className="flex items-center gap-2 h-full min-h-[36px]">
                   <Loader2 className="w-3 h-3 animate-spin text-muted-foreground shrink-0" />
                   <span className="text-xs text-muted-foreground">
-                    {posStatus === "analyzing" ? "Analitzant…" : "—"}
+                    Analitzant…
                   </span>
                 </div>
               )}

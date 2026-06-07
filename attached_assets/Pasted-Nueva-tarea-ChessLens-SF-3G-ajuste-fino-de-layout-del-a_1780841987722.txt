@@ -1,0 +1,141 @@
+Nueva tarea ChessLens — SF.3G: ajuste fino de layout del análisis por posición.
+
+Modo recomendado: Economy.
+App testing automático: OFF.
+
+Contexto:
+SF.3F quitó “Planella original” y movió el header, pero visualmente aún hay problemas.
+
+No implementar todavía sandbox de variantes.
+No permitir todavía mover piezas en análisis.
+Primero estabilizar layout, tamaño del tablero y arranque del análisis.
+
+Problemas detectados:
+
+1. Botón Analitzar
+   Está en la fila correcta, pero queda demasiado a la izquierda, sobre columnas b/c/d.
+   Debe moverse algo a la derecha para quedar ópticamente centrado sobre el tablero, aproximadamente sobre columnas d/e.
+
+Importante:
+
+* debe seguir en la misma fila que “Veure planella”;
+* no debe volver a una fila inferior;
+* no debe añadir altura extra.
+
+2. Espacio superior
+   Al quitar “Planella original”, ha quedado espacio aprovechable.
+   Subir:
+
+* líneas de análisis;
+* tablero;
+* zona principal;
+  para compactar la pantalla.
+
+3. Controles de análisis
+   En modo análisis:
+
+* “× Sortir d’anàlisi” debe verse claramente;
+* debajo debe ir “Amagar fletxes” / “Mostrar fletxes”;
+* ambos alineados a la derecha, debajo de “Veure planella”;
+* no en la misma línea que las líneas de análisis;
+* no mezclados visualmente con las jugadas sugeridas.
+
+Orden deseado:
+Veure planella
+× Sortir d’anàlisi
+Amagar fletxes
+
+4. Arranque lento al entrar en análisis
+   Al pulsar Analitzar se queda pensando demasiado, como si se hubiera colgado.
+   Después, al pasar a la siguiente jugada, recupera velocidad.
+
+Corregir:
+
+* al pulsar Analitzar, saltar primero a ply 1;
+* no lanzar análisis de la posición final antes de saltar;
+* cancelar/ignorar cualquier análisis anterior;
+* mostrar inmediatamente un estado claro tipo “Analitzant…” o spinner;
+* usar profundidad inicial rápida, por ejemplo depth 10 o 12, pero sin bloquear sensación de UI.
+
+Objetivo:
+Que al entrar en análisis no parezca colgado.
+
+5. Tamaño del tablero
+   Parece que el tablero se ha hecho más pequeño.
+   Debe recuperar el tamaño anterior.
+
+La barra de evaluación no debe reducir el tamaño del tablero.
+El tablero debe mantener su anchura/altura normal.
+
+6. Botones inferiores descentrados
+   Los controles bajo el tablero parecen descentrados.
+   Deben estar centrados respecto al tablero, no respecto al conjunto barra + tablero.
+
+Regla:
+
+* tablero = columna principal;
+* barra = accesorio a la izquierda;
+* controles inferiores y lista de movimientos deben alinearse con el tablero, no con la barra.
+
+7. Barra de evaluación
+   Mantener:
+
+* misma altura que tablero;
+* pegada a la izquierda del tablero;
+* separación pequeña;
+* score a la izquierda centrado verticalmente.
+
+Pero asegurar que la barra no cambia el tamaño ni la alineación del tablero.
+
+8. No tocar lógica sensible
+   No tocar:
+
+* OCR;
+* parser;
+* reviewState;
+* resume;
+* backend;
+* PGN;
+* Google Drive;
+* generación de PGN;
+* lista de movimientos original.
+
+Archivos probables:
+
+* client/src/pages/game-detail.tsx
+* client/src/components/chessboard-viewer.tsx
+
+Si tocas chessboard-viewer.tsx:
+
+* mantener input bloqueado en analysis mode;
+* no romper corrección;
+* no romper promoción;
+* no cambiar game.moves ni PGN.
+
+Checks obligatorios:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Botón Analitzar en misma fila que Veure planella.
+2. Botón Analitzar centrado ópticamente sobre columnas d/e.
+3. Al entrar en análisis, líneas y tablero quedan más arriba.
+4. “Sortir d’anàlisi” visible bajo Veure planella.
+5. “Amagar/Mostrar fletxes” debajo de Sortir d’anàlisi.
+6. Al pulsar Analitzar no parece colgado.
+7. Tablero mantiene tamaño normal.
+8. Botones inferiores centrados respecto al tablero.
+9. Barra no reduce ni desplaza mal el tablero.
+10. PGN/lista de movimientos originales siguen intactos.
+
+Al final dime:
+
+1. archivos modificados;
+2. cómo has centrado Analitzar sobre el tablero;
+3. cómo has evitado el análisis inicial de posición equivocada/final;
+4. cómo has recuperado tamaño del tablero;
+5. cómo has centrado los controles inferiores;
+6. resultado de npm run check;
+7. resultado de npm run build.
