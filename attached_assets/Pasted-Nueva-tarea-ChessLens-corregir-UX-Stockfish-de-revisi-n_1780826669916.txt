@@ -1,0 +1,165 @@
+Nueva tarea ChessLens — corregir UX Stockfish: de “revisión completa” a análisis por posición.
+
+Modo recomendado: Economy.
+App testing automático: OFF.
+
+Contexto:
+SF.3B integró AnalysisPanel, pero la UX actual no es la deseada.
+
+Problemas detectados:
+
+1. El botón “Analitzar” queda demasiado abajo.
+2. Al pulsar “Analitzar”, aparece otro botón interno para volver a analizar. No queremos doble botón.
+3. El análisis tarda demasiado: 2m57s para una partida de 62 movimientos por bando.
+4. Lo actual funciona como “revisión completa de partida”, pero ChessLens necesita primero “análisis por posición/jugada”.
+5. La barra no refleja bien la posición; aparece 0.0 aunque la partida está ganada por negras.
+6. La barra debe estar junto al tablero, no como panel separado inferior.
+7. Las mejores jugadas deben incluir continuación, no solo una jugada UCI aislada.
+
+Objetivo:
+Cambiar el enfoque por defecto a análisis rápido de la posición visible/actual.
+
+Nuevo comportamiento deseado:
+
+* Stockfish sigue siendo post-PGN.
+* No analizar toda la partida automáticamente.
+* Al pulsar “Analitzar”, activar análisis de la posición actual visible en el tablero.
+* Cuando el usuario navega por la partida, actualizar/analisar la posición visible.
+* Mostrar evaluación y 2 mejores líneas para esa posición.
+* La revisión completa de partida queda para una opción posterior, no por defecto.
+
+UI deseada:
+
+1. Botón principal “Analitzar”
+
+* Debe quedar centrado encima del tablero.
+* Mismo tamaño visual que “Veure planella”.
+* Fondo negro.
+* Texto blanco.
+* Solo visible si la partida está completed y tiene PGN válido.
+* No visible en needs_review / processing / failed.
+
+2. No doble botón
+
+* Al pulsar “Analitzar”, no debe aparecer otro botón “Analitzar” dentro del panel.
+* El primer botón activa el modo análisis.
+* Dentro puede haber detener/ocultar/reset si hace falta, pero no otro botón principal de análisis.
+
+3. Barra de evaluación
+
+* Debe aparecer a la izquierda del tablero.
+* Debe ser vertical.
+* Debe mostrar la evaluación de la posición actual.
+* Perspectiva estándar:
+
+  * +1.1 = ventaja blanca.
+  * -1.1 = ventaja negra.
+* La barra permanece a la izquierda del tablero.
+* Si el tablero está orientado con blancas abajo:
+
+  * blancas arriba en la barra;
+  * negras abajo.
+* Si el tablero está girado con negras abajo:
+
+  * la barra debe rotar visualmente:
+  * negras abajo;
+  * blancas arriba.
+* No mostrar 0.0 si no hay evaluación real. Si falta evaluación, mostrar estado “analizando” o “sin evaluación”.
+
+4. Mejores líneas
+
+* Mostrar por defecto las 2 mejores líneas.
+* No solo bestmove.
+* Cada línea debe mostrar:
+
+  * primera jugada recomendada;
+  * continuación de aproximadamente 8 plies / 4 movimientos por bando si Stockfish la devuelve.
+* Convertir PV UCI a SAN legible desde la FEN actual si es razonable.
+* Ejemplo:
+
+  * 1... e5 2. Nf3 Nc6 3. Bb5 a6
+* Si por ahora solo se puede convertir parcialmente, dejarlo limpio y sin romper.
+
+5. Velocidad
+
+* No analizar todas las posiciones de la partida por defecto.
+* Analizar solo la posición actual.
+* Si el usuario cambia de jugada, cancelar análisis anterior y lanzar análisis de la nueva posición.
+* Usar debounce pequeño si hace falta.
+* Profundidad inicial rápida, por ejemplo depth 10-12.
+* MultiPV=2.
+* Más adelante añadiremos configuración: rápido / normal / profundo / máximo.
+
+Arquitectura:
+Probablemente hará falta obtener la FEN actual visible del tablero o del índice de jugada actual.
+Hazlo con el cambio mínimo posible.
+
+Puedes tocar:
+
+* client/src/pages/game-detail.tsx
+* client/src/components/analysis-panel.tsx
+* client/src/lib/pgn-analysis.ts
+* client/src/lib/stockfish-worker.ts
+* client/src/hooks/use-stockfish-analysis.ts
+* client/src/components/drive-game-viewer.tsx si hace falta aplicar el mismo concepto ahí
+
+Tocar con mucho cuidado:
+
+* client/src/components/chessboard-viewer.tsx
+
+Solo tocar chessboard-viewer si es imprescindible para exponer:
+
+* currentFen;
+* currentPly;
+* boardOrientation;
+* callback onPositionChange;
+  o para colocar la barra junto al tablero.
+
+No tocar:
+
+* server/process_image_gemini.py
+* server/routes.ts
+* server/index.ts
+* shared/schema.ts
+* OCR
+* parser
+* reviewState
+* resume
+* python-chess
+* multi-planilla
+* salto de fila
+* idiomas de planilla
+* formatos de planilla
+* Google Drive storage
+
+Importante:
+No crear ahora “revisión completa” como flujo principal.
+Puede quedar el código existente, pero no debe ser la experiencia principal.
+
+Checks obligatorios:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Abrir una partida completed.
+2. Confirmar botón Analitzar centrado encima del tablero, negro con texto blanco.
+3. Pulsar Analitzar.
+4. Confirmar que no aparece un segundo botón Analitzar.
+5. Confirmar barra vertical a la izquierda del tablero.
+6. Confirmar que al moverse por jugadas cambia la evaluación.
+7. Confirmar que se muestran 2 mejores líneas con continuación.
+8. Confirmar que no analiza toda la partida automáticamente.
+9. Confirmar que needs_review no muestra análisis.
+10. Confirmar que OCR/review/resume no se han tocado.
+
+Al final dime:
+
+1. archivos modificados;
+2. cómo obtienes la FEN/ply actual visible;
+3. cómo se coloca la barra junto al tablero;
+4. si has tenido que tocar chessboard-viewer y exactamente para qué;
+5. resultado de npm run check;
+6. resultado de npm run build;
+7. qué queda pendiente.

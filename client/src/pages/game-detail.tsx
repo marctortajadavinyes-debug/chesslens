@@ -15,10 +15,12 @@ import {
   ChevronRight,
   TrendingUp,
   X,
+  Loader2,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { AppLanguage } from "@shared/schema";
-import { AnalysisPanel } from "@/components/analysis-panel";
+import { usePositionAnalysis } from "@/hooks/use-position-analysis";
+import { Chess } from "chess.js";
 
 type ReviewSide = "w" | "b";
 
@@ -224,6 +226,77 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
   },
 };
 
+// ─── Position-analysis helpers ────────────────────────────────────────────────
+
+const STARTING_FEN =
+  "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
+function getFenAtPly(pgn: string, ply: number): string {
+  if (!pgn.trim()) return STARTING_FEN;
+  try {
+    const game = new Chess();
+    game.loadPgn(pgn);
+    const history = game.history() as string[];
+    const chess = new Chess();
+    for (let i = 0; i < Math.min(ply, history.length); i++) {
+      chess.move(history[i]);
+    }
+    return chess.fen();
+  } catch {
+    return STARTING_FEN;
+  }
+}
+
+function pvToSan(fen: string, uciPv: string[]): string {
+  if (!uciPv.length) return "";
+  try {
+    const chess = new Chess();
+    chess.load(fen);
+    const fenParts = fen.split(" ");
+    let side = fenParts[1] === "b" ? "b" : "w";
+    let fullMove = parseInt(fenParts[5] ?? "1", 10);
+    const parts: string[] = [];
+    let first = true;
+    for (const uci of uciPv.slice(0, 8)) {
+      if (uci.length < 4) break;
+      if (side === "w") {
+        parts.push(`${fullMove}.`);
+      } else if (first) {
+        parts.push(`${fullMove}...`);
+      }
+      first = false;
+      const move = chess.move({
+        from: uci.slice(0, 2),
+        to: uci.slice(2, 4),
+        promotion: uci[4] ?? undefined,
+      } as any);
+      if (!move) break;
+      parts.push(move.san);
+      if (side === "b") fullMove++;
+      side = side === "w" ? "b" : "w";
+    }
+    return parts.join(" ");
+  } catch {
+    return uciPv[0] ?? "";
+  }
+}
+
+function evalToWhitePercent(scoreCpWhite?: number, mateWhite?: number): number {
+  if (mateWhite !== undefined) return mateWhite > 0 ? 95 : 5;
+  if (scoreCpWhite === undefined) return 50;
+  const clamped = Math.max(-1000, Math.min(1000, scoreCpWhite));
+  return 50 + (clamped / 1000) * 45;
+}
+
+function evalToString(scoreCpWhite?: number, mateWhite?: number): string {
+  if (mateWhite !== undefined) {
+    return mateWhite > 0 ? `M${mateWhite}` : `M${-mateWhite}`;
+  }
+  if (scoreCpWhite === undefined) return "";
+  const pawns = scoreCpWhite / 100;
+  return `${pawns >= 0 ? "+" : ""}${pawns.toFixed(1)}`;
+}
+
 function getAppLanguageFromGame(game: any): AppLanguage {
   const lang = game?.meta?.appLanguage;
 
@@ -306,6 +379,34 @@ export default function GameDetail() {
   const [showSheetMobile, setShowSheetMobile] = useState(false);
   const [sheetOverride, setSheetOverride] = useState<number | null>(null);
   const [showAnalysis, setShowAnalysis] = useState(false);
+
+  // ─── Position analysis ──────────────────────────────────────────────────────
+  const {
+    status: posStatus,
+    lines: posLines,
+    analyzePosition: posAnalyze,
+    stop: posStop,
+  } = usePositionAnalysis();
+
+  const currentFen = useMemo(
+    () => getFenAtPly(pgnText || game?.pgn || "", boardIndex),
+    [pgnText, game?.pgn, boardIndex],
+  );
+
+  // Re-analyze whenever analysis mode is active and the position changes.
+  useEffect(() => {
+    if (!showAnalysis) return;
+    const timer = setTimeout(() => {
+      posAnalyze(currentFen, { depth: 12 });
+    }, 150);
+    return () => clearTimeout(timer);
+    // posAnalyze is stable (useCallback with no deps)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showAnalysis, currentFen]);
+
+  const posLine = posLines[0];
+  const evalTopPercent = evalToWhitePercent(posLine?.scoreCpWhite, posLine?.mateWhite);
+  const evalString = posLine ? evalToString(posLine.scoreCpWhite, posLine.mateWhite) : "";
 
   const isNavigatingPast = boardIndex < maxBoardIndex;
   const needsReview = game?.status === "needs_review" || isNavigatingPast;
@@ -703,23 +804,114 @@ export default function GameDetail() {
             </div>
           )}
 
-          <ChessboardViewer
-            pgn={pgnText || game.pgn || ""}
-            error={game.status === "failed" ? (game.error ?? null) : null}
-            syncToken={`${game.updatedAt ?? ""}:${game.status ?? ""}:${
-              game.reviewState?.blockedRow ?? ""
-            }:${game.reviewState?.blockedSide ?? ""}`}
-            enableInput={needsReview}
-            onMove={handleMoveFromBoard}
-            onMoveIndexChange={(idx, maxIdx) => {
-              setBoardIndex(idx);
-              setMaxBoardIndex(maxIdx);
-            }}
-            boardOrientation={boardOrientation}
-            onOrientationChange={setBoardOrientation}
-            appLanguage={appLanguage}
-            scoresheetLanguage={scoresheetLanguage}
-          />
+          {/* ── Analyze button — centered above board, black bg ────────── */}
+          {canAnalyze && !showAnalysis && (
+            <div className="flex justify-center">
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setShowAnalysis(true)}
+                data-testid="button-analyze-game"
+                className="gap-1.5 bg-black text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+              >
+                <TrendingUp className="w-4 h-4" />
+                {t.analyze}
+              </Button>
+            </div>
+          )}
+
+          {/* ── Analysis mode header (when active) ─────────────────────── */}
+          {canAnalyze && showAnalysis && (
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium flex items-center gap-1.5 text-muted-foreground">
+                <TrendingUp className="w-3.5 h-3.5" />
+                {evalString && (
+                  <span className="font-mono text-foreground font-semibold">
+                    {evalString}
+                  </span>
+                )}
+                {posStatus === "analyzing" && (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                )}
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs gap-1"
+                onClick={() => { setShowAnalysis(false); posStop(); }}
+                data-testid="button-hide-analysis"
+              >
+                <X className="w-3.5 h-3.5" />
+                {t.hideAnalysis}
+              </Button>
+            </div>
+          )}
+
+          {/* ── Board + vertical eval bar ───────────────────────────────── */}
+          <div className="flex gap-1">
+            {showAnalysis && (
+              <div
+                className="w-3 sm:w-4 flex flex-col rounded-sm overflow-hidden border border-border/30 shrink-0 self-stretch min-h-[120px]"
+                data-testid="eval-bar"
+                aria-label={evalString || undefined}
+              >
+                {/* Top portion — white (normal orientation) */}
+                <div
+                  className="bg-gray-100 dark:bg-gray-300 transition-[height] duration-500"
+                  style={{ height: `${evalTopPercent}%` }}
+                />
+                {/* Bottom portion — black */}
+                <div className="flex-1 bg-neutral-900 dark:bg-neutral-800" />
+              </div>
+            )}
+            <div className={showAnalysis ? "flex-1 min-w-0" : "w-full"}>
+              <ChessboardViewer
+                pgn={pgnText || game.pgn || ""}
+                error={game.status === "failed" ? (game.error ?? null) : null}
+                syncToken={`${game.updatedAt ?? ""}:${game.status ?? ""}:${
+                  game.reviewState?.blockedRow ?? ""
+                }:${game.reviewState?.blockedSide ?? ""}`}
+                enableInput={needsReview}
+                onMove={handleMoveFromBoard}
+                onMoveIndexChange={(idx, maxIdx) => {
+                  setBoardIndex(idx);
+                  setMaxBoardIndex(maxIdx);
+                }}
+                boardOrientation={boardOrientation}
+                onOrientationChange={setBoardOrientation}
+                appLanguage={appLanguage}
+                scoresheetLanguage={scoresheetLanguage}
+              />
+            </div>
+          </div>
+
+          {/* ── Best lines — below board ────────────────────────────────── */}
+          {showAnalysis && posLines.length > 0 && (
+            <div
+              className="space-y-1 bg-muted/30 rounded-lg px-3 py-2"
+              data-testid="analysis-lines"
+            >
+              {posLines.map((line, i) => {
+                const san = pvToSan(currentFen, line.pv);
+                const ev = evalToString(line.scoreCpWhite, line.mateWhite);
+                return (
+                  <div
+                    key={i}
+                    className="flex items-baseline gap-2 text-xs font-mono"
+                    data-testid={`analysis-line-${i}`}
+                  >
+                    <span className="text-muted-foreground w-12 shrink-0">
+                      {ev}
+                    </span>
+                    <span className="text-foreground/90 leading-relaxed break-all">
+                      {san || line.move}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           <PgnActions
             pgn={pgnText || game.pgn || ""}
@@ -746,47 +938,6 @@ export default function GameDetail() {
               className="w-full h-32 p-4 rounded-lg font-mono text-xs border"
             />
           </div>
-
-          {canAnalyze && !showAnalysis && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setShowAnalysis(true)}
-              data-testid="button-analyze-game"
-              className="gap-1.5"
-            >
-              <TrendingUp className="w-4 h-4" />
-              {t.analyze}
-            </Button>
-          )}
-
-          {canAnalyze && showAnalysis && (
-            <div className="border border-border rounded-xl p-4 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                  <TrendingUp className="w-3.5 h-3.5" />
-                  {t.analyze}
-                </span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0"
-                  onClick={() => setShowAnalysis(false)}
-                  data-testid="button-hide-analysis"
-                  title={t.hideAnalysis}
-                >
-                  <X className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-              <AnalysisPanel
-                pgn={pgnText || game.pgn || ""}
-                lang={appLanguage}
-                depth={16}
-              />
-            </div>
-          )}
         </div>
       </main>
     </div>
