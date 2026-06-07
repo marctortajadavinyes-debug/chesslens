@@ -94,6 +94,8 @@ interface ChessboardViewerProps {
   onOrientationChange: (o: "white" | "black") => void;
   appLanguage?: AppLanguage;
   scoresheetLanguage?: ScoresheetLanguage;
+  customArrows?: [string, string, string][];
+  jumpSignal?: { index: number; counter: number };
 }
 
 function isBadPgn(pgn?: string | null) {
@@ -217,12 +219,15 @@ export function ChessboardViewer({
   onOrientationChange,
   appLanguage = "ca",
   scoresheetLanguage = "ca",
+  customArrows,
+  jumpSignal,
 }: ChessboardViewerProps) {
   const [game, setGame] = useState(() => new Chess());
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [uiError, setUiError] = useState<string | null>(null);
   const [tempPosition, setTempPosition] = useState<string | null>(null);
+  const handledJumpRef = useRef<number | undefined>(undefined);
 
   const { toast } = useToast();
   const t = BOARD_TEXT[appLanguage] ?? BOARD_TEXT.ca;
@@ -231,6 +236,17 @@ export function ChessboardViewer({
   const activeMoveRef = useRef<HTMLSpanElement | null>(null);
 
   const historySan = useMemo(() => game.history(), [game]);
+
+  // Jump to a specific move index when signaled from the parent
+  useEffect(() => {
+    if (!jumpSignal || jumpSignal.counter === handledJumpRef.current) return;
+    handledJumpRef.current = jumpSignal.counter;
+    setIsPlaying(false);
+    setCurrentMoveIndex(
+      Math.min(Math.max(0, jumpSignal.index), historySan.length),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [jumpSignal?.counter]);
 
   useEffect(() => {
     if (onMoveIndexChange) {
@@ -420,6 +436,8 @@ export function ChessboardViewer({
             customDarkSquareStyle={{ backgroundColor: "#779556" }}
             customLightSquareStyle={{ backgroundColor: "#ebecd0" }}
             animationDuration={200}
+            customArrows={(customArrows ?? []) as any}
+            customArrowColor="rgb(255,170,0)"
           />
         </div>
       </div>

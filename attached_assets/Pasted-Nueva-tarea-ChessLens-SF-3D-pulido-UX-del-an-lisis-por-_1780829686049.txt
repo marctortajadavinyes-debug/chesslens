@@ -1,0 +1,212 @@
+Nueva tarea ChessLens — SF.3D: pulido UX del análisis por posición.
+
+Modo recomendado: Economy.
+App testing automático: OFF.
+
+Contexto:
+Ya existe análisis Stockfish por posición en game-detail.tsx:
+
+* botón Analitzar;
+* barra de evaluación a la izquierda;
+* análisis de posición actual;
+* 2 mejores líneas;
+* sin revisión completa por defecto.
+
+Pero la UX actual necesita correcciones importantes.
+
+Objetivo:
+Pulir la experiencia de análisis para que sea compacta, clara y usable en móvil/desktop.
+
+Cambios requeridos:
+
+1. Ubicación del botón Analitzar
+   Actualmente el botón queda en una línea extra encima del tablero y alarga la pantalla.
+
+Debe quedar en la misma fila horizontal que:
+
+* título “Planella original” a la izquierda;
+* botón “Veure planella” a la derecha.
+
+Diseño deseado:
+
+* “Planella original” izquierda;
+* “Analitzar” centrado;
+* “Veure planella” derecha.
+
+El botón Analitzar:
+
+* mismo tamaño visual que “Veure planella”;
+* fondo negro;
+* texto blanco;
+* no debe añadir altura extra a la pantalla.
+
+2. Al activar análisis, empezar desde el inicio
+   Cuando el usuario pulsa Analitzar:
+
+* activar modo análisis;
+* mover automáticamente el tablero/lista a la primera posición analizable de la partida:
+
+  * después de 1. blancas, es decir, movimiento 1 blanco / ply 1;
+* así el usuario empieza a revisar desde el inicio sin rebobinar manualmente.
+
+No romper navegación manual posterior.
+
+3. Ocultar banner azul en modo análisis
+   En modo análisis no debe aparecer el banner azul de revisión/corrección:
+   “Estàs revisant la posició abans de...”
+
+Ese banner ocupa espacio y no tiene sentido durante análisis.
+El usuario ya se guía por:
+
+* tablero;
+* lista de movimientos;
+* posición actual;
+* líneas de análisis.
+
+Ocultar ese banner cuando showAnalysis === true.
+
+Usar ese espacio para mostrar información de análisis más arriba.
+
+4. Información de análisis más arriba
+   Las 2 mejores líneas ahora quedan demasiado abajo/escondidas.
+
+Debe mostrarse en la zona superior del análisis, preferiblemente entre el header de análisis y el tablero o justo debajo del tablero, pero sin quedar escondido bajo la lista de movimientos.
+
+Mantenerlo compacto.
+
+5. Lista de movimientos en idioma de la planilla
+   En el recuadro de movimientos bajo el tablero, las jugadas deben aparecer en el idioma de la planilla, igual que en el resto de ChessLens.
+
+No deben aparecer siempre en SAN inglés si la planilla es catalana/española.
+
+Respetar scoresheetLanguage:
+
+* ca/es: N→C, B→A, R→T, Q→D, K→R cuando se muestra al usuario.
+* en: SAN internacional.
+
+No tocar PGN interno. Solo visualización.
+
+6. Flechas de mejores jugadas
+   Cuando el análisis está activo:
+
+* mostrar flechas sobre el tablero para las mejores jugadas sugeridas.
+* Por defecto: flechas activadas.
+* Mínimo:
+
+  * flecha para la primera mejor jugada;
+  * si es razonable, flecha diferente/segunda flecha para la segunda línea.
+* Las flechas deben corresponder a la posición actual y desaparecer/cambiar al navegar.
+
+7. Toggle persistente de flechas
+   Debajo de “× Amagar anàlisi”, añadir opción pequeña con el mismo estilo/tamaño:
+
+Si flechas activas:
+
+* “Amagar fletxes” / “Ocultar flechas” / “Hide arrows”
+
+Si flechas ocultas:
+
+* “Mostrar fletxes” / “Mostrar flechas” / “Show arrows”
+
+Cuando el usuario cambia esta opción:
+
+* guardar preferencia en localStorage;
+* mantenerla por defecto en futuras partidas/sesiones.
+
+8. Barra de evaluación: posición y tamaño
+   La barra debe:
+
+* estar justo a la izquierda del tablero;
+* dejar solo un poco de aire entre barra y tablero;
+* tener la misma altura visual que el tablero;
+* no quedar pegada al borde izquierdo de la página;
+* no ocupar una columna enorme.
+
+La puntuación, por ejemplo +0.4:
+
+* debe ir a la izquierda de la barra;
+* alineada verticalmente al centro de la barra;
+* no encima.
+
+9. Orientación correcta de la barra
+   Ahora la barra está invertida.
+
+Comportamiento deseado:
+
+* Si el tablero está con blancas abajo:
+
+  * blanco abajo;
+  * negro arriba.
+* Si el tablero está girado con negras abajo:
+
+  * negro abajo;
+  * blanco arriba.
+
+La barra debe permanecer siempre a la izquierda del tablero, pero su orientación visual debe seguir la orientación del tablero.
+
+10. No tocar motor
+    No tocar:
+
+* server/process_image_gemini.py
+* server/routes.ts
+* server/index.ts
+* shared/schema.ts
+* OCR
+* parser
+* reviewState
+* resume
+* python-chess
+* multi-planilla
+* salto de fila
+* idiomas de planilla backend
+* formatos de planilla
+* Google Drive storage
+
+Puedes tocar con cuidado:
+
+* client/src/pages/game-detail.tsx
+* client/src/hooks/use-position-analysis.ts
+* client/src/lib/stockfish-worker.ts si hace falta para flechas/PV
+* client/src/lib/pgn-analysis.ts si hace falta para helpers de SAN visual
+* client/src/components/chessboard-viewer.tsx solo si es imprescindible para flechas o posición visual
+
+Si tienes que tocar chessboard-viewer.tsx:
+
+* explicar exactamente por qué;
+* cambio mínimo;
+* no romper corrección desde tablero ni promoción.
+
+Checks obligatorios:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Abrir partida completed.
+2. Confirmar que Analitzar está en la misma fila que Planella original y Veure planella.
+3. Pulsar Analitzar.
+4. Confirmar que salta al inicio de la partida, ply 1.
+5. Confirmar que no aparece banner azul en modo análisis.
+6. Confirmar que la barra está justo a la izquierda del tablero y tiene la misma altura.
+7. Confirmar que +0.4 aparece a la izquierda de la barra, centrado verticalmente.
+8. Confirmar orientación:
+
+   * blancas abajo → blanco abajo / negro arriba;
+   * tablero girado → negro abajo / blanco arriba.
+9. Confirmar que las jugadas bajo el tablero se muestran en idioma de planilla.
+10. Confirmar flechas de mejores jugadas.
+11. Confirmar que Amagar fletxes / Mostrar fletxes persiste en localStorage.
+12. Confirmar que OCR/review/resume siguen intactos.
+
+Al final dime:
+
+1. archivos modificados;
+2. si tocaste chessboard-viewer.tsx y por qué;
+3. cómo posicionaste el botón Analitzar;
+4. cómo ocultaste el banner azul en modo análisis;
+5. cómo calculas/rotas la barra;
+6. cómo implementaste flechas y persistencia;
+7. resultado de npm run check;
+8. resultado de npm run build;
+9. pendientes.
