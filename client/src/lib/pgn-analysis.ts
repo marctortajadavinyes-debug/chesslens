@@ -71,6 +71,8 @@ export interface GameAnalysis {
   moves: MoveAnalysis[];
   /** Number of positions analysed */
   positionsAnalysed: number;
+  /** Engine lines for the final board position (used by the analysis panel). */
+  finalPositionLines: AnalysisLine[];
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -215,5 +217,6 @@ export async function analyzePgn(
   return {
     moves: result,
     positionsAnalysed: positionLines.filter(Boolean).length,
+    finalPositionLines: positionLines[fens.length - 1] ?? [],
   };
 }

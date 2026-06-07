@@ -1,0 +1,150 @@
+Nueva tarea ChessLens — Stockfish SF.3A: panel visual friendly de análisis, aislado.
+
+Modo recomendado: Economy.
+App testing automático: OFF.
+
+Contexto:
+Ya están completadas:
+
+* SF.1: Stockfish Worker funcionando con stockfish@18.0.7, lite-single, sin COOP/COEP.
+* SF.2: análisis PGN completo, MultiPV=2, hook use-stockfish-analysis.
+* SF.2.1: cálculo de evaluación y pérdida validado para blancas y negras.
+* npm run check/build limpios.
+* Stockfish es estrictamente post-PGN.
+
+Objetivo de SF.3A:
+Crear el primer panel visual de análisis, friendly y reutilizable, pero sin integrarlo todavía en los flujos reales de partida escaneada ni Drive.
+
+No tocar todavía:
+
+* game-detail.tsx;
+* drive-game-viewer.tsx;
+* Google Drive;
+* OCR;
+* parser;
+* reviewState;
+* resume;
+* backend.
+
+Crear preferiblemente:
+
+* client/src/components/analysis-panel.tsx
+
+El panel debe recibir datos del hook ya existente o de analyzePgn y mostrar:
+
+1. Barra de evaluación
+
+* Siempre desde perspectiva blanca.
+* Positivo = blancas mejor.
+* Negativo = negras mejor.
+* Mostrar con una décima:
+
+  * +1.1
+  * 0.0
+  * -0.8
+* Si hay mate, mostrar:
+
+  * M+3 si mate favorable a blancas;
+  * M-3 si mate favorable a negras.
+
+2. Texto claro bajo la barra
+   Ejemplos:
+
+* “Blancas están mejor”
+* “Posición equilibrada”
+* “Negras están mejor”
+
+Usar el idioma actual de la app si el sistema de traducciones ya está fácil de usar. Si complica la tarea, dejar textos simples por ahora y marcar como pendiente de i18n.
+
+3. Mejores jugadas
+   Mostrar por defecto las 2 mejores jugadas:
+
+* Mejor jugada: ...
+* Segunda opción: ...
+
+Usar la información MultiPV=2 ya existente.
+Si solo hay una línea, mostrar solo una.
+
+4. Resumen de calidad de jugadas
+   Contadores:
+
+* excelentes;
+* buenas;
+* imprecisiones;
+* errores;
+* errores graves.
+
+No implementar todavía “teórica”, “brillante” ni “maestra” salvo dejar el diseño preparado. Esas etiquetas requieren lógica adicional posterior.
+
+5. Lista de momentos críticos
+   Mostrar jugadas donde:
+
+* label === "mistake"
+* label === "blunder"
+* o evalLossCp >= 150
+
+Cada item:
+
+* número de jugada;
+* lado;
+* SAN;
+* etiqueta;
+* pérdida aproximada en peones, por ejemplo “-1.7”.
+
+6. Estado del análisis
+   El panel debe mostrar:
+
+* idle / no iniciado;
+* analizando;
+* progreso;
+* completado;
+* error;
+* botón detener si está analizando.
+
+7. Prueba aislada
+   Usar el botón DEV actual de Settings para renderizar este panel con un PGN corto o con el análisis SF.2 ya existente.
+
+Puede modificarse:
+
+* client/src/pages/home.tsx solo para montar el panel en el bloque DEV temporal.
+* client/src/hooks/use-stockfish-analysis.ts si hace falta exponer datos más cómodos.
+* client/src/lib/pgn-analysis.ts solo si hace falta añadir helpers de formato, pero no cambiar la lógica validada de pérdidas salvo bug claro.
+
+No tocar:
+
+* server/process_image_gemini.py
+* server/routes.ts
+* server/index.ts
+* shared/schema.ts
+* client/src/components/chessboard-viewer.tsx
+* client/src/lib/google-drive.ts
+* flujo Google Drive
+* OCR/PGN engine
+* reviewState
+* resume
+* idiomas de planilla
+* formatos de planilla
+
+Principios UX:
+
+* móvil friendly;
+* no saturar;
+* análisis fácil de entender;
+* no máxima profundidad por defecto;
+* no arrancar automáticamente;
+* nada debe bloquear la UI.
+
+Checks obligatorios:
+
+* npm run check
+* npm run build
+
+Al final dime:
+
+1. archivos creados;
+2. archivos modificados;
+3. cómo probar el panel en la app;
+4. si el botón DEV sigue existiendo y dónde;
+5. resultado de npm run check;
+6. resultado de npm run build;
+7. si ha quedado pendiente alguna parte de i18n o diseño.

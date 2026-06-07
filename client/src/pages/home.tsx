@@ -15,6 +15,7 @@ import {
 import { useCreateGame, useGames } from "@/hooks/use-games";
 import { getStockfishWorker } from "@/lib/stockfish-worker";
 import { analyzePgn } from "@/lib/pgn-analysis";
+import { AnalysisPanel } from "@/components/analysis-panel";
 import { Button } from "@/components/ui/button";
 import { GameCard } from "@/components/game-card";
 import { useToast } from "@/hooks/use-toast";
@@ -319,6 +320,7 @@ export default function Home() {
   const [showSettings, setShowSettings] = useState(false);
   const [settings, setSettings] =
     useState<ChessLensUserSettings>(DEFAULT_SETTINGS);
+  const [showDevPanel, setShowDevPanel] = useState(false);
 
   const t = UI_TEXT[settings.appLanguage] ?? UI_TEXT.ca;
 
@@ -631,9 +633,9 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* [DEV] Stockfish SF.1 / SF.2.1 eval validation — remove after validation */}
+                {/* [DEV] Stockfish SF.1 / SF.2.1 / SF.3A — remove after validation */}
                 <div className="border border-dashed border-border rounded-xl p-3 space-y-2 bg-muted/10 opacity-70">
-                  <p className="text-xs text-muted-foreground font-mono">[DEV] SF eval validation (SF.1 + SF.2.1)</p>
+                  <p className="text-xs text-muted-foreground font-mono">[DEV] SF eval + panel (SF.1 · SF.2.1 · SF.3A)</p>
                   <div className="flex gap-2">
                     <Button
                       type="button"
@@ -729,7 +731,27 @@ export default function Home() {
                       }}
                       data-testid="button-dev-sf21-test"
                     >SF.2.1 Val</Button>
+                    <Button
+                      type="button"
+                      variant={showDevPanel ? "secondary" : "ghost"}
+                      size="sm"
+                      className="flex-1 text-xs"
+                      onClick={() => setShowDevPanel((v) => !v)}
+                      data-testid="button-dev-sf3a-panel"
+                    >SF.3A Panel</Button>
                   </div>
+
+                  {/* SF.3A: isolated panel test */}
+                  {showDevPanel && (
+                    <div className="border border-border/40 rounded-lg p-3 bg-background mt-1">
+                      <AnalysisPanel
+                        pgn={`[Event "SF.3A-Dev"]
+1. d4 d5 2. Nf3 Nf6 3. c4 e6 4. Nc3 Be7 5. e3 O-O 6. Bd3 c5 7. O-O cxd4 8. exd4 dxc4 9. Bxc4 Nc6 10. Be3 Bd7 *`}
+                        lang={settings.appLanguage}
+                        depth={10}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Suggestions section */}
