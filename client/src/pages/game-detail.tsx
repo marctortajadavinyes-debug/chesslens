@@ -705,8 +705,11 @@ export default function GameDetail() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto w-full p-4 grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="space-y-4">
+      <main className="flex-1 max-w-7xl mx-auto w-full p-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-4">
+
+        {/* ── LEFT header cell ─────────────────────────────────────────────── */}
+        <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2 min-h-[36px]">
             <h2 className="font-semibold text-lg flex-1">{t.originalScoresheet}</h2>
             <Button
@@ -730,8 +733,7 @@ export default function GameDetail() {
               )}
             </Button>
           </div>
-
-          {/* Analysis controls — below header, right-aligned */}
+          {/* Analysis controls — below "Veure planella", right-aligned */}
           {canAnalyze && showAnalysis && (
             <div className="flex justify-end gap-4">
               <button
@@ -753,7 +755,29 @@ export default function GameDetail() {
               </button>
             </div>
           )}
+        </div>
 
+        {/* ── RIGHT header cell — Analitzar, desktop only, same grid row ───── */}
+        <div className="hidden lg:flex items-center justify-center min-h-[36px]">
+          {canAnalyze && !showAnalysis && (
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => {
+                setShowAnalysis(true);
+                setJumpSignal({ index: 1, counter: Date.now() });
+              }}
+              data-testid="button-analyze-game"
+              className="gap-1.5 bg-black text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+            >
+              <TrendingUp className="w-4 h-4" />
+              {t.analyze}
+            </Button>
+          )}
+        </div>
+
+        {/* ── LEFT content cell — scoresheet image ─────────────────────────── */}
+        <div className="space-y-4">
           <div
             className={`${
               showSheetMobile ? "block" : "hidden"
@@ -822,10 +846,11 @@ export default function GameDetail() {
           ) : null}
         </div>
 
+        {/* ── RIGHT content cell ───────────────────────────────────────── */}
         <div className="space-y-4 flex flex-col min-h-[600px] relative">
-          {/* Analitzar button — centered above board */}
+          {/* Mobile: Analitzar button (on desktop it's in the shared header row) */}
           {canAnalyze && !showAnalysis && (
-            <div className="flex justify-center pt-1">
+            <div className="lg:hidden flex justify-center">
               <Button
                 type="button"
                 size="sm"
@@ -833,7 +858,7 @@ export default function GameDetail() {
                   setShowAnalysis(true);
                   setJumpSignal({ index: 1, counter: Date.now() });
                 }}
-                data-testid="button-analyze-game"
+                data-testid="button-analyze-game-mobile"
                 className="gap-1.5 bg-black text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
               >
                 <TrendingUp className="w-4 h-4" />
@@ -1010,6 +1035,8 @@ export default function GameDetail() {
             />
           </div>
         </div>
+
+        </div>{/* end grid */}
       </main>
     </div>
   );
