@@ -97,6 +97,10 @@ interface ChessboardViewerProps {
   customArrows?: [string, string, string][];
   jumpSignal?: { index: number; counter: number };
   evalBar?: React.ReactNode;
+  /** When false, disables the auto-advance-to-final-position behaviour that
+   *  fires when enableInput → false. Set to false during analysis mode so the
+   *  jumpSignal controls the board position instead. Defaults to true. */
+  lockToEnd?: boolean;
 }
 
 function isBadPgn(pgn?: string | null) {
@@ -223,6 +227,7 @@ export function ChessboardViewer({
   customArrows,
   jumpSignal,
   evalBar,
+  lockToEnd = true,
 }: ChessboardViewerProps) {
   const [game, setGame] = useState(() => new Chess());
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
@@ -315,10 +320,12 @@ export function ChessboardViewer({
   }, [currentMoveIndex, pgn]);
 
   useEffect(() => {
-    if (!enableInput) {
+    // Only auto-advance to the final position when lockToEnd is not suppressed.
+    // During analysis mode lockToEnd=false so jumpSignal controls the index.
+    if (!enableInput && lockToEnd !== false) {
       setCurrentMoveIndex(historySan.length);
     }
-  }, [enableInput, historySan.length]);
+  }, [enableInput, historySan.length, lockToEnd]);
 
   const currentPosition = useMemo(() => {
     if (tempPosition) return tempPosition;

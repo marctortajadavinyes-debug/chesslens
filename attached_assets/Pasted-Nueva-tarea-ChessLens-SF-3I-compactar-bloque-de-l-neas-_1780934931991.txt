@@ -1,0 +1,170 @@
+Nueva tarea ChessLens — SF.3I: compactar bloque de líneas y arreglar reentrada en análisis.
+
+Modo recomendado: Economy.
+App testing automático: OFF.
+
+Contexto:
+Tras SF.3H, el “saltito” al navegar parece corregido, pero quedan dos problemas:
+
+1. Sigue habiendo demasiado espacio superior.
+   Sospecha visual:
+   El bloque/banner donde aparecen las 2 líneas de análisis ocupa todo el ancho hasta el final derecho de la pantalla. Eso puede estar empujando visualmente el tablero hacia abajo y dejando demasiado espacio.
+
+2. Bug al salir y volver a entrar en análisis:
+   Si pulso “Sortir d’anàlisi” y luego vuelvo a pulsar “Analitzar”:
+
+* se queda como colgado;
+* vuelve o se queda en la posición final de la partida;
+* no reinicia correctamente desde el inicio.
+
+Objetivo:
+Corregir solo estos dos puntos antes de implementar sandbox de variantes.
+
+No implementar sandbox todavía.
+No permitir todavía mover piezas en análisis.
+No tocar motor OCR/PGN.
+
+Cambios requeridos:
+
+1. Bloque de líneas de análisis limitado al ancho del tablero
+   El bloque que muestra:
+
+* línea 1 de Stockfish;
+* línea 2 de Stockfish;
+* “Analitzant…” cuando carga;
+
+NO debe ocupar todo el ancho de la página.
+
+Debe:
+
+* tener el mismo ancho visual que el tablero;
+* estar alineado horizontalmente con el tablero;
+* quedar por encima del tablero;
+* no extenderse hasta el botón “Veure planella” ni hasta el borde derecho;
+* no crear espacio vacío innecesario.
+
+Sugerencia:
+Crear una columna central de análisis/tablero con ancho máximo igual al tablero, por ejemplo max-w-[400px] o el mismo ancho usado por ChessboardViewer.
+Dentro de esa columna:
+
+* líneas Stockfish arriba;
+* tablero debajo;
+* controles debajo del tablero.
+
+La barra de evaluación puede quedar fuera a la izquierda, pero las líneas deben alinearse con el tablero, no con toda la página.
+
+2. Reducir padding/margin vertical superior
+   Revisar márgenes entre:
+
+* header superior;
+* bloque “Veure planella / Sortir d’anàlisi / Amagar fletxes”;
+* líneas de análisis;
+* tablero.
+
+Reducir el espacio sobrante sin romper el layout.
+
+3. Reentrada en análisis
+   Al pulsar “Sortir d’anàlisi”:
+
+* parar/cancelar análisis actual;
+* limpiar estado visual si hace falta;
+* mantener partida original intacta.
+
+Al volver a pulsar “Analitzar”:
+
+* debe comportarse como una entrada nueva;
+* cancelar cualquier análisis pendiente anterior;
+* limpiar líneas antiguas si hace falta;
+* saltar a ply 1;
+* analizar la posición de ply 1, no la posición final;
+* mostrar “Analitzant…” inmediatamente;
+* no quedarse colgado.
+
+Importante:
+No analizar la posición final antes de saltar a ply 1.
+
+Si la lógica actual usa jumpSignal:
+
+* asegurar que jumpSignal cambia cada vez que se entra en análisis, incluso si ya se había entrado antes.
+* asegurar que el análisis se lanza después de que boardIndex/currentFen refleje ply 1.
+
+Si hace falta:
+
+* introducir un pequeño estado pendingAnalysisStart;
+* al activar análisis, pedir jump a ply 1;
+* cuando currentFen/currentPly sea realmente ply 1, arrancar análisis;
+* ignorar/cancelar resultados antiguos mediante generation id o posStop.
+
+4. Estado al salir
+   “Sortir d’anàlisi” debe:
+
+* setShowAnalysis(false);
+* posStop();
+* no modificar boardIndex salvo que sea necesario;
+* no tocar PGN;
+* no tocar game.moves;
+* no tocar lista de movimientos real.
+
+5. Mantener lo que ya funciona
+   No romper:
+
+* botón Analitzar en la fila correcta;
+* Veure planella a la derecha;
+* Sortir d’anàlisi / Amagar fletxes a la derecha;
+* barra de evaluación junto al tablero;
+* flechas;
+* protección de partida original;
+* lista de movimientos original;
+* navegación por jugadas;
+* check/build limpios.
+
+No tocar:
+
+* server/process_image_gemini.py
+* server/routes.ts
+* server/index.ts
+* shared/schema.ts
+* OCR
+* parser
+* reviewState
+* resume
+* python-chess
+* multi-planilla
+* salto de fila
+* idiomas de planilla backend
+* formatos de planilla
+* Google Drive storage
+
+Archivos probables:
+
+* client/src/pages/game-detail.tsx
+* client/src/components/chessboard-viewer.tsx solo si es imprescindible para layout
+
+Checks obligatorios:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Abrir partida completed.
+2. Pulsar Analitzar.
+3. Confirmar que las líneas de Stockfish ocupan solo el ancho del tablero.
+4. Confirmar que el tablero queda más arriba y no hay gran espacio superior.
+5. Pulsar Sortir d’anàlisi.
+6. Volver a pulsar Analitzar.
+7. Confirmar que salta de nuevo a ply 1.
+8. Confirmar que no analiza la posición final.
+9. Confirmar que no se queda colgado.
+10. Navegar por jugadas y confirmar que no hay saltitos.
+11. Confirmar que PGN/lista original no cambian.
+
+Al final dime:
+
+1. archivos modificados;
+2. cómo limitaste el ancho del bloque de líneas;
+3. qué márgenes/paddings redujiste;
+4. cómo arreglaste la reentrada en análisis;
+5. cómo garantizas que no analiza la posición final al reentrar;
+6. resultado de npm run check;
+7. resultado de npm run build.

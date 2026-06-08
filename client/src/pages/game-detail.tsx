@@ -716,7 +716,7 @@ export default function GameDetail() {
           {/* Right section */}
           <div className="flex-1 flex flex-col gap-1">
             {/* Main row — Analitzar truly centred; Veure planella pinned right */}
-            <div className="relative flex items-center justify-center min-h-[36px]">
+            <div className="relative flex items-center justify-center min-h-[30px]">
               {canAnalyze && !showAnalysis && (
                 <Button
                   type="button"
@@ -756,7 +756,7 @@ export default function GameDetail() {
             </div>
             {/* Analysis controls — vertical stack, right-aligned, below Veure planella */}
             {canAnalyze && showAnalysis && (
-              <div className="flex flex-col items-end gap-0.5 mt-0.5">
+              <div className="flex flex-col items-end gap-0.5">
                 <button
                   type="button"
                   className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
@@ -901,10 +901,10 @@ export default function GameDetail() {
             </div>
           )}
 
-          {/* ── Stockfish lines — fixed height so board never jumps ─────── */}
+          {/* ── Stockfish lines — fixed height, capped to board width ─────── */}
           {showAnalysis && (
             <div
-              className="h-[52px] space-y-0.5 bg-muted/30 rounded-lg px-3 py-1.5 overflow-hidden"
+              className="h-[52px] space-y-0.5 bg-muted/30 rounded-lg px-3 py-1.5 overflow-hidden max-w-[400px] mx-auto w-full"
               data-testid="analysis-lines"
             >
               {posLines.length > 0 ? (
@@ -957,6 +957,7 @@ export default function GameDetail() {
             scoresheetLanguage={scoresheetLanguage}
             customArrows={customArrows}
             jumpSignal={jumpSignal}
+            lockToEnd={!showAnalysis}
             evalBar={
               showAnalysis ? (
                 <div className="flex items-stretch h-full gap-1">
