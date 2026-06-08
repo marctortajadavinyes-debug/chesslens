@@ -10,6 +10,7 @@ import {
   RefreshCw,
   Undo2,
   Image as ImageIcon,
+  Eye,
   EyeOff,
   ChevronLeft,
   ChevronRight,
@@ -979,39 +980,46 @@ export default function GameDetail() {
 
             {/* Lateral button column — only visible in analysis mode */}
             {showAnalysis && (
-              <div className="shrink-0 flex flex-col gap-2 w-[148px]">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="w-full justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight"
-                  onClick={() => setShowSheetMobile((v) => !v)}
-                  data-testid="button-toggle-scoresheet-sidebar"
-                >
-                  {showSheetMobile ? (
-                    <EyeOff className="w-3.5 h-3.5 shrink-0" />
-                  ) : (
-                    <ImageIcon className="w-3.5 h-3.5 shrink-0" />
-                  )}
-                  <span>
-                    {showSheetMobile ? t.hideScoresheet : t.showScoresheet}
-                  </span>
-                </Button>
+              <div className="shrink-0 flex flex-col justify-between w-[148px] min-h-[460px]">
+                {/* Top group: Veure planella + Amagar/Mostrar fletxes */}
+                <div className="flex flex-col gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="w-full justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight"
+                    onClick={() => setShowSheetMobile((v) => !v)}
+                    data-testid="button-toggle-scoresheet-sidebar"
+                  >
+                    {showSheetMobile ? (
+                      <EyeOff className="w-3.5 h-3.5 shrink-0" />
+                    ) : (
+                      <ImageIcon className="w-3.5 h-3.5 shrink-0" />
+                    )}
+                    <span>
+                      {showSheetMobile ? t.hideScoresheet : t.showScoresheet}
+                    </span>
+                  </Button>
 
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="w-full justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight"
-                  onClick={() => setShowArrows((v) => !v)}
-                  data-testid="button-toggle-arrows-sidebar"
-                >
-                  <span>{showArrows ? t.hideArrows : t.showArrows}</span>
-                </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="w-full justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight"
+                    onClick={() => setShowArrows((v) => !v)}
+                    data-testid="button-toggle-arrows-sidebar"
+                  >
+                    {showArrows ? (
+                      <EyeOff className="w-3.5 h-3.5 shrink-0" />
+                    ) : (
+                      <Eye className="w-3.5 h-3.5 shrink-0" />
+                    )}
+                    <span>{showArrows ? t.hideArrows : t.showArrows}</span>
+                  </Button>
+                </div>
 
-                {/* Reserved for "Tornar a la partida" — SF.4A */}
-                <div className="h-8" aria-hidden="true" />
-
+                {/* Bottom: Sortir d'anàlisi — approximately at rank 1 of the board */}
+                {/* SF.4A: "Tornar a la partida" will be inserted above this button */}
                 <Button
                   type="button"
                   size="sm"

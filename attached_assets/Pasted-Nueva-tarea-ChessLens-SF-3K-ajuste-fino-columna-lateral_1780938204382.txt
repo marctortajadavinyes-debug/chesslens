@@ -1,0 +1,80 @@
+Nueva tarea ChessLens — SF.3K: ajuste fino columna lateral de botones en análisis.
+
+Modo recomendado: Lite o Economy.
+Recomendación: Lite si solo es CSS/posicionamiento; Economy si hay que tocar imports de iconos.
+App testing automático: OFF.
+
+Contexto:
+SF.3J está bien:
+
+* tablero ampliado;
+* barra de evaluación crece con el tablero;
+* controles/lista alineados;
+* columna lateral derecha creada;
+* npm run check/build limpios.
+
+Ahora solo queremos ajustar la posición visual de los botones laterales.
+
+Cambios requeridos:
+
+1. Botón “Veure planella”
+   Moverlo un poco más arriba, casi arriba del todo de la columna lateral.
+   Debe quedar como primer botón visible de la columna derecha.
+
+2. Botón “Amagar fletxes / Mostrar fletxes”
+   Moverlo un poco más arriba también, aproximadamente a la altura de las líneas de Stockfish.
+   Debe quedar debajo de “Veure planella”, con separación clara anti-misclick.
+
+Añadir icono:
+
+* Si flechas visibles: usar icono tipo EyeOff o similar para “Amagar fletxes”.
+* Si flechas ocultas: usar icono tipo Eye o similar para “Mostrar fletxes”.
+* Mantener formato de botón igual que los demás.
+
+3. Botón “Sortir d’anàlisi”
+   Moverlo más abajo, aproximadamente a la altura de la fila 1 del tablero.
+   Debe mantener icono X.
+   Debe seguir siendo botón del mismo tamaño/formato que los demás.
+
+4. No mostrar todavía “Tornar a la partida”
+   Ese botón llegará con SF.4A cuando exista sandbox de variantes.
+   No implementarlo todavía.
+
+5. Mantener
+   No romper:
+
+* tablero ampliado;
+* barra de evaluación;
+* alineación tablero/barra/lista;
+* flechas;
+* protección del PGN original;
+* entrada/salida de análisis;
+* reentrada desde ply 1.
+
+No tocar:
+
+* OCR;
+* parser;
+* reviewState;
+* resume;
+* backend;
+* PGN;
+* Google Drive;
+* lógica Stockfish.
+
+Archivos probables:
+
+* client/src/pages/game-detail.tsx
+
+Checks:
+
+* npm run check
+* npm run build
+
+Al final dime:
+
+1. archivos modificados;
+2. qué iconos usaste;
+3. cómo ajustaste la posición vertical de los tres botones;
+4. resultado de npm run check;
+5. resultado de npm run build.
