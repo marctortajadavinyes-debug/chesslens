@@ -1,0 +1,147 @@
+Nueva tarea ChessLens — SF.3J: ampliar tablero y reorganizar botones laterales de análisis.
+
+Modo recomendado: Economy.
+App testing automático: OFF.
+
+Contexto:
+SF.3I dejó estable la entrada/salida del análisis y corrigió el bloque de líneas. Ahora queremos pulir el layout visual antes de implementar sandbox de variantes.
+
+No implementar todavía sandbox.
+No permitir todavía mover piezas en análisis.
+No implementar todavía “Tornar a la partida” funcional salvo dejar espacio preparado si es limpio.
+
+Objetivos:
+
+1. Ampliar tablero
+   El tablero actual se ve algo pequeño y hay mucho espacio alrededor.
+
+Aumentar tamaño en desktop/tablet:
+
+* probar pasar de max-w-[400px] a algo como max-w-[440px] o max-w-[460px];
+* mantener responsive en móvil;
+* no provocar overflow horizontal;
+* la barra de evaluación debe crecer con el tablero;
+* los controles inferiores deben seguir centrados respecto al tablero;
+* la lista de movimientos debe seguir alineada con el tablero.
+
+2. Subir el bloque tablero/análisis
+   Hay espacio arriba que puede aprovecharse.
+
+Reducir margen/padding vertical superior para que:
+
+* líneas de Stockfish;
+* tablero;
+* controles;
+  queden más arriba.
+
+No crear saltos visuales.
+
+3. Desplazar visualmente el tablero algo a la izquierda
+   Ahora hay mucho aire a izquierda y derecha. El lado derecho se usará para botones/opciones.
+
+Reorganizar el layout para que:
+
+* tablero + barra queden un poco más hacia la izquierda;
+* lado derecho tenga una columna de botones;
+* no quede todo excesivamente centrado en la pantalla.
+
+4. Botones laterales con formato consistente
+   Los controles de la derecha deben ser botones pequeños del mismo formato visual.
+
+Crear una columna lateral derecha, alineada con el tablero, con estos botones:
+
+Arriba:
+
+* “Veure planella”
+
+Debajo, cerca de las líneas de Stockfish:
+
+* “Amagar fletxes” / “Mostrar fletxes”
+
+A media altura del tablero, entre filas 4 y 5, reservar diseño para:
+
+* “Tornar a la partida”
+
+Importante:
+
+* si no existe sandbox todavía, no mostrar “Tornar a la partida” o mostrarlo solo cuando haya una future flag de variante activa.
+* No debe hacer nada ahora si no hay sandbox.
+* Mejor no mostrarlo hasta SF.4A.
+
+Abajo:
+
+* mantener “Sortir d’anàlisi”
+
+No cambiar “Sortir d’anàlisi” por “Menú principal”, porque esa acción no vuelve al menú principal; solo cierra el análisis.
+
+5. Separación anti-misclick
+   Los botones deben tener:
+
+* tamaño similar;
+* suficiente separación vertical;
+* área clicable clara;
+* no quedar pegados entre sí;
+* no mezclarse con las líneas de Stockfish.
+
+6. Mantener lo que ya funciona
+   No romper:
+
+* entrada a análisis desde ply 1;
+* no analizar posición final al reentrar;
+* líneas Stockfish limitadas al ancho del tablero;
+* barra junto al tablero;
+* flechas;
+* protección de PGN original;
+* lista de movimientos original;
+* navegación por jugadas.
+
+No tocar:
+
+* server/process_image_gemini.py
+* server/routes.ts
+* server/index.ts
+* shared/schema.ts
+* OCR
+* parser
+* reviewState
+* resume
+* python-chess
+* multi-planilla
+* salto de fila
+* idiomas de planilla backend
+* formatos de planilla
+* Google Drive storage
+* lógica PGN real
+
+Archivos probables:
+
+* client/src/pages/game-detail.tsx
+* client/src/components/chessboard-viewer.tsx
+
+Checks obligatorios:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Abrir partida completed.
+2. Entrar en análisis.
+3. Confirmar que el tablero es más grande en desktop/tablet.
+4. Confirmar que en móvil sigue responsive.
+5. Confirmar que tablero/barra/controles inferiores siguen alineados.
+6. Confirmar que el bloque de análisis queda más arriba.
+7. Confirmar que el tablero queda algo más a la izquierda y hay columna útil a la derecha.
+8. Confirmar botones laterales con formato homogéneo.
+9. Confirmar que no aparece “Tornar a la partida” hasta tener sandbox activo.
+10. Confirmar que Sortir d’anàlisi sigue funcionando.
+11. Confirmar que PGN/lista original no cambian.
+
+Al final dime:
+
+1. archivos modificados;
+2. nuevo tamaño máximo del tablero;
+3. cómo mantuviste responsive móvil;
+4. cómo organizaste la columna derecha de botones;
+5. resultado de npm run check;
+6. resultado de npm run build.

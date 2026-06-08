@@ -439,7 +439,7 @@ export function ChessboardViewer({
         {evalBar && (
           <div className="shrink-0 self-stretch flex">{evalBar}</div>
         )}
-        <div className="relative aspect-square flex-1 min-w-0 max-w-[400px]">
+        <div className="relative aspect-square flex-1 min-w-0 max-w-[460px]">
           <div className="shadow-2xl rounded-lg border-4 border-primary/10 bg-white">
             <Chessboard
               position={currentPosition}
@@ -454,8 +454,6 @@ export function ChessboardViewer({
             />
           </div>
         </div>
-        {/* Invisible spacer mirrors eval-bar width → board stays optically centred */}
-        {evalBar && <div className="shrink-0 w-10 sm:w-11" aria-hidden="true" />}
       </div>
 
       <div className="flex items-center justify-center space-x-2">
