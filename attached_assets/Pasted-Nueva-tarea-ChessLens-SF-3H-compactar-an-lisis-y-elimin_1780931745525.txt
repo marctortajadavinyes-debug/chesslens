@@ -1,0 +1,118 @@
+Nueva tarea ChessLens — SF.3H: compactar análisis y eliminar saltos visuales.
+
+Modo recomendado: Economy.
+App testing automático: OFF.
+
+Contexto:
+SF.3G mejoró el layout, pero quedan dos problemas visuales:
+
+1. Hay demasiado espacio vertical entre la parte superior de la pantalla y las líneas de análisis:
+   Ejemplo:
+   “+0.4  5... Cxe4 6. d4...”
+   queda demasiado abajo, y empuja tablero/movimientos hacia abajo.
+
+2. Al navegar por jugadas, cuando aparece “Analitzant…” y luego llegan las líneas, el tablero da pequeños “saltitos” arriba/abajo.
+   Eso transmite fragilidad visual.
+
+Importante:
+No implementar todavía sandbox de variantes.
+No implementar todavía botón “Tornar a la partida”.
+Ese botón se hará en SF.4A junto con la variante temporal separada.
+
+Objetivo SF.3H:
+Compactar el layout del análisis y estabilizar la altura para que el tablero no se mueva al cambiar de jugada.
+
+Cambios requeridos:
+
+1. Reducir espacio superior
+
+* Subir el bloque de líneas de análisis.
+* Reducir padding/margin vertical innecesario entre:
+
+  * header superior;
+  * controles “Veure planella / Sortir d’anàlisi / Amagar fletxes”;
+  * líneas de análisis;
+  * tablero.
+* El tablero debe quedar más arriba.
+
+2. Zona de líneas de análisis con altura estable
+   El bloque que contiene:
+
+* “Analitzant…”
+* o las 2 líneas de Stockfish
+
+debe tener una altura reservada fija o mínima estable.
+
+Objetivo:
+
+* cuando cambia de “Analitzant…” a líneas reales, no debe mover el tablero;
+* cuando cambia de una jugada a otra, no debe cambiar la altura;
+* las 2 líneas deben ocupar siempre la misma zona.
+
+Sugerencia:
+
+* usar min-height fijo suficiente para 2 líneas;
+* mostrar placeholders/skeleton si está analizando;
+* evitar que el texto wrapping cambie la altura;
+* si una línea es larga, truncar o permitir scroll horizontal suave, pero no aumentar altura.
+
+3. “Analitzant…” dentro del mismo espacio
+   No poner “Analitzant…” en un sitio que altere el layout.
+   Debe aparecer dentro del mismo contenedor reservado para las líneas.
+
+4. Mantener tablero y controles centrados
+   No romper lo que ya está bien:
+
+* Analitzar centrado sobre tablero;
+* Veure planella a la derecha;
+* tablero tamaño normal;
+* botones inferiores centrados respecto al tablero;
+* barra a la izquierda del tablero con misma altura.
+
+5. No tocar lógica sensible
+   No tocar:
+
+* OCR
+* parser
+* reviewState
+* resume
+* backend
+* PGN
+* Google Drive
+* generación de PGN
+* lista de movimientos original
+* protección de partida original
+
+6. No implementar sandbox todavía
+   En esta fase no permitir mover piezas en análisis.
+   La partida original debe seguir protegida.
+
+Archivos probables:
+
+* client/src/pages/game-detail.tsx
+* client/src/components/chessboard-viewer.tsx solo si es imprescindible para layout
+
+Checks:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Entrar en una partida completed.
+2. Pulsar Analitzar.
+3. Confirmar que las líneas de análisis quedan más arriba.
+4. Confirmar que el tablero queda más arriba.
+5. Navegar varias jugadas adelante/atrás.
+6. Confirmar que el tablero ya no da saltitos cuando aparece “Analitzant…”.
+7. Confirmar que el tamaño del tablero no cambia.
+8. Confirmar que la barra sigue alineada con el tablero.
+9. Confirmar que los movimientos originales no se modifican.
+
+Al final dime:
+
+1. archivos modificados;
+2. qué márgenes/paddings redujiste;
+3. cómo reservaste altura estable para líneas/análisis;
+4. resultado de npm run check;
+5. resultado de npm run build.

@@ -705,7 +705,7 @@ export default function GameDetail() {
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl mx-auto w-full p-4 flex flex-col gap-2">
+      <main className="flex-1 max-w-7xl mx-auto w-full pt-2 px-4 pb-4 flex flex-col gap-1">
 
         {/* ── Shared header bar ─────────────────────────────────────────────────
             Desktop: left placeholder (aligns w/ scoresheet) + right section (board).
@@ -851,7 +851,7 @@ export default function GameDetail() {
           ) : null}
         </div>
 
-        <div className="space-y-4 flex flex-col relative">
+        <div className="space-y-2 flex flex-col relative">
           {(game.status === "processing" || isResuming) && (
             <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-background/70 backdrop-blur-sm rounded-xl">
               <RefreshCw className="w-12 h-12 text-primary animate-spin mb-4" />
@@ -901,10 +901,10 @@ export default function GameDetail() {
             </div>
           )}
 
-          {/* ── Stockfish lines — stable reserved height above board ──────── */}
+          {/* ── Stockfish lines — fixed height so board never jumps ─────── */}
           {showAnalysis && (
             <div
-              className="min-h-[52px] space-y-1 bg-muted/30 rounded-lg px-3 py-2 overflow-hidden"
+              className="h-[52px] space-y-0.5 bg-muted/30 rounded-lg px-3 py-1.5 overflow-hidden"
               data-testid="analysis-lines"
             >
               {posLines.length > 0 ? (
@@ -915,20 +915,20 @@ export default function GameDetail() {
                   return (
                     <div
                       key={i}
-                      className="flex items-baseline gap-2 text-xs font-mono"
+                      className="flex items-center gap-2 text-xs font-mono overflow-hidden"
                       data-testid={`analysis-line-${i}`}
                     >
                       <span className="text-muted-foreground w-12 shrink-0">
                         {ev}
                       </span>
-                      <span className="text-foreground/90 leading-relaxed break-all">
+                      <span className="text-foreground/90 truncate">
                         {display || line.move}
                       </span>
                     </div>
                   );
                 })
               ) : (
-                <div className="flex items-center gap-2 h-full min-h-[36px]">
+                <div className="flex items-center gap-2 h-full">
                   <Loader2 className="w-3 h-3 animate-spin text-muted-foreground shrink-0" />
                   <span className="text-xs text-muted-foreground">
                     Analitzant…
