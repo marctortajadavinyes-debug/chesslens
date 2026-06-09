@@ -1,0 +1,186 @@
+Nueva tarea ChessLens — SF.4A: sandbox de variantes en análisis sin tocar la partida real.
+
+Modo recomendado: Economy.
+App testing automático: OFF.
+
+Contexto:
+El análisis Stockfish por posición ya funciona y la partida original está protegida porque en modo análisis el tablero no permite input.
+Ahora queremos permitir que el usuario explore variantes, pero sin modificar nunca la partida escaneada real.
+
+Objetivo:
+En modo análisis, permitir al usuario mover piezas en el tablero para probar una línea alternativa temporal, por ejemplo siguiendo una flecha de Stockfish.
+
+Regla de oro:
+La partida original debe permanecer inmutable.
+
+Nunca modificar:
+
+* game.moves;
+* PGN original;
+* lista de movimientos escaneados;
+* reviewState;
+* resume;
+* backend;
+* OCR;
+* parser;
+* Google Drive.
+
+La variante debe vivir en un estado separado, temporal, de frontend.
+
+Comportamiento deseado:
+
+1. Entrar en análisis
+
+* El usuario pulsa Analitzar.
+* La app salta a ply 1 como ahora.
+* Se analiza la posición real actual.
+
+2. Navegar por partida real
+
+* Si el usuario pulsa una jugada de la lista real bajo el tablero, se muestra esa posición real.
+* Si había una variante activa, se descarta.
+* El análisis vuelve a calcularse sobre la posición real elegida.
+
+3. Jugar una variante
+
+* En modo análisis, el usuario puede mover piezas en el tablero.
+* Ese movimiento NO se añade a game.moves.
+* Ese movimiento NO cambia el PGN.
+* Ese movimiento NO cambia la lista real bajo el tablero.
+* Ese movimiento crea o continúa una variante temporal.
+
+Estado conceptual sugerido:
+
+* analysisSandboxFen: string | null
+* analysisSandboxMoves: string[]
+* isAnalysisSandboxActive: boolean
+
+Cuando el usuario mueve una pieza en análisis:
+
+* validar el movimiento con chess.js desde la FEN actual del sandbox o desde la FEN real actual;
+* si es legal:
+
+  * actualizar analysisSandboxFen;
+  * añadir SAN/UCI a analysisSandboxMoves;
+  * analizar la nueva posición sandbox con Stockfish;
+* si es ilegal:
+
+  * ignorar o mostrar feedback suave;
+* nunca llamar a reviewGame.mutateAsync;
+* nunca llamar a resume;
+* nunca alterar game.moves.
+
+4. Botón “Tornar a la partida”
+   Cuando haya una variante activa:
+
+* mostrar botón lateral “Tornar a la partida”.
+* Debe estar en la columna derecha, a media altura del tablero, entre filas 4 y 5 aproximadamente.
+* Mismo estilo/tamaño que:
+
+  * Veure planella
+  * Amagar fletxes
+  * Sortir d’anàlisi
+* Al pulsarlo:
+
+  * borrar sandbox;
+  * volver a la posición real actual;
+  * recalcular análisis de la posición real.
+
+5. Clicar una jugada real
+   Si el usuario clica un movimiento real bajo el tablero:
+
+* descartar sandbox automáticamente;
+* volver a esa posición real;
+* analizar esa posición real.
+
+6. Mostrar que estamos en variante
+   Mostrar de forma compacta algo tipo:
+
+* “Variant” / “Variante” / “Variation”
+* o “Variant: ...”
+  con la secuencia temporal de jugadas si cabe.
+
+No ocupar mucho espacio.
+No sustituir la lista real de movimientos.
+
+7. Flechas
+   Las flechas de Stockfish deben referirse a la posición activa:
+
+* si no hay sandbox: posición real actual;
+* si hay sandbox: posición sandbox actual.
+
+8. Líneas Stockfish
+   Las líneas mostradas también deben corresponder a la posición activa:
+
+* real o sandbox.
+
+9. Seguridad
+   En modo análisis con sandbox:
+
+* proteger siempre la partida original;
+* no mezclar sandbox con corrección;
+* no activar edición de planilla;
+* no activar reviewState.
+
+Puedes tocar:
+
+* client/src/pages/game-detail.tsx
+* client/src/components/chessboard-viewer.tsx
+* client/src/hooks/use-position-analysis.ts si hace falta
+* helpers de chess.js si hace falta
+
+Si tocas chessboard-viewer.tsx:
+
+* cambio mínimo;
+* separar claramente input de corrección y input de análisis sandbox;
+* no romper promoción;
+* no romper corrección real desde tablero cuando needs_review.
+
+No tocar:
+
+* server/process_image_gemini.py
+* server/routes.ts
+* server/index.ts
+* shared/schema.ts
+* OCR
+* parser
+* reviewState backend
+* resume backend
+* python-chess
+* multi-planilla
+* salto de fila
+* idiomas de planilla backend
+* formatos de planilla
+* Google Drive storage
+
+Checks obligatorios:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Abrir partida completed.
+2. Pulsar Analitzar.
+3. Confirmar que se analiza la posición real.
+4. Mover una pieza legal en el tablero siguiendo una flecha.
+5. Confirmar que aparece modo variante.
+6. Confirmar que la lista real bajo el tablero NO cambia.
+7. Confirmar que el PGN NO cambia.
+8. Confirmar que las líneas/flechas se recalculan sobre la variante.
+9. Pulsar Tornar a la partida.
+10. Confirmar que desaparece la variante y vuelve la posición real.
+11. Clicar una jugada real bajo el tablero.
+12. Confirmar que se descarta cualquier variante.
+13. Confirmar que needs_review/corrección/resume siguen funcionando igual.
+
+Al final dime:
+
+1. archivos modificados;
+2. cómo separaste variante temporal de partida real;
+3. cómo evitaste tocar game.moves/PGN/review/resume;
+4. cómo implementaste Tornar a la partida;
+5. cómo descartas sandbox al clicar una jugada real;
+6. resultado de npm run check;
+7. resultado de npm run build;
+8. pendientes.

@@ -101,6 +101,11 @@ interface ChessboardViewerProps {
    *  fires when enableInput → false. Set to false during analysis mode so the
    *  jumpSignal controls the board position instead. Defaults to true. */
   lockToEnd?: boolean;
+  /** FEN to display in analysis sandbox mode. When set, the board shows this
+   *  position and piece drops are routed to onSandboxMove, not onMove. */
+  sandboxFen?: string | null;
+  /** Called when the user drops a piece while sandboxFen is set. */
+  onSandboxMove?: (from: string, to: string, promotion?: string) => void;
 }
 
 function isBadPgn(pgn?: string | null) {
@@ -228,6 +233,8 @@ export function ChessboardViewer({
   jumpSignal,
   evalBar,
   lockToEnd = true,
+  sandboxFen = null,
+  onSandboxMove,
 }: ChessboardViewerProps) {
   const [game, setGame] = useState(() => new Chess());
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
@@ -328,11 +335,36 @@ export function ChessboardViewer({
   }, [enableInput, historySan.length, lockToEnd]);
 
   const currentPosition = useMemo(() => {
+    if (sandboxFen) return sandboxFen;
     if (tempPosition) return tempPosition;
     return fenAtMoveIndex(game, currentMoveIndex);
-  }, [game, currentMoveIndex, tempPosition]);
+  }, [sandboxFen, game, currentMoveIndex, tempPosition]);
 
   const handlePieceDrop = (source: string, target: string, piece: string) => {
+    // SANDBOX MODE — user explores a variant in analysis; never touches the real game
+    if (sandboxFen && onSandboxMove) {
+      const sandboxGame = new Chess();
+      sandboxGame.load(sandboxFen);
+      const movingPiece = sandboxGame.get(source as any);
+      const isPawnPromotion =
+        movingPiece?.type === "p" &&
+        (target.endsWith("8") || target.endsWith("1"));
+      const promotionChar =
+        isPawnPromotion
+          ? piece.length === 2
+            ? piece[1].toLowerCase()
+            : "q"
+          : undefined;
+      try {
+        sandboxGame.move({ from: source, to: target, promotion: promotionChar });
+        onSandboxMove(source, target, promotionChar);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    // CORRECTION MODE — real move review; guarded by enableInput
     if (!enableInput || !onMove) return false;
 
     const currentGame = new Chess(fenAtMoveIndex(game, currentMoveIndex));
@@ -445,7 +477,7 @@ export function ChessboardViewer({
               position={currentPosition}
               boardOrientation={boardOrientation}
               onPieceDrop={handlePieceDrop}
-              arePiecesDraggable={enableInput}
+              arePiecesDraggable={enableInput || (!!sandboxFen && !!onSandboxMove)}
               customDarkSquareStyle={{ backgroundColor: "#779556" }}
               customLightSquareStyle={{ backgroundColor: "#ebecd0" }}
               animationDuration={200}

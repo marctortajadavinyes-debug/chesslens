@@ -8,6 +8,7 @@ import {
   ArrowLeft,
   Save,
   RefreshCw,
+  RotateCcw,
   Undo2,
   Image as ImageIcon,
   Eye,
@@ -64,6 +65,7 @@ type GameDetailText = {
   hideAnalysis: string;
   showArrows: string;
   hideArrows: string;
+  returnToGame: string;
 };
 
 const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
@@ -122,6 +124,7 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
     hideAnalysis: "Sortir d'anàlisi",
     showArrows: "Mostrar fletxes",
     hideArrows: "Amagar fletxes",
+    returnToGame: "Tornar a la partida",
   },
   en: {
     gameNotFound: "Game not found",
@@ -176,6 +179,7 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
     hideAnalysis: "Exit analysis",
     showArrows: "Show arrows",
     hideArrows: "Hide arrows",
+    returnToGame: "Return to game",
   },
   es: {
     gameNotFound: "Partida no encontrada",
@@ -232,6 +236,7 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
     hideAnalysis: "Salir del análisis",
     showArrows: "Mostrar flechas",
     hideArrows: "Ocultar flechas",
+    returnToGame: "Volver a la partida",
   },
 };
 
@@ -399,6 +404,19 @@ export default function GameDetail() {
   const [sheetOverride, setSheetOverride] = useState<number | null>(null);
   const [showAnalysis, setShowAnalysis] = useState(false);
 
+  // ─── Analysis sandbox ────────────────────────────────────────────────────────
+  const [sandboxFen, setSandboxFen] = useState<string | null>(null);
+  const [sandboxMoves, setSandboxMoves] = useState<string[]>([]);
+  const isSandboxActive = sandboxFen !== null;
+
+  // Clear sandbox whenever analysis mode is turned off
+  useEffect(() => {
+    if (!showAnalysis) {
+      setSandboxFen(null);
+      setSandboxMoves([]);
+    }
+  }, [showAnalysis]);
+
   // ─── Position analysis ──────────────────────────────────────────────────────
   const {
     status: posStatus,
@@ -412,16 +430,19 @@ export default function GameDetail() {
     [pgnText, game?.pgn, boardIndex],
   );
 
-  // Re-analyze whenever analysis mode is active and the position changes.
+  // In sandbox mode analyze the sandbox position; otherwise the real board position.
+  const activeFen = isSandboxActive ? sandboxFen! : currentFen;
+
+  // Re-analyze whenever analysis mode is active and the active position changes.
   useEffect(() => {
     if (!showAnalysis) return;
     const timer = setTimeout(() => {
-      posAnalyze(currentFen, { depth: 12 });
+      posAnalyze(activeFen, { depth: 12 });
     }, 350);
     return () => clearTimeout(timer);
     // posAnalyze is stable (useCallback with no deps)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showAnalysis, currentFen]);
+  }, [showAnalysis, activeFen]);
 
   const posLine = posLines[0];
   const evalTopPercent = evalToWhitePercent(posLine?.scoreCpWhite, posLine?.mateWhite);
@@ -607,6 +628,27 @@ export default function GameDetail() {
     } finally {
       setIsResuming(false);
     }
+  };
+
+  // Validate and record a sandbox variant move — never touches the real game
+  const handleSandboxMove = (from: string, to: string, promotion?: string) => {
+    const baseFen = isSandboxActive ? sandboxFen! : currentFen;
+    try {
+      const chess = new Chess();
+      chess.load(baseFen);
+      const move = chess.move({ from, to, promotion: promotion ?? "q" });
+      if (move) {
+        setSandboxFen(chess.fen());
+        setSandboxMoves((prev) => [...prev, move.san]);
+      }
+    } catch {
+      // Illegal move — silently ignore
+    }
+  };
+
+  const clearSandbox = () => {
+    setSandboxFen(null);
+    setSandboxMoves([]);
   };
 
   useEffect(() => {
@@ -883,6 +925,19 @@ export default function GameDetail() {
             {/* Analysis column: Stockfish lines + board */}
             <div className="flex-1 min-w-0 space-y-2">
 
+              {/* Variant indicator — compact; only when sandbox is active */}
+              {showAnalysis && isSandboxActive && (
+                <div
+                  className="flex items-center gap-1.5 text-[10px] bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 rounded px-2 py-0.5 max-w-[460px] w-full overflow-hidden"
+                  data-testid="sandbox-variant-indicator"
+                >
+                  <span className="shrink-0 font-semibold">Variant</span>
+                  {sandboxMoves.length > 0 && (
+                    <span className="truncate">{sandboxMoves.join(" ")}</span>
+                  )}
+                </div>
+              )}
+
               {/* Stockfish lines — fixed height */}
               {showAnalysis && (
                 <div
@@ -891,7 +946,7 @@ export default function GameDetail() {
                 >
                   {posLines.length > 0 ? (
                     posLines.map((line, i) => {
-                      const san = pvToSan(currentFen, line.pv);
+                      const san = pvToSan(activeFen, line.pv);
                       const display = sanToDisplay(san, scoresheetLanguage);
                       const ev = evalToString(line.scoreCpWhite, line.mateWhite);
                       return (
@@ -932,6 +987,11 @@ export default function GameDetail() {
                 onMoveIndexChange={(idx, maxIdx) => {
                   setBoardIndex(idx);
                   setMaxBoardIndex(maxIdx);
+                  // Navigating to a real position discards any active sandbox variant
+                  if (isSandboxActive) {
+                    setSandboxFen(null);
+                    setSandboxMoves([]);
+                  }
                 }}
                 boardOrientation={boardOrientation}
                 onOrientationChange={setBoardOrientation}
@@ -940,6 +1000,8 @@ export default function GameDetail() {
                 customArrows={customArrows}
                 jumpSignal={jumpSignal}
                 lockToEnd={!showAnalysis}
+                sandboxFen={showAnalysis ? sandboxFen : null}
+                onSandboxMove={showAnalysis ? handleSandboxMove : undefined}
                 evalBar={
                   showAnalysis ? (
                     <div className="flex items-stretch h-full gap-1">
@@ -1018,8 +1080,22 @@ export default function GameDetail() {
                   </Button>
                 </div>
 
+                {/* Middle: Tornar a la partida — only when a sandbox variant is active */}
+                {isSandboxActive && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="w-full justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight"
+                    onClick={clearSandbox}
+                    data-testid="button-return-to-game"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+                    <span>{t.returnToGame}</span>
+                  </Button>
+                )}
+
                 {/* Bottom: Sortir d'anàlisi — approximately at rank 1 of the board */}
-                {/* SF.4A: "Tornar a la partida" will be inserted above this button */}
                 <Button
                   type="button"
                   size="sm"
