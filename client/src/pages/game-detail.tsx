@@ -636,7 +636,9 @@ export default function GameDetail() {
     try {
       const chess = new Chess();
       chess.load(baseFen);
-      const move = chess.move({ from, to, promotion: promotion ?? "q" });
+      // Pass promotion only when defined — chess.js throws if promotion: "q"
+      // is given for a non-promotion move (it can't match it in the move list).
+      const move = chess.move({ from, to, promotion });
       if (move) {
         setSandboxFen(chess.fen());
         setSandboxMoves((prev) => [...prev, move.san]);
@@ -1050,45 +1052,46 @@ export default function GameDetail() {
               {/* Lateral button column — only visible in analysis mode */}
               {showAnalysis && (
                 <div className="shrink-0 flex flex-col justify-between w-[148px] min-h-[460px]">
-                  {/* Row 8 (top): Veure planella — each button is a direct
-                      flex child so justify-between spreads them across the
-                      full board height without grouping wrappers */}
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="w-full justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight"
-                    onClick={() => setShowSheetMobile((v) => !v)}
-                    data-testid="button-toggle-scoresheet-sidebar"
-                  >
-                    {showSheetMobile ? (
-                      <EyeOff className="w-3.5 h-3.5 shrink-0" />
-                    ) : (
-                      <ImageIcon className="w-3.5 h-3.5 shrink-0" />
-                    )}
-                    <span>
-                      {showSheetMobile ? t.hideScoresheet : t.showScoresheet}
-                    </span>
-                  </Button>
+                  {/* Top cluster: arrows toggle + scoresheet toggle.
+                      Grouped so they sit together at the top; gap-3 gives
+                      enough space to avoid misclicks. */}
+                  <div className="flex flex-col gap-3">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="w-full justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight"
+                      onClick={() => setShowArrows((v) => !v)}
+                      data-testid="button-toggle-arrows-sidebar"
+                    >
+                      {showArrows ? (
+                        <EyeOff className="w-3.5 h-3.5 shrink-0" />
+                      ) : (
+                        <Eye className="w-3.5 h-3.5 shrink-0" />
+                      )}
+                      <span>{showArrows ? t.hideArrows : t.showArrows}</span>
+                    </Button>
 
-                  {/* Upper-middle: Amagar/Mostrar fletxes */}
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    className="w-full justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight"
-                    onClick={() => setShowArrows((v) => !v)}
-                    data-testid="button-toggle-arrows-sidebar"
-                  >
-                    {showArrows ? (
-                      <EyeOff className="w-3.5 h-3.5 shrink-0" />
-                    ) : (
-                      <Eye className="w-3.5 h-3.5 shrink-0" />
-                    )}
-                    <span>{showArrows ? t.hideArrows : t.showArrows}</span>
-                  </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="w-full justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight"
+                      onClick={() => setShowSheetMobile((v) => !v)}
+                      data-testid="button-toggle-scoresheet-sidebar"
+                    >
+                      {showSheetMobile ? (
+                        <EyeOff className="w-3.5 h-3.5 shrink-0" />
+                      ) : (
+                        <ImageIcon className="w-3.5 h-3.5 shrink-0" />
+                      )}
+                      <span>
+                        {showSheetMobile ? t.hideScoresheet : t.showScoresheet}
+                      </span>
+                    </Button>
+                  </div>
 
-                  {/* Lower-middle: Tornar a la partida — only when a sandbox variant is active */}
+                  {/* Middle: Tornar a la partida — only when sandbox is active */}
                   {isSandboxActive && (
                     <Button
                       type="button"

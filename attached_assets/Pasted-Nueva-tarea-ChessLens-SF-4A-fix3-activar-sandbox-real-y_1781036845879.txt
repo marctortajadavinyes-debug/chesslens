@@ -1,0 +1,171 @@
+Nueva tarea ChessLens — SF.4A-fix3: activar sandbox real y simplificar botones laterales.
+
+Modo recomendado: Economy.
+App testing automático: OFF.
+
+Contexto:
+Tras el fix anterior, ahora en modo análisis puedo arrastrar una pieza y la pieza se queda visualmente en la nueva casilla.
+
+Pero el sandbox NO está funcionando completamente:
+
+* no aparece badge “Variant”;
+* no aparece botón “Tornar a la partida”;
+* Stockfish parece seguir analizando la posición real, no la variante;
+* en la posición resultante parece que blancas han movido dos veces y negras una, pero las líneas sugeridas siguen siendo para blancas, lo cual indica que el turno/FEN activo no se está actualizando bien.
+
+Diagnóstico probable:
+El tablero visual actualiza `tempPosition`, pero el estado real del sandbox en `game-detail.tsx` no queda activo o no se usa como `activeFen` para:
+
+* análisis Stockfish;
+* flechas;
+* líneas;
+* badge Variant;
+* botón Tornar a la partida.
+
+Objetivo prioritario:
+Hacer que el sandbox sea real, no solo visual.
+
+Comportamiento correcto:
+
+1. Entrar en análisis.
+2. Mover una pieza legal.
+3. La pieza se queda.
+4. Se activa `analysisSandboxFen`.
+5. Se añade la jugada a `analysisSandboxMoves`.
+6. Aparece badge “Variant”.
+7. Aparece botón “Tornar a la partida”.
+8. Stockfish analiza la posición sandbox.
+9. Las líneas/flechas corresponden al turno correcto de la FEN sandbox.
+10. La lista real de movimientos y el PGN original no cambian.
+
+Revisar especialmente:
+
+1. `onSandboxMove`
+   Confirmar que se llama realmente al soltar una pieza legal.
+   Añadir logs temporales si hace falta:
+
+* sourceSquare;
+* targetSquare;
+* SAN/UCI;
+* sandboxFen generado;
+* sandboxMoves resultante.
+
+2. Firma de props
+   Verificar que la firma enviada desde `ChessboardViewer` coincide exactamente con la firma esperada por `handleSandboxMove` en `game-detail.tsx`.
+
+Ejemplo:
+Si `ChessboardViewer` llama:
+onSandboxMove({ fen, san, uci })
+entonces `game-detail.tsx` debe recibir exactamente ese objeto.
+
+Evitar mismatch tipo:
+onSandboxMove(fen, san)
+pero handler espera objeto.
+
+3. `activeFen`
+   Debe existir una única fuente de verdad para análisis:
+
+activeFen = analysisSandboxFen ?? currentRealFen
+
+Y esa `activeFen` debe alimentar:
+
+* use-position-analysis;
+* líneas Stockfish;
+* flechas;
+* tablero si sandbox está activo;
+* turno correcto.
+
+4. No analizar la FEN real si hay sandbox
+   Si `analysisSandboxFen` existe:
+
+* nunca usar `currentRealFen` para Stockfish;
+* solo usar `analysisSandboxFen`.
+
+5. Turno correcto
+   Al hacer una jugada legal con chess.js:
+
+* usar `chess.move(...)`;
+* luego usar `chess.fen()`;
+* esa FEN ya debe incluir el turno correcto.
+  No construir FEN manualmente.
+  No mantener el turno anterior.
+
+6. Badge Variant y botón Tornar
+   Condición correcta:
+   isSandboxActive = Boolean(analysisSandboxFen)
+
+Si true:
+
+* mostrar badge “Variant”;
+* mostrar línea de jugadas sandbox si existe;
+* mostrar botón “Tornar a la partida”.
+
+7. Tornar a la partida
+   Al pulsar:
+
+* setAnalysisSandboxFen(null);
+* setAnalysisSandboxMoves([]);
+* limpiar tempPosition si hace falta;
+* volver a mostrar currentRealFen;
+* recalcular análisis sobre currentRealFen.
+
+8. Clicar jugada real
+   Si el usuario clica una jugada real bajo el tablero:
+
+* descartar sandbox;
+* volver a esa posición real;
+* analizar esa posición real.
+
+Cambios visuales de sidebar:
+No insistimos más con subir/bajar todo milimétricamente.
+
+Dejarlo simple:
+
+* Donde ahora está “Veure planella”, poner “Amagar fletxes / Mostrar fletxes”.
+* Justo debajo, con un poco de aire anti-misclick, poner “Veure planella”.
+* Mantener “Sortir d’anàlisi” abajo.
+* No más reajustes finos por ahora.
+
+Importante:
+No tocar:
+
+* OCR
+* parser
+* reviewState backend
+* resume backend
+* server/process_image_gemini.py
+* server/routes.ts
+* shared/schema.ts
+* Google Drive
+* PGN real
+* game.moves real
+
+Checks obligatorios:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Abrir partida completed.
+2. Pulsar Analitzar.
+3. Mover una pieza legal.
+4. Confirmar que aparece “Variant”.
+5. Confirmar que aparece “Tornar a la partida”.
+6. Confirmar que Stockfish analiza la nueva posición sandbox.
+7. Confirmar que el turno es correcto tras la jugada.
+8. Confirmar que la lista real de movimientos NO cambia.
+9. Confirmar que el PGN NO cambia.
+10. Pulsar Tornar a la partida.
+11. Confirmar que vuelve a la posición real.
+12. Confirmar que clicar una jugada real descarta sandbox.
+
+Al final dime:
+
+1. causa exacta de que no apareciera Variant;
+2. causa exacta de que Stockfish siguiera mostrando líneas de la posición real;
+3. cómo queda definido activeFen;
+4. cómo garantizas el turno correcto;
+5. archivos modificados;
+6. resultado de npm run check;
+7. resultado de npm run build.
