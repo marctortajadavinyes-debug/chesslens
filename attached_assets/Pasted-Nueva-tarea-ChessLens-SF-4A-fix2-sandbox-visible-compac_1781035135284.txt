@@ -1,0 +1,163 @@
+Nueva tarea ChessLens — SF.4A-fix2: sandbox visible + compactar cabecera.
+
+Modo recomendado: Economy.
+App testing automático: OFF.
+
+Contexto:
+Tras SF.4A-fix, en modo análisis ya puedo arrastrar una pieza, pero al soltarla vuelve a su posición original.
+
+Eso indica que:
+
+* el drag empieza;
+* pero el tablero no queda actualizado con la posición sandbox;
+* probablemente el tablero sigue controlado por la FEN real;
+* o onPieceDrop devuelve false;
+* o analysisSandboxFen no se pasa como posición visible al ChessboardViewer.
+
+Objetivo prioritario:
+Cuando el usuario mueve una pieza legal en modo análisis, la pieza debe quedarse en la nueva casilla dentro de una variante temporal.
+
+Regla de oro:
+La partida real sigue intocable.
+
+Nunca modificar:
+
+* game.moves;
+* PGN original;
+* lista real de movimientos;
+* reviewState;
+* resume;
+* backend;
+* OCR;
+* parser.
+
+Cambios requeridos:
+
+1. Sandbox debe controlar la posición visible
+   En modo análisis:
+
+* si NO hay sandbox activo, el tablero muestra la posición real actual;
+* si HAY sandbox activo, el tablero debe mostrar analysisSandboxFen.
+
+La posición visible del tablero debe venir de:
+activeFen = analysisSandboxFen ?? currentRealFen
+
+y no siempre de la partida real.
+
+2. onPieceDrop de sandbox
+   Cuando showAnalysis === true:
+
+* una jugada manual del usuario debe ir a la lógica sandbox;
+* no debe entrar en handleMoveFromBoard de corrección real;
+* validar la jugada con chess.js desde activeFen;
+* si es legal:
+
+  * actualizar analysisSandboxFen con chess.fen();
+  * añadir jugada a analysisSandboxMoves;
+  * devolver true para que react-chessboard no rebote la pieza;
+  * recalcular Stockfish sobre la nueva FEN sandbox;
+* si es ilegal:
+
+  * devolver false o ignorar suavemente.
+
+3. Badge Variant
+   Al primer movimiento legal de sandbox:
+
+* mostrar badge “Variant”;
+* mostrar la línea temporal si ya existe;
+* mostrar botón “Tornar a la partida”.
+
+4. Tornar a la partida
+   Al pulsar:
+
+* limpiar analysisSandboxFen;
+* limpiar analysisSandboxMoves;
+* volver a mostrar currentRealFen;
+* recalcular análisis sobre la posición real actual.
+
+5. Clicar jugada real
+   Si el usuario clica una jugada real bajo el tablero:
+
+* limpiar sandbox;
+* mostrar esa posición real;
+* analizar esa posición real.
+
+6. Compactar cabecera superior
+   Quitar o compactar al máximo:
+
+* “Partida #3”
+* badge “Completada”
+
+Objetivo:
+Ganar altura vertical para que “Accions del PGN” quede más visible sin tener que hacer tanto scroll.
+
+Mantener:
+
+* botón de volver atrás si existe;
+* no romper navegación.
+
+7. Botones laterales
+   Ajustar visualmente:
+
+* “Veure planella”: subirlo lo máximo razonable dentro de la columna lateral.
+* “Amagar fletxes / Mostrar fletxes”: colocarlo a la altura aproximada de las líneas de Stockfish.
+* “Sortir d’anàlisi”: bajarlo a la altura visual de la fila 1 del tablero.
+* Mantener formato de botón coherente.
+
+8. No tocar motor ni backend
+   No tocar:
+
+* server/process_image_gemini.py
+* server/routes.ts
+* server/index.ts
+* shared/schema.ts
+* OCR
+* parser
+* reviewState backend
+* resume backend
+* python-chess
+* Google Drive storage
+
+Archivos probables:
+
+* client/src/pages/game-detail.tsx
+* client/src/components/chessboard-viewer.tsx
+
+Revisar especialmente:
+
+* qué FEN/position recibe ChessboardViewer;
+* si existe prop tipo positionOverride / activeFen / sandboxFen;
+* qué devuelve onPieceDrop;
+* si arePiecesDraggable permite sandbox;
+* que el input de corrección real y el input sandbox estén separados.
+
+Checks obligatorios:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Abrir partida completed.
+2. Pulsar Analitzar.
+3. Mover una pieza legal en el tablero.
+4. Confirmar que la pieza se queda en la nueva casilla.
+5. Confirmar que aparece “Variant”.
+6. Confirmar que aparece “Tornar a la partida”.
+7. Confirmar que la lista real de jugadas NO cambia.
+8. Confirmar que el PGN NO cambia.
+9. Pulsar Tornar a la partida.
+10. Confirmar que vuelve a la posición real.
+11. Clicar una jugada real bajo el tablero.
+12. Confirmar que descarta sandbox.
+13. Confirmar que “Accions del PGN” queda más arriba/visible tras compactar cabecera.
+14. Confirmar npm check/build limpios.
+
+Al final dime:
+
+1. causa exacta de que la pieza rebotara;
+2. cómo haces que sandboxFen controle la posición visible;
+3. cómo garantizas que el PGN real no se modifica;
+4. archivos modificados;
+5. resultado de npm run check;
+6. resultado de npm run build.

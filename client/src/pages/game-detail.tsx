@@ -697,7 +697,7 @@ export default function GameDetail() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b border-border bg-white/50 backdrop-blur-md z-10">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div className={`max-w-7xl mx-auto px-4 flex items-center justify-between transition-all ${showAnalysis ? "h-10" : "h-16"}`}>
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" asChild>
               <Link href="/">
@@ -705,23 +705,27 @@ export default function GameDetail() {
               </Link>
             </Button>
 
-            <h1 className="font-display font-bold text-xl hidden sm:block">
-              {t.gameTitle(game.id)}
-            </h1>
+            {!showAnalysis && (
+              <h1 className="font-display font-bold text-xl hidden sm:block">
+                {t.gameTitle(game.id)}
+              </h1>
+            )}
 
-            <span
-              className={`px-2 py-0.5 rounded-full text-xs font-medium border truncate max-w-[45vw] sm:max-w-none ${
-                game.status === "completed" && !isResuming
-                  ? "bg-green-100 text-green-700 border-green-200"
-                  : game.status === "failed"
-                    ? "bg-red-100 text-red-700 border-red-200"
-                    : game.status === "needs_review"
-                      ? "bg-amber-100 text-amber-700 border-amber-200"
-                      : "bg-blue-100 text-blue-700 border-blue-200 animate-pulse"
-              }`}
-            >
-              {getStatusText()}
-            </span>
+            {!showAnalysis && (
+              <span
+                className={`px-2 py-0.5 rounded-full text-xs font-medium border truncate max-w-[45vw] sm:max-w-none ${
+                  game.status === "completed" && !isResuming
+                    ? "bg-green-100 text-green-700 border-green-200"
+                    : game.status === "failed"
+                      ? "bg-red-100 text-red-700 border-red-200"
+                      : game.status === "needs_review"
+                        ? "bg-amber-100 text-amber-700 border-amber-200"
+                        : "bg-blue-100 text-blue-700 border-blue-200 animate-pulse"
+                }`}
+              >
+                {getStatusText()}
+              </span>
+            )}
           </div>
 
           <div className="hidden lg:flex items-center gap-2">
@@ -1046,44 +1050,45 @@ export default function GameDetail() {
               {/* Lateral button column — only visible in analysis mode */}
               {showAnalysis && (
                 <div className="shrink-0 flex flex-col justify-between w-[148px] min-h-[460px]">
-                  {/* Top group: Veure planella + Amagar/Mostrar fletxes */}
-                  <div className="flex flex-col gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="w-full justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight"
-                      onClick={() => setShowSheetMobile((v) => !v)}
-                      data-testid="button-toggle-scoresheet-sidebar"
-                    >
-                      {showSheetMobile ? (
-                        <EyeOff className="w-3.5 h-3.5 shrink-0" />
-                      ) : (
-                        <ImageIcon className="w-3.5 h-3.5 shrink-0" />
-                      )}
-                      <span>
-                        {showSheetMobile ? t.hideScoresheet : t.showScoresheet}
-                      </span>
-                    </Button>
+                  {/* Row 8 (top): Veure planella — each button is a direct
+                      flex child so justify-between spreads them across the
+                      full board height without grouping wrappers */}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="w-full justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight"
+                    onClick={() => setShowSheetMobile((v) => !v)}
+                    data-testid="button-toggle-scoresheet-sidebar"
+                  >
+                    {showSheetMobile ? (
+                      <EyeOff className="w-3.5 h-3.5 shrink-0" />
+                    ) : (
+                      <ImageIcon className="w-3.5 h-3.5 shrink-0" />
+                    )}
+                    <span>
+                      {showSheetMobile ? t.hideScoresheet : t.showScoresheet}
+                    </span>
+                  </Button>
 
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="w-full justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight"
-                      onClick={() => setShowArrows((v) => !v)}
-                      data-testid="button-toggle-arrows-sidebar"
-                    >
-                      {showArrows ? (
-                        <EyeOff className="w-3.5 h-3.5 shrink-0" />
-                      ) : (
-                        <Eye className="w-3.5 h-3.5 shrink-0" />
-                      )}
-                      <span>{showArrows ? t.hideArrows : t.showArrows}</span>
-                    </Button>
-                  </div>
+                  {/* Upper-middle: Amagar/Mostrar fletxes */}
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="w-full justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight"
+                    onClick={() => setShowArrows((v) => !v)}
+                    data-testid="button-toggle-arrows-sidebar"
+                  >
+                    {showArrows ? (
+                      <EyeOff className="w-3.5 h-3.5 shrink-0" />
+                    ) : (
+                      <Eye className="w-3.5 h-3.5 shrink-0" />
+                    )}
+                    <span>{showArrows ? t.hideArrows : t.showArrows}</span>
+                  </Button>
 
-                  {/* Middle: Tornar a la partida — only when a sandbox variant is active */}
+                  {/* Lower-middle: Tornar a la partida — only when a sandbox variant is active */}
                   {isSandboxActive && (
                     <Button
                       type="button"

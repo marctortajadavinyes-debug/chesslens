@@ -363,6 +363,9 @@ export function ChessboardViewer({
           : undefined;
       try {
         sandboxGame.move({ from: source, to: target, promotion: promotionChar });
+        // setTempPosition immediately so react-chessboard sees the new FEN
+        // in the same render cycle — prevents the piece bouncing back.
+        setTempPosition(sandboxGame.fen());
         onSandboxMove(source, target, promotionChar);
         return true;
       } catch {
