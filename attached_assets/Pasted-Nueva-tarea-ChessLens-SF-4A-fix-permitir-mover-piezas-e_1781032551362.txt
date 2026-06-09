@@ -1,0 +1,122 @@
+Nueva tarea ChessLens — SF.4A-fix: permitir mover piezas en sandbox de análisis + ajustar botones laterales.
+
+Modo recomendado: Economy.
+App testing automático: OFF.
+
+Contexto:
+SF.4A compila, pero en prueba manual no se pueden mover piezas en modo análisis.
+Por tanto no se puede validar el sandbox.
+
+Además hay un ajuste visual menor:
+
+* “Veure planella” y “Amagar fletxes” deben subir un poco más.
+* “× Sortir d’anàlisi” está a la altura de la fila 2; debe bajar un poco hasta la altura de la fila 1.
+
+Objetivo 1 — arreglar sandbox
+En modo análisis, el usuario debe poder mover piezas en el tablero para crear una variante temporal.
+
+Pero:
+
+* NO modificar game.moves;
+* NO modificar PGN;
+* NO modificar la lista real de movimientos;
+* NO llamar a review/resume;
+* NO tocar backend;
+* NO tocar OCR/parser.
+
+Revisar especialmente:
+
+* client/src/components/chessboard-viewer.tsx
+* client/src/pages/game-detail.tsx
+
+Posible causa:
+`arePiecesDraggable` o `enableInput` probablemente siguen bloqueando el tablero durante análisis.
+
+Solución deseada:
+Separar claramente dos tipos de input:
+
+1. Input de corrección real:
+
+* solo cuando needsReview;
+* puede llamar a reviewGame/resume;
+* modifica la partida corregida según el flujo actual.
+
+2. Input de sandbox de análisis:
+
+* solo cuando showAnalysis;
+* NO llama a reviewGame;
+* NO llama a resume;
+* NO toca game.moves/PGN;
+* solo actualiza estado temporal de variante.
+
+Si hace falta, añadir props separadas a ChessboardViewer, por ejemplo:
+
+* enableInput para corrección real;
+* enableAnalysisSandboxInput para análisis;
+* onAnalysisSandboxMove para jugadas de variante.
+
+La lógica debe impedir que una jugada de sandbox entre en handleMoveFromBoard de corrección real.
+
+Comportamiento esperado:
+
+* En análisis, puedo arrastrar una pieza legal.
+* Si la jugada es legal desde la posición activa, actualiza sandboxFen/sandboxMoves.
+* Aparece badge “Variant”.
+* Aparece botón “Tornar a la partida”.
+* Las líneas/flechas de Stockfish se recalculan sobre la posición sandbox.
+* La lista real bajo el tablero no cambia.
+
+Objetivo 2 — ajustes visuales botones laterales
+En la columna derecha:
+
+* subir un poco “Veure planella”;
+* subir un poco “Amagar fletxes”;
+* bajar “Sortir d’anàlisi” hasta la altura visual de la fila 1 del tablero.
+
+Mantener mismo formato de botones.
+
+No tocar:
+
+* server/process_image_gemini.py
+* server/routes.ts
+* server/index.ts
+* shared/schema.ts
+* OCR
+* parser
+* reviewState backend
+* resume backend
+* python-chess
+* multi-planilla
+* salto de fila
+* idiomas de planilla backend
+* formatos de planilla
+* Google Drive storage
+
+Checks obligatorios:
+
+* npm run check
+* npm run build
+
+Verificación manual obligatoria:
+
+1. Abrir partida completed.
+2. Pulsar Analitzar.
+3. Intentar mover una pieza legal en el tablero.
+4. Confirmar que ahora sí se puede mover.
+5. Confirmar que aparece “Variant”.
+6. Confirmar que aparece “Tornar a la partida”.
+7. Confirmar que la lista real de movimientos NO cambia.
+8. Confirmar que el PGN NO cambia.
+9. Pulsar Tornar a la partida.
+10. Confirmar que vuelve a la posición real.
+11. Confirmar que needs_review/corrección sigue funcionando igual.
+12. Confirmar posición visual de los botones laterales.
+
+Al final dime:
+
+1. cuál era la causa de que no se pudieran mover piezas;
+2. qué props/lógica separaste para corrección real vs sandbox;
+3. cómo garantizas que sandbox no toca PGN/game.moves/review/resume;
+4. archivos modificados;
+5. resultado de npm run check;
+6. resultado de npm run build.

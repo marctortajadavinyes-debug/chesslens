@@ -101,10 +101,12 @@ interface ChessboardViewerProps {
    *  fires when enableInput → false. Set to false during analysis mode so the
    *  jumpSignal controls the board position instead. Defaults to true. */
   lockToEnd?: boolean;
-  /** FEN to display in analysis sandbox mode. When set, the board shows this
-   *  position and piece drops are routed to onSandboxMove, not onMove. */
+  /** When true, piece drops are routed to onSandboxMove instead of onMove.
+   *  Set to true whenever analysis mode is active, regardless of sandboxFen. */
+  enableAnalysisSandbox?: boolean;
+  /** FEN to DISPLAY in analysis sandbox mode (may be null on the first move). */
   sandboxFen?: string | null;
-  /** Called when the user drops a piece while sandboxFen is set. */
+  /** Called when the user drops a piece while enableAnalysisSandbox is true. */
   onSandboxMove?: (from: string, to: string, promotion?: string) => void;
 }
 
@@ -233,6 +235,7 @@ export function ChessboardViewer({
   jumpSignal,
   evalBar,
   lockToEnd = true,
+  enableAnalysisSandbox = false,
   sandboxFen = null,
   onSandboxMove,
 }: ChessboardViewerProps) {
@@ -341,10 +344,13 @@ export function ChessboardViewer({
   }, [sandboxFen, game, currentMoveIndex, tempPosition]);
 
   const handlePieceDrop = (source: string, target: string, piece: string) => {
-    // SANDBOX MODE — user explores a variant in analysis; never touches the real game
-    if (sandboxFen && onSandboxMove) {
+    // SANDBOX MODE — user explores a variant in analysis; never touches the real game.
+    // Gate is enableAnalysisSandbox (NOT sandboxFen) so the first move also works
+    // when sandboxFen is still null.
+    if (enableAnalysisSandbox && onSandboxMove) {
+      const baseFen = sandboxFen ?? fenAtMoveIndex(game, currentMoveIndex);
       const sandboxGame = new Chess();
-      sandboxGame.load(sandboxFen);
+      sandboxGame.load(baseFen);
       const movingPiece = sandboxGame.get(source as any);
       const isPawnPromotion =
         movingPiece?.type === "p" &&
@@ -477,7 +483,7 @@ export function ChessboardViewer({
               position={currentPosition}
               boardOrientation={boardOrientation}
               onPieceDrop={handlePieceDrop}
-              arePiecesDraggable={enableInput || (!!sandboxFen && !!onSandboxMove)}
+              arePiecesDraggable={enableInput || enableAnalysisSandbox}
               customDarkSquareStyle={{ backgroundColor: "#779556" }}
               customLightSquareStyle={{ backgroundColor: "#ebecd0" }}
               animationDuration={200}
