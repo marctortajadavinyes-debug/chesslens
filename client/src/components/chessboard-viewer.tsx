@@ -106,8 +106,15 @@ interface ChessboardViewerProps {
   enableAnalysisSandbox?: boolean;
   /** FEN to DISPLAY in analysis sandbox mode (may be null on the first move). */
   sandboxFen?: string | null;
-  /** Called when the user drops a piece while enableAnalysisSandbox is true. */
-  onSandboxMove?: (from: string, to: string, promotion?: string) => void;
+  /** Called with the validated move result after a legal sandbox drop.
+   *  ChessboardViewer does all chess.js validation; the handler just sets state. */
+  onSandboxMove?: (move: {
+    fen: string;
+    san: string;
+    from: string;
+    to: string;
+    promotion?: string;
+  }) => void;
 }
 
 function isBadPgn(pgn?: string | null) {
@@ -348,29 +355,50 @@ export function ChessboardViewer({
     // Gate is enableAnalysisSandbox (NOT sandboxFen) so the first move also works
     // when sandboxFen is still null.
     if (enableAnalysisSandbox && onSandboxMove) {
+      // All chess.js validation happens here so handleSandboxMove in the parent
+      // receives an already-validated result and never needs to re-validate
+      // (avoiding FEN-mismatch bugs from two independent chess.js replays).
       const baseFen = sandboxFen ?? fenAtMoveIndex(game, currentMoveIndex);
       const sandboxGame = new Chess();
       sandboxGame.load(baseFen);
+
+      // Determine promotion piece only for real pawn-promotion moves.
+      // react-chessboard passes the resulting piece type ("wQ", "bR"…) as the
+      // third argument; for regular moves it passes the moving piece ("wP", "bN"…).
       const movingPiece = sandboxGame.get(source as any);
       const isPawnPromotion =
         movingPiece?.type === "p" &&
         (target.endsWith("8") || target.endsWith("1"));
-      const promotionChar =
-        isPawnPromotion
-          ? piece.length === 2
-            ? piece[1].toLowerCase()
-            : "q"
-          : undefined;
+      const promotionChar = isPawnPromotion
+        ? (piece[1]?.toLowerCase() ?? "q")
+        : undefined;
+
+      // Build a minimal move object — do NOT include promotion key at all for
+      // non-promotion moves so chess.js can't accidentally reject the move.
+      const moveInput = isPawnPromotion
+        ? { from: source, to: target, promotion: promotionChar }
+        : { from: source, to: target };
+
+      let result: ReturnType<Chess["move"]> | null = null;
       try {
-        sandboxGame.move({ from: source, to: target, promotion: promotionChar });
-        // setTempPosition immediately so react-chessboard sees the new FEN
-        // in the same render cycle — prevents the piece bouncing back.
-        setTempPosition(sandboxGame.fen());
-        onSandboxMove(source, target, promotionChar);
-        return true;
+        result = sandboxGame.move(moveInput as any);
       } catch {
         return false;
       }
+      if (!result) return false;
+
+      const nextFen = sandboxGame.fen();
+      // Immediate visual update — prevents react-chessboard bounce-back.
+      setTempPosition(nextFen);
+      // Pass the complete validated result; parent just assigns state.
+      onSandboxMove({
+        fen: nextFen,
+        san: result.san,
+        from: result.from,
+        to: result.to,
+        promotion: result.promotion,
+      });
+      return true;
     }
 
     // CORRECTION MODE — real move review; guarded by enableInput

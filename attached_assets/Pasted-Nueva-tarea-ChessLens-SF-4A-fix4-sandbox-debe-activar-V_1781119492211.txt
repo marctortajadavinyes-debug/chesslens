@@ -1,0 +1,159 @@
+Nueva tarea ChessLens — SF.4A-fix4: sandbox debe activar Variant y analizar la FEN nueva.
+
+Modo recomendado: Economy.
+App testing automático: OFF.
+
+Contexto:
+Tras el último fix, en modo análisis ya puedo arrastrar una pieza y dejarla visualmente en una nueva casilla.
+
+Pero el sandbox sigue sin activarse realmente:
+
+* no aparece badge “Variant”;
+* no aparece botón “Tornar a la partida”;
+* las líneas Stockfish siguen siendo de la posición real;
+* tras mover negras, Stockfish sigue sugiriendo jugadas como si negras volvieran a mover.
+
+Esto indica que:
+
+* tempPosition cambia visualmente;
+* pero sandboxFen no se actualiza;
+* o onSandboxMove no se llama;
+* o onSandboxMove falla/catchea;
+* o el handler recibe argumentos incorrectos.
+
+Objetivo:
+Que al hacer una jugada legal en análisis:
+
+1. se valide desde la FEN activa;
+2. se genere nextFen con chess.js;
+3. se actualice sandboxFen en game-detail;
+4. aparezca “Variant”;
+5. aparezca “Tornar a la partida”;
+6. Stockfish analice nextFen;
+7. el turno de nextFen sea correcto.
+
+Revisar especialmente la firma real de onPieceDrop de react-chessboard.
+
+Posible causa:
+El tercer argumento de onPieceDrop puede ser la pieza, por ejemplo "bP" o "wN", no una promoción.
+Si se está pasando ese valor como promotion a chess.move, chess.js rechazará el movimiento.
+
+Solución robusta recomendada:
+
+En ChessboardViewer, dentro del branch sandbox:
+
+1. No llamar setTempPosition antes de validar.
+2. Crear chess.js desde currentPosition / active visible fen.
+3. Construir moveInput así:
+
+   * from
+   * to
+   * promotion SOLO si realmente es promoción de peón.
+4. Para movimientos normales, NO incluir promotion.
+5. Ejecutar chess.move(moveInput).
+6. Si chess.move falla:
+
+   * return false;
+   * no setTempPosition;
+   * no onSandboxMove.
+7. Si chess.move funciona:
+
+   * const nextFen = chess.fen();
+   * setTempPosition(nextFen);
+   * llamar onSandboxMove con objeto claro:
+     {
+     fen: nextFen,
+     san: move.san,
+     uci: move.from + move.to + (move.promotion ?? ""),
+     from: move.from,
+     to: move.to,
+     promotion: move.promotion
+     }
+   * return true.
+
+Importante:
+No fiarse del tercer argumento como promotion salvo que se compruebe explícitamente que es una promoción real.
+
+En game-detail:
+
+* handleSandboxMove debe recibir exactamente ese objeto.
+* Debe hacer:
+
+  * setSandboxFen(fen);
+  * setSandboxMoves(prev => [...prev, san]);
+* No debe recalcular chess.move otra vez si ya viene fen validada desde ChessboardViewer.
+* No debe atrapar silenciosamente sin log si falla.
+
+Añadir logs temporales si hace falta:
+console.log("[sandbox drop]", { from, to, piece });
+console.log("[sandbox move ok]", { fen, san, uci });
+console.log("[sandbox activeFen]", activeFen);
+
+Luego se pueden quitar si todo va bien.
+
+activeFen:
+Debe quedar así o equivalente:
+const activeFen = sandboxFen ?? currentFen;
+
+Y debe alimentar:
+
+* análisis Stockfish;
+* flechas;
+* líneas;
+* posición visible si sandbox activo.
+
+Botón y badge:
+Condición:
+const isSandboxActive = Boolean(sandboxFen);
+
+Si true:
+
+* mostrar “Variant”;
+* mostrar sandboxMoves;
+* mostrar “Tornar a la partida”.
+
+Tornar a la partida:
+
+* setSandboxFen(null);
+* setSandboxMoves([]);
+* limpiar tempPosition si hace falta;
+* volver a currentFen real.
+
+No tocar:
+
+* OCR;
+* parser;
+* reviewState;
+* resume;
+* backend;
+* PGN real;
+* game.moves real;
+* lista real de movimientos;
+* Google Drive.
+
+Checks:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Abrir partida completed.
+2. Pulsar Analitzar.
+3. Mover una pieza legal de negras siguiendo flecha, por ejemplo e7-e6 si es legal.
+4. Confirmar que aparece “Variant”.
+5. Confirmar que aparece “Tornar a la partida”.
+6. Confirmar que las líneas de Stockfish cambian y ahora sugieren jugada del bando correcto.
+7. Confirmar que la lista real de movimientos NO cambia.
+8. Confirmar que el PGN NO cambia.
+9. Pulsar Tornar a la partida.
+10. Confirmar que vuelve a la posición real.
+
+Al final dime:
+
+1. cuál era exactamente la causa de que sandboxFen no se actualizara;
+2. cuál es la firma real de onPieceDrop que usa react-chessboard;
+3. cómo validas la jugada antes de setTempPosition;
+4. cómo queda el objeto enviado a handleSandboxMove;
+5. resultado de npm run check;
+6. resultado de npm run build.

@@ -630,22 +630,20 @@ export default function GameDetail() {
     }
   };
 
-  // Validate and record a sandbox variant move — never touches the real game
-  const handleSandboxMove = (from: string, to: string, promotion?: string) => {
-    const baseFen = isSandboxActive ? sandboxFen! : currentFen;
-    try {
-      const chess = new Chess();
-      chess.load(baseFen);
-      // Pass promotion only when defined — chess.js throws if promotion: "q"
-      // is given for a non-promotion move (it can't match it in the move list).
-      const move = chess.move({ from, to, promotion });
-      if (move) {
-        setSandboxFen(chess.fen());
-        setSandboxMoves((prev) => [...prev, move.san]);
-      }
-    } catch {
-      // Illegal move — silently ignore
-    }
+  // Record a sandbox variant move — ChessboardViewer has already validated the
+  // move and computed the next FEN; we just set state here, no re-validation.
+  const handleSandboxMove = ({
+    fen,
+    san,
+  }: {
+    fen: string;
+    san: string;
+    from: string;
+    to: string;
+    promotion?: string;
+  }) => {
+    setSandboxFen(fen);
+    setSandboxMoves((prev) => [...prev, san]);
   };
 
   const clearSandbox = () => {
