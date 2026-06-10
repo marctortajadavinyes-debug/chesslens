@@ -1,0 +1,185 @@
+Nueva tarea ChessLens — SF.4A-fix5: hacer trazable y funcional el callback sandbox.
+
+Modo recomendado: Economy.
+App testing automático: OFF.
+
+Contexto:
+En modo análisis:
+
+* puedo mover la primera pieza sugerida;
+* la pieza se queda visualmente en el tablero;
+* pero NO aparece “Variant”;
+* NO aparece “Tornar a la partida”;
+* las flechas siguen siendo de la posición real;
+* Stockfish no analiza la posición nueva;
+* no puedo continuar bien la variante con una segunda jugada.
+
+Conclusión:
+El tablero está actualizando posición local/tempPosition, pero el estado sandbox real en game-detail no se activa.
+
+Objetivo:
+Arreglar definitivamente el flujo:
+
+ChessboardViewer onPieceDrop
+→ valida jugada legal
+→ calcula nextFen
+→ llama onSandboxMove(payload)
+→ game-detail recibe payload
+→ setSandboxFen(nextFen)
+→ setSandboxMoves(...)
+→ isSandboxActive = true
+→ aparece Variant
+→ aparece Tornar a la partida
+→ activeFen = sandboxFen
+→ Stockfish analiza sandboxFen
+→ flechas y líneas corresponden al nuevo turno.
+
+Instrucción importante:
+No más catches silenciosos.
+Si hay catch, debe hacer console.warn con contexto suficiente durante esta fase.
+
+Añadir logs temporales claros:
+
+En ChessboardViewer, dentro del branch sandbox:
+console.log("[sandbox viewer drop start]", { sourceSquare, targetSquare, piece, currentPosition });
+console.log("[sandbox viewer legal]", { nextFen, san, uci });
+console.log("[sandbox viewer callback exists]", Boolean(onSandboxMove));
+
+Justo antes de llamar:
+onSandboxMove(payload);
+
+Después:
+console.log("[sandbox viewer callback called]", payload);
+
+En game-detail, al inicio de handleSandboxMove:
+console.log("[sandbox parent received]", payload);
+
+Después de setSandboxFen:
+console.log("[sandbox parent set]", { fen: payload.fen, san: payload.san });
+
+Revisar y corregir:
+
+1. Prop name mismatch
+   Confirmar que el nombre de la prop coincide exactamente:
+
+* En ChessboardViewer props/interface.
+* En destructuring del componente.
+* En la llamada desde game-detail.
+
+Por ejemplo:
+onSandboxMove={handleSandboxMove}
+
+y no:
+onAnalysisSandboxMove / onSandboxMove / handleSandboxMove mezclados.
+
+2. Payload mismatch
+   Usar un único objeto claro:
+
+type SandboxMovePayload = {
+fen: string;
+san: string;
+uci: string;
+from: string;
+to: string;
+promotion?: string;
+};
+
+ChessboardViewer debe llamar:
+onSandboxMove(payload)
+
+game-detail debe recibir:
+function handleSandboxMove(payload: SandboxMovePayload) { ... }
+
+No usar argumentos sueltos.
+
+3. No actualizar tempPosition si no hay callback
+   Si enableAnalysisSandbox está activo pero onSandboxMove no existe, no ocultar el problema.
+   Hacer:
+   console.warn("[sandbox missing callback]");
+   return false;
+
+Así no parecerá que funciona visualmente si el padre no recibe nada.
+
+4. game-detail no debe revalidar
+   handleSandboxMove no debe hacer chess.move otra vez.
+   Solo:
+
+* setSandboxFen(payload.fen);
+* setSandboxMoves(prev => [...prev, payload.san]);
+* opcionalmente guardar payload.uci;
+* posStop si hace falta para cancelar análisis anterior.
+
+5. activeFen único
+   Asegurar:
+   const activeFen = sandboxFen ?? currentFen;
+
+Ese activeFen debe usarse para:
+
+* posAnalyze(activeFen);
+* pvToSan(activeFen, ...);
+* customArrows;
+* posición visible si sandbox activo.
+
+6. Efecto de análisis
+   El useEffect que lanza Stockfish debe depender de activeFen, no solo currentFen.
+   Si sandboxFen cambia, debe disparar análisis nuevo.
+
+7. Flechas
+   Las flechas deben recalcularse desde las líneas de Stockfish de activeFen.
+   Tras mover una jugada de negras, las nuevas flechas deben ser para blancas si el FEN dice que blancas mueven.
+
+8. Navegación real
+   Si el usuario pulsa flecha derecha/izquierda o una jugada real:
+
+* se puede descartar sandbox;
+* eso está bien.
+  Pero mientras no navegue, la variante debe seguir activa.
+
+9. No tocar partida real
+   Nunca modificar:
+
+* game.moves;
+* PGN;
+* lista real bajo tablero;
+* reviewState;
+* resume;
+* backend;
+* OCR/parser.
+
+Checks:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Abrir partida completed.
+2. Pulsar Analitzar.
+3. Abrir consola.
+4. Mover una pieza legal sugerida.
+5. Confirmar logs:
+
+   * sandbox viewer drop start
+   * sandbox viewer legal
+   * sandbox viewer callback exists true
+   * sandbox viewer callback called
+   * sandbox parent received
+   * sandbox parent set
+6. Confirmar que aparece “Variant”.
+7. Confirmar que aparece “Tornar a la partida”.
+8. Confirmar que Stockfish recalcula sobre la nueva FEN.
+9. Confirmar que el turno es correcto.
+10. Confirmar que la lista real y el PGN no cambian.
+11. Mover una segunda pieza legal en la variante.
+12. Confirmar que se añade a sandboxMoves.
+13. Pulsar Tornar a la partida y confirmar vuelta limpia.
+
+Al final dime:
+
+1. si el callback se estaba llamando o no;
+2. si había mismatch de nombre de prop;
+3. si había mismatch de payload;
+4. cómo queda el tipo SandboxMovePayload;
+5. cómo queda activeFen;
+6. resultado de npm run check;
+7. resultado de npm run build.

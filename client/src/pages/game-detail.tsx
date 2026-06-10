@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRoute, Link } from "wouter";
 import { useGame, useReviewGame, useUpdateGame } from "@/hooks/use-games";
 import { Button } from "@/components/ui/button";
@@ -417,6 +417,22 @@ export default function GameDetail() {
     }
   }, [showAnalysis]);
 
+  // Clear sandbox only when the user ACTUALLY navigates (boardIndex changes).
+  // We use a ref to distinguish a real navigation from a spurious render that
+  // calls onMoveIndexChange with the same idx (which would otherwise wipe the
+  // sandbox immediately after it was just activated).
+  const prevBoardIndexRef = useRef<number | null>(null);
+  useEffect(() => {
+    const prev = prevBoardIndexRef.current;
+    prevBoardIndexRef.current = boardIndex;
+    if (prev !== null && prev !== boardIndex) {
+      // User navigated to a different ply — discard any active sandbox variant
+      setSandboxFen(null);
+      setSandboxMoves([]);
+      console.log("[sandbox cleared] boardIndex changed", prev, "→", boardIndex);
+    }
+  }, [boardIndex]);
+
   // ─── Position analysis ──────────────────────────────────────────────────────
   const {
     status: posStatus,
@@ -632,18 +648,18 @@ export default function GameDetail() {
 
   // Record a sandbox variant move — ChessboardViewer has already validated the
   // move and computed the next FEN; we just set state here, no re-validation.
-  const handleSandboxMove = ({
-    fen,
-    san,
-  }: {
+  const handleSandboxMove = (payload: {
     fen: string;
     san: string;
+    uci: string;
     from: string;
     to: string;
     promotion?: string;
   }) => {
-    setSandboxFen(fen);
-    setSandboxMoves((prev) => [...prev, san]);
+    console.log("[sandbox parent received]", payload);
+    setSandboxFen(payload.fen);
+    setSandboxMoves((prev) => [...prev, payload.san]);
+    console.log("[sandbox parent set]", { fen: payload.fen, san: payload.san });
   };
 
   const clearSandbox = () => {
@@ -993,11 +1009,6 @@ export default function GameDetail() {
                   onMoveIndexChange={(idx, maxIdx) => {
                     setBoardIndex(idx);
                     setMaxBoardIndex(maxIdx);
-                    // Navigating to a real position discards any active sandbox variant
-                    if (isSandboxActive) {
-                      setSandboxFen(null);
-                      setSandboxMoves([]);
-                    }
                   }}
                   boardOrientation={boardOrientation}
                   onOrientationChange={setBoardOrientation}

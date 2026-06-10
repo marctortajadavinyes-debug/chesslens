@@ -78,6 +78,15 @@ const BOARD_TEXT: Record<AppLanguage, BoardText> = {
   },
 };
 
+export type SandboxMovePayload = {
+  fen: string;
+  san: string;
+  uci: string;
+  from: string;
+  to: string;
+  promotion?: string;
+};
+
 interface ChessboardViewerProps {
   pgn?: string | null;
   error?: string | null;
@@ -108,13 +117,7 @@ interface ChessboardViewerProps {
   sandboxFen?: string | null;
   /** Called with the validated move result after a legal sandbox drop.
    *  ChessboardViewer does all chess.js validation; the handler just sets state. */
-  onSandboxMove?: (move: {
-    fen: string;
-    san: string;
-    from: string;
-    to: string;
-    promotion?: string;
-  }) => void;
+  onSandboxMove?: (move: SandboxMovePayload) => void;
 }
 
 function isBadPgn(pgn?: string | null) {
@@ -354,11 +357,15 @@ export function ChessboardViewer({
     // SANDBOX MODE — user explores a variant in analysis; never touches the real game.
     // Gate is enableAnalysisSandbox (NOT sandboxFen) so the first move also works
     // when sandboxFen is still null.
-    if (enableAnalysisSandbox && onSandboxMove) {
-      // All chess.js validation happens here so handleSandboxMove in the parent
-      // receives an already-validated result and never needs to re-validate
-      // (avoiding FEN-mismatch bugs from two independent chess.js replays).
+    if (enableAnalysisSandbox) {
+      if (!onSandboxMove) {
+        console.warn("[sandbox] enableAnalysisSandbox=true but onSandboxMove is missing!");
+        return false;
+      }
+
       const baseFen = sandboxFen ?? fenAtMoveIndex(game, currentMoveIndex);
+      console.log("[sandbox viewer drop start]", { source, target, piece, baseFen, currentMoveIndex });
+
       const sandboxGame = new Chess();
       sandboxGame.load(baseFen);
 
@@ -374,7 +381,7 @@ export function ChessboardViewer({
         : undefined;
 
       // Build a minimal move object — do NOT include promotion key at all for
-      // non-promotion moves so chess.js can't accidentally reject the move.
+      // non-promotion moves so chess.js cannot accidentally reject it.
       const moveInput = isPawnPromotion
         ? { from: source, to: target, promotion: promotionChar }
         : { from: source, to: target };
@@ -382,22 +389,32 @@ export function ChessboardViewer({
       let result: ReturnType<Chess["move"]> | null = null;
       try {
         result = sandboxGame.move(moveInput as any);
-      } catch {
+      } catch (err) {
+        console.warn("[sandbox] chess.move failed", { moveInput, baseFen, err });
         return false;
       }
-      if (!result) return false;
+      if (!result) {
+        console.warn("[sandbox] chess.move returned null/false", { moveInput, baseFen });
+        return false;
+      }
 
       const nextFen = sandboxGame.fen();
-      // Immediate visual update — prevents react-chessboard bounce-back.
-      setTempPosition(nextFen);
-      // Pass the complete validated result; parent just assigns state.
-      onSandboxMove({
+      const payload = {
         fen: nextFen,
         san: result.san,
+        uci: result.from + result.to + (result.promotion ?? ""),
         from: result.from,
         to: result.to,
         promotion: result.promotion,
-      });
+      };
+      console.log("[sandbox viewer legal]", payload);
+
+      // Immediate visual update — prevents react-chessboard bounce-back.
+      setTempPosition(nextFen);
+
+      console.log("[sandbox viewer callback exists]", true);
+      onSandboxMove(payload);
+      console.log("[sandbox viewer callback called]", payload);
       return true;
     }
 
