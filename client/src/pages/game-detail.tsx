@@ -271,7 +271,7 @@ function pvToSan(fen: string, uciPv: string[]): string {
     let fullMove = parseInt(fenParts[5] ?? "1", 10);
     const parts: string[] = [];
     let first = true;
-    for (const uci of uciPv.slice(0, 12)) {
+    for (const uci of uciPv.slice(0, 8)) {
       if (uci.length < 4) break;
       if (side === "w") {
         parts.push(`${fullMove}.`);
@@ -1011,13 +1011,13 @@ export default function GameDetail() {
                     return (
                       <div
                         key={i}
-                        className="flex items-center gap-2 text-xs font-mono overflow-x-auto"
+                        className="flex items-center gap-2 text-xs font-mono"
                         data-testid={`analysis-line-${i}`}
                       >
                         <span className="text-muted-foreground w-12 shrink-0">
                           {ev}
                         </span>
-                        <span className="text-foreground/90 whitespace-nowrap">
+                        <span className="text-foreground/90 truncate">
                           {display || line.move}
                         </span>
                       </div>
