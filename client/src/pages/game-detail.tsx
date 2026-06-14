@@ -271,7 +271,7 @@ function pvToSan(fen: string, uciPv: string[]): string {
     let fullMove = parseInt(fenParts[5] ?? "1", 10);
     const parts: string[] = [];
     let first = true;
-    for (const uci of uciPv.slice(0, 8)) {
+    for (const uci of uciPv.slice(0, 12)) {
       if (uci.length < 4) break;
       if (side === "w") {
         parts.push(`${fullMove}.`);
@@ -296,7 +296,8 @@ function pvToSan(fen: string, uciPv: string[]): string {
 }
 
 function evalToWhitePercent(scoreCpWhite?: number, mateWhite?: number): number {
-  if (mateWhite !== undefined) return mateWhite > 0 ? 95 : 5;
+  // Mate → the winning side takes the entire bar (100 or 0).
+  if (mateWhite !== undefined) return mateWhite > 0 ? 100 : 0;
   if (scoreCpWhite === undefined) return 50;
   const clamped = Math.max(-1000, Math.min(1000, scoreCpWhite));
   return 50 + (clamped / 1000) * 45;
@@ -405,20 +406,36 @@ export default function GameDetail() {
   const [showAnalysis, setShowAnalysis] = useState(false);
 
   // ─── Analysis sandbox ────────────────────────────────────────────────────────
-  const [sandboxFen, setSandboxFen] = useState<string | null>(null);
+  // Gate verbose sandbox tracing behind this flag.
+  const DEBUG_SANDBOX = false;
+
+  // History of FENs and SANs accumulated in the current variant.
+  // sandboxIndex is the cursor (-1 = no active sandbox).
+  const [sandboxFens, setSandboxFens] = useState<string[]>([]);
   const [sandboxMoves, setSandboxMoves] = useState<string[]>([]);
-  const isSandboxActive = sandboxFen !== null;
-  // The real-game ply the user was on when the variant started.
-  // Used by clearSandbox to jump back to exactly that position.
+  const [sandboxIndex, setSandboxIndex] = useState<number>(-1);
+  // Real-game ply the user was on when the variant started.
   const [sandboxBasePly, setSandboxBasePly] = useState<number | null>(null);
+
+  const isSandboxActive = sandboxIndex >= 0;
+  // Current FEN to display / feed to Stockfish during a variant.
+  const currentSandboxFen: string | null = isSandboxActive
+    ? sandboxFens[sandboxIndex]
+    : null;
+  const sandboxCanPrev = isSandboxActive && sandboxIndex > 0;
+  const sandboxCanNext =
+    isSandboxActive && sandboxIndex < sandboxFens.length - 1;
+
+  const resetSandboxState = () => {
+    setSandboxFens([]);
+    setSandboxMoves([]);
+    setSandboxIndex(-1);
+    setSandboxBasePly(null);
+  };
 
   // Clear sandbox whenever analysis mode is turned off
   useEffect(() => {
-    if (!showAnalysis) {
-      setSandboxFen(null);
-      setSandboxMoves([]);
-      setSandboxBasePly(null);
-    }
+    if (!showAnalysis) resetSandboxState();
   }, [showAnalysis]);
 
   // Clear sandbox only when the user ACTUALLY navigates (boardIndex changes).
@@ -431,10 +448,8 @@ export default function GameDetail() {
     prevBoardIndexRef.current = boardIndex;
     if (prev !== null && prev !== boardIndex) {
       // User navigated to a different ply — discard any active sandbox variant
-      setSandboxFen(null);
-      setSandboxMoves([]);
-      setSandboxBasePly(null);
-      console.log("[sandbox cleared] boardIndex changed", prev, "→", boardIndex);
+      resetSandboxState();
+      DEBUG_SANDBOX && console.log("[sandbox cleared] boardIndex changed", prev, "→", boardIndex);
     }
   }, [boardIndex]);
 
@@ -452,7 +467,7 @@ export default function GameDetail() {
   );
 
   // In sandbox mode analyze the sandbox position; otherwise the real board position.
-  const activeFen = isSandboxActive ? sandboxFen! : currentFen;
+  const activeFen = isSandboxActive ? currentSandboxFen! : currentFen;
 
   // Re-analyze whenever analysis mode is active and the active position changes.
   useEffect(() => {
@@ -661,28 +676,35 @@ export default function GameDetail() {
     to: string;
     promotion?: string;
   }) => {
-    console.log("[sandbox parent received]", payload);
-    // On the first move of a new variant, snapshot the current real-game ply
-    // so clearSandbox can jump back to exactly this position.
-    if (sandboxFen === null) {
+    DEBUG_SANDBOX && console.log("[sandbox parent received]", payload);
+    // First move of a new variant → snapshot the real-game ply for clearSandbox.
+    if (!isSandboxActive) {
       setSandboxBasePly(boardIndex);
-      console.log("[sandbox basePly saved]", boardIndex);
+      DEBUG_SANDBOX && console.log("[sandbox basePly saved]", boardIndex);
     }
-    setSandboxFen(payload.fen);
-    setSandboxMoves((prev) => [...prev, payload.san]);
-    console.log("[sandbox parent set]", { fen: payload.fen, san: payload.san });
+    // Branch-cut: if we're not at the tip, discard future moves and start new branch.
+    setSandboxFens((prev) => [...prev.slice(0, sandboxIndex + 1), payload.fen]);
+    setSandboxMoves((prev) => [...prev.slice(0, sandboxIndex + 1), payload.san]);
+    setSandboxIndex((i) => i + 1);
+    DEBUG_SANDBOX && console.log("[sandbox parent set]", { fen: payload.fen, san: payload.san });
+  };
+
+  const handleSandboxPrev = () => {
+    setSandboxIndex((i) => Math.max(0, i - 1));
+  };
+
+  const handleSandboxNext = () => {
+    setSandboxIndex((i) => Math.min(sandboxFens.length - 1, i + 1));
   };
 
   const clearSandbox = () => {
     // Jump back to the exact ply where the variant started.
-    // jumpSignal always uses a fresh counter so ChessboardViewer processes it
-    // even if the index value happens to equal the current one.
+    // jumpSignal uses a fresh counter so ChessboardViewer processes it even
+    // if the ply value happens to equal the current internal index.
     const targetPly = sandboxBasePly ?? boardIndex;
     setJumpSignal({ index: targetPly, counter: Date.now() });
-    console.log("[sandbox clearSandbox] jumping back to ply", targetPly);
-    setSandboxFen(null);
-    setSandboxMoves([]);
-    setSandboxBasePly(null);
+    DEBUG_SANDBOX && console.log("[sandbox clearSandbox] jumping back to ply", targetPly);
+    resetSandboxState();
   };
 
   useEffect(() => {
@@ -964,12 +986,14 @@ export default function GameDetail() {
                 Kept outside the flex row so the sidebar aligns exactly with the board. */}
             {showAnalysis && isSandboxActive && (
               <div
-                className="flex items-center gap-1.5 text-[10px] bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 rounded px-2 py-0.5 max-w-[460px] w-full overflow-hidden"
+                className="flex items-center gap-1.5 text-[10px] bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 rounded px-2 py-0.5 max-w-[460px] w-full overflow-x-auto"
                 data-testid="sandbox-variant-indicator"
               >
                 <span className="shrink-0 font-semibold">Variant</span>
                 {sandboxMoves.length > 0 && (
-                  <span className="truncate">{sandboxMoves.join(" ")}</span>
+                  <span className="whitespace-nowrap">
+                    {sandboxMoves.slice(0, sandboxIndex + 1).join(" ")}
+                  </span>
                 )}
               </div>
             )}
@@ -987,13 +1011,13 @@ export default function GameDetail() {
                     return (
                       <div
                         key={i}
-                        className="flex items-center gap-2 text-xs font-mono overflow-hidden"
+                        className="flex items-center gap-2 text-xs font-mono overflow-x-auto"
                         data-testid={`analysis-line-${i}`}
                       >
                         <span className="text-muted-foreground w-12 shrink-0">
                           {ev}
                         </span>
-                        <span className="text-foreground/90 truncate">
+                        <span className="text-foreground/90 whitespace-nowrap">
                           {display || line.move}
                         </span>
                       </div>
@@ -1036,8 +1060,12 @@ export default function GameDetail() {
                   jumpSignal={jumpSignal}
                   lockToEnd={!showAnalysis}
                   enableAnalysisSandbox={showAnalysis}
-                  sandboxFen={showAnalysis ? sandboxFen : null}
+                  sandboxFen={showAnalysis ? currentSandboxFen : null}
                   onSandboxMove={showAnalysis ? handleSandboxMove : undefined}
+                  onSandboxPrev={showAnalysis && isSandboxActive ? handleSandboxPrev : undefined}
+                  onSandboxNext={showAnalysis && isSandboxActive ? handleSandboxNext : undefined}
+                  sandboxCanPrev={sandboxCanPrev}
+                  sandboxCanNext={sandboxCanNext}
                   evalBar={
                     showAnalysis ? (
                       <div className="flex items-stretch h-full gap-1">

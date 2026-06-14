@@ -6,10 +6,10 @@ import { Button } from "@/components/ui/button";
 import {
   ChevronLeft,
   ChevronRight,
-  RotateCcw,
+  SkipBack,
   Play,
   Pause,
-  ArrowUpDown,
+  RefreshCw,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -118,6 +118,14 @@ interface ChessboardViewerProps {
   /** Called with the validated move result after a legal sandbox drop.
    *  ChessboardViewer does all chess.js validation; the handler just sets state. */
   onSandboxMove?: (move: SandboxMovePayload) => void;
+  /** Navigate to the previous position within the active sandbox variant. */
+  onSandboxPrev?: () => void;
+  /** Navigate to the next position within the active sandbox variant. */
+  onSandboxNext?: () => void;
+  /** Whether backward navigation is available in the sandbox variant. */
+  sandboxCanPrev?: boolean;
+  /** Whether forward navigation is available in the sandbox variant. */
+  sandboxCanNext?: boolean;
 }
 
 function isBadPgn(pgn?: string | null) {
@@ -248,6 +256,10 @@ export function ChessboardViewer({
   enableAnalysisSandbox = false,
   sandboxFen = null,
   onSandboxMove,
+  onSandboxPrev,
+  onSandboxNext,
+  sandboxCanPrev = false,
+  sandboxCanNext = false,
 }: ChessboardViewerProps) {
   const [game, setGame] = useState(() => new Chess());
   const [currentMoveIndex, setCurrentMoveIndex] = useState(0);
@@ -557,7 +569,7 @@ export function ChessboardViewer({
           }
           title={t.rotateBoard}
         >
-          <ArrowUpDown className="w-4 h-4" />
+          <RefreshCw className="w-4 h-4" />
         </Button>
 
         <Button
@@ -569,7 +581,7 @@ export function ChessboardViewer({
           }}
           disabled={currentMoveIndex === 0}
         >
-          <RotateCcw className="w-4 h-4" />
+          <SkipBack className="w-4 h-4" />
         </Button>
 
         <Button
@@ -577,9 +589,17 @@ export function ChessboardViewer({
           size="icon"
           onClick={() => {
             setIsPlaying(false);
-            setCurrentMoveIndex(Math.max(0, currentMoveIndex - 1));
+            if (enableAnalysisSandbox && sandboxFen != null && onSandboxPrev) {
+              onSandboxPrev();
+            } else {
+              setCurrentMoveIndex(Math.max(0, currentMoveIndex - 1));
+            }
           }}
-          disabled={currentMoveIndex === 0}
+          disabled={
+            enableAnalysisSandbox && sandboxFen != null
+              ? !sandboxCanPrev
+              : currentMoveIndex === 0
+          }
         >
           <ChevronLeft className="w-4 h-4" />
         </Button>
@@ -602,7 +622,10 @@ export function ChessboardViewer({
               setIsPlaying(!isPlaying);
             }
           }}
-          disabled={historySan.length === 0}
+          disabled={
+            historySan.length === 0 ||
+            (enableAnalysisSandbox && sandboxFen != null)
+          }
           title={enableInput ? t.correctionModeTitle : t.playGameTitle}
         >
           {isPlaying ? (
@@ -617,11 +640,19 @@ export function ChessboardViewer({
           size="icon"
           onClick={() => {
             setIsPlaying(false);
-            setCurrentMoveIndex(
-              Math.min(historySan.length, currentMoveIndex + 1),
-            );
+            if (enableAnalysisSandbox && sandboxFen != null && onSandboxNext) {
+              onSandboxNext();
+            } else {
+              setCurrentMoveIndex(
+                Math.min(historySan.length, currentMoveIndex + 1),
+              );
+            }
           }}
-          disabled={currentMoveIndex >= historySan.length}
+          disabled={
+            enableAnalysisSandbox && sandboxFen != null
+              ? !sandboxCanNext
+              : currentMoveIndex >= historySan.length
+          }
         >
           <ChevronRight className="w-4 h-4" />
         </Button>

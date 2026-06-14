@@ -1,0 +1,186 @@
+Nueva tarea ChessLens — SF.4B: pulido análisis, navegación de variante e iconos.
+
+Modo recomendado: Economy.
+App testing automático: OFF.
+
+Contexto:
+SF.4A ya funciona casi completo:
+
+* análisis por posición;
+* sandbox de variantes;
+* Variant aparece;
+* Tornar a la partida funciona;
+* PGN/lista real no se modifican.
+
+Ahora queremos pulir 4 aspectos:
+
+1. Barra de evaluación en mate
+   Problema:
+   Cuando Stockfish marca M1 / M2 / M3, la barra no queda completamente del color del bando que da mate.
+
+Comportamiento correcto:
+
+* Si la evaluación es mate favorable a blancas:
+
+  * la barra debe estar 100% blanca.
+* Si la evaluación es mate favorable a negras:
+
+  * la barra debe estar 100% negra.
+* Esto aplica a M1, M2, M3, etc.
+* Mostrar texto M1 / M2 / M3 como ahora, pero la barra debe reflejar dominio total.
+
+Revisar helper de porcentaje de evaluación, probablemente evalToWhitePercent o equivalente.
+Si scoreMateWhite > 0 → whitePercent = 100.
+Si scoreMateWhite < 0 → whitePercent = 0.
+
+2. Líneas Stockfish sin puntos suspensivos prematuros
+   Problema:
+   Las líneas muestran `...` aunque hay espacio a la derecha.
+
+Comportamiento deseado:
+
+* Mostrar más jugadas de la PV si Stockfish las devuelve.
+* No cortar con `...` tan pronto.
+* Mantener el bloque de líneas con altura estable para que el tablero no salte.
+* Si la línea es larga:
+
+  * permitir overflow-x auto suave;
+  * o truncar solo al final real del espacio;
+  * pero evitar mostrar `...` cuando todavía hay espacio visible.
+* Mantener 2 líneas por defecto.
+
+3. Navegación dentro de variante
+   Actualmente el usuario puede estudiar una línea alternativa, pero necesitamos poder avanzar/retroceder dentro de esa variante como si fuera una mini-partida temporal.
+
+Comportamiento deseado:
+
+* Al crear una variante, guardar historial temporal:
+
+  * baseFen/basePly;
+  * sandboxMoves;
+  * sandboxFens;
+  * sandboxIndex.
+* Mientras hay variante activa:
+
+  * los botones de navegación atrás/adelante deben moverse dentro de la variante temporal si es posible.
+  * No deben modificar game.moves.
+  * No deben modificar PGN.
+  * No deben modificar lista real.
+* Si el usuario está en una variante y pulsa una jugada real de la lista:
+
+  * descartar variante;
+  * volver a esa posición real.
+* Si pulsa Tornar a la partida:
+
+  * descartar variante;
+  * volver a basePly/baseFen real.
+* Si está en una variante y hace un nuevo movimiento desde un punto intermedio:
+
+  * cortar la variante futura y crear nueva rama desde ahí, como hacen los tableros de análisis.
+
+Implementación sugerida:
+
+* analysisSandboxFens: string[]
+* analysisSandboxMoves: string[]
+* analysisSandboxIndex: number
+* activeFen = sandbox activo ? analysisSandboxFens[analysisSandboxIndex] : currentFen
+* al mover pieza legal:
+
+  * si analysisSandboxIndex no está al final, cortar arrays hasta index actual;
+  * añadir nextFen;
+  * añadir SAN;
+  * sandboxIndex++;
+* botones prev/next:
+
+  * si sandbox activo, navegar sandboxIndex;
+  * si no, navegar partida real como ahora.
+* Stockfish siempre analiza activeFen.
+
+Importante:
+La lista real bajo el tablero sigue mostrando la partida real, no la variante.
+
+4. Iconos de navegación
+   Cambiar iconos de dos botones inferiores:
+
+A) Botón “volver al inicio de la partida”
+Usar un icono tipo:
+
+* `SkipBack`
+* o similar de lucide-react.
+  Debe parecer “ir al inicio”, tipo triángulo hacia la izquierda con barra.
+  Tamaño/color adaptado a ChessLens.
+  No usar imágenes externas ni iconos de Shutterstock.
+
+B) Botón “rotar tablero”
+Usar un icono tipo:
+
+* `RefreshCw`
+* `Repeat2`
+* o SVG propio simple con dos flechas formando rotación.
+  Debe ser cuadrado y coherente con los demás botones.
+  No usar imágenes externas ni iconos de Shutterstock.
+
+Mantener:
+
+* tamaño cuadrado de los botones;
+* estilo coherente;
+* buen contraste;
+* no romper móvil.
+
+5. Limpiar logs temporales
+   Si siguen existiendo logs `[sandbox ...]`, quitarlos o dejarlos detrás de una constante:
+   const DEBUG_SANDBOX = false;
+
+No dejar logs ruidosos en consola normal.
+
+No tocar:
+
+* OCR
+* parser
+* reviewState backend
+* resume backend
+* server/process_image_gemini.py
+* server/routes.ts
+* shared/schema.ts
+* Google Drive storage
+* PGN real
+* game.moves real
+* lista real de movimientos
+
+Archivos probables:
+
+* client/src/pages/game-detail.tsx
+* client/src/components/chessboard-viewer.tsx
+* client/src/hooks/use-position-analysis.ts si hace falta
+
+Checks obligatorios:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Entrar en análisis.
+2. Confirmar que M1/M2/M3 pintan la barra completa del bando que da mate.
+3. Confirmar que las líneas Stockfish muestran más jugadas y no cortan con `...` si hay espacio.
+4. Crear una variante.
+5. Confirmar que Variant aparece.
+6. Mover varias jugadas en la variante.
+7. Usar atrás/adelante dentro de la variante.
+8. Confirmar que la partida real/lista/PGN no cambian.
+9. Desde punto intermedio de variante, hacer otra jugada y confirmar que corta el futuro de la variante.
+10. Pulsar Tornar a la partida y confirmar vuelta limpia.
+11. Clicar jugada real y confirmar que descarta variante.
+12. Confirmar nuevos iconos de “inicio” y “rotar tablero”.
+13. Confirmar npm check/build limpios.
+
+Al final dime:
+
+1. cómo corregiste la barra en mate;
+2. cómo quitaste los puntos suspensivos prematuros;
+3. cómo implementaste navegación de variante;
+4. cómo garantizas que la variante no toca PGN/game.moves;
+5. qué iconos usaste;
+6. si limpiaste logs sandbox;
+7. resultado de npm run check;
+8. resultado de npm run build.
