@@ -986,7 +986,7 @@ export default function GameDetail() {
                 Kept outside the flex row so the sidebar aligns exactly with the board. */}
             {showAnalysis && isSandboxActive && (
               <div
-                className="flex items-center gap-1.5 text-[10px] bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 rounded px-2 py-0.5 max-w-[460px] w-full overflow-x-auto"
+                className="flex items-center gap-1.5 text-[10px] bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400 rounded px-2 py-0.5 w-full overflow-x-auto"
                 data-testid="sandbox-variant-indicator"
               >
                 <span className="shrink-0 font-semibold">Variant</span>
@@ -1000,7 +1000,7 @@ export default function GameDetail() {
 
             {showAnalysis && (
               <div
-                className="h-[52px] space-y-0.5 bg-muted/30 rounded-lg px-3 py-1.5 overflow-hidden max-w-[460px] w-full"
+                className="h-[52px] space-y-0.5 bg-muted/30 rounded-lg px-3 py-1.5 overflow-hidden w-full"
                 data-testid="analysis-lines"
               >
                 {posLines.length > 0 ? (

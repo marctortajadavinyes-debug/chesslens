@@ -1,0 +1,71 @@
+Nueva tarea ChessLens — SF.4D: ampliar ancho útil de líneas Stockfish hasta columna h.
+
+Modo recomendado: Lite.
+App testing automático: OFF.
+
+Contexto:
+SF.4C quitó el scrollbar horizontal de las líneas Stockfish y dejó truncado suave. Funciona, pero visualmente las 2 líneas de análisis encima del tablero parecen llegar solo hasta la columna g. Hay espacio para que ocupen el ancho completo del tablero, hasta la columna h.
+
+Objetivo:
+Hacer que el bloque de las 2 líneas Stockfish tenga exactamente el mismo ancho útil que el tablero, de columna a hasta columna h.
+
+Cambios requeridos:
+
+1. Ancho de líneas
+
+* El contenedor de líneas Stockfish debe alinearse con el tablero.
+* Debe tener el mismo ancho que el tablero, no menos.
+* Debe llegar visualmente hasta la columna h.
+* No debe invadir la columna lateral derecha de botones.
+
+2. Evitar puntos suspensivos innecesarios
+
+* Al ganar ese ancho, deben desaparecer los puntos suspensivos en la mayoría de casos.
+* Mantener truncado suave solo si realmente no cabe.
+* No volver a poner scrollbar horizontal.
+
+3. Mantener layout estable
+
+* No mover el tablero hacia abajo.
+* No crear saltos visuales.
+* No cambiar altura del bloque de líneas.
+* No romper barra de evaluación ni columna lateral.
+
+4. No tocar lógica
+   No tocar:
+
+* Stockfish worker;
+* sandbox;
+* PGN;
+* game.moves;
+* OCR;
+* parser;
+* reviewState;
+* resume;
+* backend;
+* Google Drive.
+
+Archivo probable:
+
+* client/src/pages/game-detail.tsx
+
+Checks:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Entrar en análisis.
+2. Confirmar que las 2 líneas llegan hasta el ancho completo del tablero, columna h incluida.
+3. Confirmar que no aparece scrollbar.
+4. Confirmar que los puntos suspensivos aparecen mucho menos o desaparecen si hay espacio.
+5. Confirmar que la columna lateral de botones no se mueve ni se invade.
+6. Confirmar que sandbox/variantes siguen funcionando.
+
+Al final dime:
+
+1. archivo modificado;
+2. qué clase/ancho cambiaste;
+3. resultado de npm run check;
+4. resultado de npm run build.
