@@ -408,12 +408,16 @@ export default function GameDetail() {
   const [sandboxFen, setSandboxFen] = useState<string | null>(null);
   const [sandboxMoves, setSandboxMoves] = useState<string[]>([]);
   const isSandboxActive = sandboxFen !== null;
+  // The real-game ply the user was on when the variant started.
+  // Used by clearSandbox to jump back to exactly that position.
+  const [sandboxBasePly, setSandboxBasePly] = useState<number | null>(null);
 
   // Clear sandbox whenever analysis mode is turned off
   useEffect(() => {
     if (!showAnalysis) {
       setSandboxFen(null);
       setSandboxMoves([]);
+      setSandboxBasePly(null);
     }
   }, [showAnalysis]);
 
@@ -429,6 +433,7 @@ export default function GameDetail() {
       // User navigated to a different ply — discard any active sandbox variant
       setSandboxFen(null);
       setSandboxMoves([]);
+      setSandboxBasePly(null);
       console.log("[sandbox cleared] boardIndex changed", prev, "→", boardIndex);
     }
   }, [boardIndex]);
@@ -657,14 +662,27 @@ export default function GameDetail() {
     promotion?: string;
   }) => {
     console.log("[sandbox parent received]", payload);
+    // On the first move of a new variant, snapshot the current real-game ply
+    // so clearSandbox can jump back to exactly this position.
+    if (sandboxFen === null) {
+      setSandboxBasePly(boardIndex);
+      console.log("[sandbox basePly saved]", boardIndex);
+    }
     setSandboxFen(payload.fen);
     setSandboxMoves((prev) => [...prev, payload.san]);
     console.log("[sandbox parent set]", { fen: payload.fen, san: payload.san });
   };
 
   const clearSandbox = () => {
+    // Jump back to the exact ply where the variant started.
+    // jumpSignal always uses a fresh counter so ChessboardViewer processes it
+    // even if the index value happens to equal the current one.
+    const targetPly = sandboxBasePly ?? boardIndex;
+    setJumpSignal({ index: targetPly, counter: Date.now() });
+    console.log("[sandbox clearSandbox] jumping back to ply", targetPly);
     setSandboxFen(null);
     setSandboxMoves([]);
+    setSandboxBasePly(null);
   };
 
   useEffect(() => {
@@ -784,7 +802,7 @@ export default function GameDetail() {
                   onClick={() => {
                     posStop();
                     setShowAnalysis(true);
-                    setJumpSignal({ index: 1, counter: Date.now() });
+                    setJumpSignal({ index: 0, counter: Date.now() });
                   }}
                   data-testid="button-analyze-game"
                   className="gap-1.5 bg-black text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"

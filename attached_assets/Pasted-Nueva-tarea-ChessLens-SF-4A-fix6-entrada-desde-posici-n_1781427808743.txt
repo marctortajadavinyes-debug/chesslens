@@ -1,0 +1,135 @@
+Nueva tarea ChessLens — SF.4A-fix6: entrada desde posición inicial y botón Tornar a la partida.
+
+Modo recomendado: Economy.
+App testing automático: OFF.
+
+Contexto:
+El sandbox de análisis ya funciona casi completo:
+
+* puedo entrar en análisis;
+* puedo mover una pieza sugerida;
+* puedo continuar una variante temporal;
+* la partida real y la lista de movimientos no se modifican.
+
+Quedan dos bugs:
+
+1. Al entrar en análisis, la app empieza después del primer movimiento blanco.
+   Actualmente se ve la posición tras 1.e4.
+   Queremos empezar en la posición inicial, antes de 1.e4.
+
+Comportamiento deseado:
+
+* Al pulsar Analitzar:
+
+  * activar análisis;
+  * saltar a ply 0 / posición inicial;
+  * analizar la posición inicial;
+  * mostrar líneas recomendadas para blancas desde la posición inicial.
+
+No debe empezar en ply 1.
+
+Revisar:
+
+* jumpSignal;
+* boardIndex;
+* getFenAtPly;
+* currentMoveIndex;
+* cualquier lógica que fuerce ply 1 al entrar en análisis.
+
+Cambiar a:
+
+* entrada análisis → ply 0.
+
+2. Botón “Tornar a la partida” no vuelve correctamente.
+   Ahora:
+
+* si pulso Tornar a la partida, parece que sigue en la variante/análisis;
+* sí vuelve si clico una jugada real de la lista;
+* también vuelve si uso flecha atrás, pero entonces queda un movimiento antes.
+
+Comportamiento deseado:
+Al pulsar “Tornar a la partida”:
+
+* limpiar sandboxFen;
+* limpiar sandboxMoves;
+* limpiar tempPosition si hace falta;
+* volver exactamente a la posición real actual del tablero/lista;
+* recalcular Stockfish sobre esa posición real;
+* mantener showAnalysis activo;
+* no mover boardIndex salvo que sea imprescindible;
+* no ir un movimiento atrás;
+* no tocar PGN ni lista real.
+
+Si el usuario estaba analizando una variante desde una posición real concreta:
+
+* Tornar a la partida debe volver a esa misma posición real base.
+* Ejemplo:
+
+  * estoy en posición real tras 4...Cf6;
+  * hago variante;
+  * pulso Tornar;
+  * vuelvo a posición real tras 4...Cf6, no al inicio ni al movimiento anterior.
+
+Si ahora no existe variable para recordar la posición base de la variante, añadir una:
+
+* sandboxBasePly
+  o
+* sandboxBaseFen
+
+Recomendación:
+Cuando empieza la variante:
+
+* guardar basePly = boardIndex;
+* guardar baseFen = currentFen;
+  Al pulsar Tornar:
+* sandboxFen = null;
+* sandboxMoves = [];
+* limpiar tempPosition;
+* restaurar baseFen/basePly si hace falta.
+
+3. No tocar la partida real
+   No modificar:
+
+* game.moves;
+* PGN;
+* lista real bajo tablero;
+* reviewState;
+* resume;
+* backend;
+* OCR/parser;
+* Google Drive.
+
+4. Logs temporales
+   Si siguen existiendo logs [sandbox ...] está bien mantenerlos durante este fix.
+   Si todo queda validado, después haremos una limpieza.
+
+Checks:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Abrir partida completed.
+2. Pulsar Analitzar.
+3. Confirmar que el tablero muestra la posición inicial, antes de 1.e4.
+4. Confirmar que Stockfish propone jugadas para blancas desde la posición inicial.
+5. Avanzar hasta una posición real cualquiera.
+6. Mover una pieza legal para crear variante.
+7. Confirmar que aparece Variant.
+8. Confirmar que aparece Tornar a la partida.
+9. Pulsar Tornar a la partida.
+10. Confirmar que vuelve exactamente a la posición real base de la variante.
+11. Confirmar que no retrocede un movimiento.
+12. Confirmar que la lista real y el PGN no cambian.
+13. Clicar una jugada real y confirmar que descarta variante.
+
+Al final dime:
+
+1. por qué entraba en ply 1;
+2. cómo lo cambiaste a ply 0;
+3. por qué Tornar a la partida no volvía correctamente;
+4. cómo recuerdas la posición base de la variante;
+5. archivos modificados;
+6. resultado de npm run check;
+7. resultado de npm run build.

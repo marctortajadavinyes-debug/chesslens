@@ -335,9 +335,13 @@ export function ChessboardViewer({
     };
   }, [currentMoveIndex, historySan.length, syncToken, enableInput]);
 
+  // Clear the optimistic visual state whenever the real position changes OR
+  // whenever the sandbox FEN prop resets to null (clearSandbox / end of variant).
+  // Without sandboxFen in the deps, tempPosition would linger after clearSandbox
+  // and the board would keep showing the last sandbox position.
   useEffect(() => {
     setTempPosition(null);
-  }, [currentMoveIndex, pgn]);
+  }, [currentMoveIndex, pgn, sandboxFen]);
 
   useEffect(() => {
     // Only auto-advance to the final position when lockToEnd is not suppressed.
