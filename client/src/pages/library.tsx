@@ -738,6 +738,18 @@ export default function Library() {
 
   const showFilters = connected && !loading && !error && files.length > 0;
 
+  // Full-screen viewer — replaces library list entirely (no modal/overlay)
+  if (viewerFile && viewerPgn !== null) {
+    return (
+      <DriveGameViewer
+        file={viewerFile}
+        pgn={viewerPgn}
+        appLanguage={appLanguage}
+        onClose={handleCloseViewer}
+      />
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -886,15 +898,6 @@ export default function Library() {
         )}
       </main>
 
-      {/* Game viewer */}
-      {viewerFile && viewerPgn !== null && (
-        <DriveGameViewer
-          file={viewerFile}
-          pgn={viewerPgn}
-          appLanguage={appLanguage}
-          onClose={handleCloseViewer}
-        />
-      )}
     </div>
   );
 }

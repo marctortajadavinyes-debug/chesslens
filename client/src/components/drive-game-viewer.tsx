@@ -1,37 +1,60 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChessboardViewer } from "@/components/chessboard-viewer";
 import { PgnActions } from "@/components/pgn-actions";
-import { TrendingUp, Loader2, RotateCcw } from "lucide-react";
+import {
+  TrendingUp,
+  Loader2,
+  RotateCcw,
+  ArrowLeft,
+  Eye,
+  EyeOff,
+  X,
+} from "lucide-react";
 import type { DriveGameFile } from "@/lib/google-drive";
 import { Chess } from "chess.js";
 import { usePositionAnalysis } from "@/hooks/use-position-analysis";
 
 type AppLanguage = "ca" | "en" | "es";
 
-const ANALYZE_LABEL: Record<AppLanguage, string> = {
-  ca: "Analitzar",
-  en: "Analyze",
-  es: "Analizar",
-};
+// ─── i18n ─────────────────────────────────────────────────────────────────────
 
-const EXIT_ANALYSIS_LABEL: Record<AppLanguage, string> = {
-  ca: "Sortir d'anàlisi",
-  en: "Exit analysis",
-  es: "Salir del análisis",
-};
-
-const RETURN_TO_GAME_LABEL: Record<AppLanguage, string> = {
-  ca: "Tornar a la partida",
-  en: "Return to game",
-  es: "Volver a la partida",
+const LABEL: Record<
+  AppLanguage,
+  {
+    back: string;
+    analyze: string;
+    exitAnalysis: string;
+    returnToGame: string;
+    showArrows: string;
+    hideArrows: string;
+  }
+> = {
+  ca: {
+    back: "Tornar",
+    analyze: "Analitzar",
+    exitAnalysis: "Sortir d'anàlisi",
+    returnToGame: "Tornar a la partida",
+    showArrows: "Mostrar fletxes",
+    hideArrows: "Amagar fletxes",
+  },
+  en: {
+    back: "Back",
+    analyze: "Analyze",
+    exitAnalysis: "Exit analysis",
+    returnToGame: "Return to game",
+    showArrows: "Show arrows",
+    hideArrows: "Hide arrows",
+  },
+  es: {
+    back: "Volver",
+    analyze: "Analizar",
+    exitAnalysis: "Salir del análisis",
+    returnToGame: "Volver a la partida",
+    showArrows: "Mostrar flechas",
+    hideArrows: "Ocultar flechas",
+  },
 };
 
 // ─── Position-analysis helpers ────────────────────────────────────────────────
@@ -130,6 +153,7 @@ export function DriveGameViewer({
   appLanguage,
   onClose,
 }: DriveGameViewerProps) {
+  const lbl = LABEL[appLanguage] ?? LABEL.ca;
   const p = file.appProperties;
   const white = p.white || "?";
   const black = p.black || "?";
@@ -144,6 +168,14 @@ export function DriveGameViewer({
   );
   const [showAnalysis, setShowAnalysis] = useState(false);
   const [boardIndex, setBoardIndex] = useState<number>(0);
+
+  // showArrows — persisted in localStorage
+  const [showArrows, setShowArrows] = useState(
+    () => localStorage.getItem("chesslens_show_arrows") !== "false",
+  );
+  useEffect(() => {
+    localStorage.setItem("chesslens_show_arrows", showArrows ? "true" : "false");
+  }, [showArrows]);
 
   // ─── Sandbox ─────────────────────────────────────────────────────────────
   const [sandboxFens, setSandboxFens] = useState<string[]>([]);
@@ -181,6 +213,7 @@ export function DriveGameViewer({
 
   // ─── Position analysis ────────────────────────────────────────────────────
   const {
+    status: posStatus,
     lines: posLines,
     analyzePosition: posAnalyze,
     stop: posStop,
@@ -208,6 +241,9 @@ export function DriveGameViewer({
     posLine?.scoreCpWhite,
     posLine?.mateWhite,
   );
+  const evalString = posLine
+    ? evalToString(posLine.scoreCpWhite, posLine.mateWhite)
+    : "";
 
   // ─── Jump signal ──────────────────────────────────────────────────────────
   const [jumpSignal, setJumpSignal] = useState<
@@ -248,89 +284,143 @@ export function DriveGameViewer({
     resetSandboxState();
   };
 
-  // ─── Eval bar node ────────────────────────────────────────────────────────
+  // ─── Eval bar node (same flexGrow pattern as game-detail) ─────────────────
   const evalBarNode = showAnalysis ? (
-    <div
-      className="w-4 flex flex-col rounded overflow-hidden border border-border/30"
-      style={{ minHeight: 0 }}
-      data-testid="eval-bar"
-    >
+    <div className="flex items-stretch h-full gap-1">
+      <div className="flex items-center justify-center">
+        <span className="text-[10px] font-mono font-semibold tabular-nums leading-none w-7 text-center">
+          {posStatus === "analyzing" && !evalString ? (
+            <Loader2 className="w-3 h-3 animate-spin inline" />
+          ) : (
+            evalString
+          )}
+        </span>
+      </div>
       <div
-        className="w-full bg-zinc-800"
+        className="w-2 sm:w-3 flex overflow-hidden rounded border border-border/40 shrink-0 h-full"
         style={{
-          height: `${100 - evalTopPercent}%`,
-          transition: "height 0.6s ease",
+          flexDirection:
+            boardOrientation === "white" ? "column-reverse" : "column",
         }}
-      />
-      <div
-        className="w-full bg-zinc-100 dark:bg-zinc-200"
-        style={{
-          height: `${evalTopPercent}%`,
-          transition: "height 0.6s ease",
-        }}
-      />
+        data-testid="eval-bar"
+        title={evalString || undefined}
+      >
+        <div
+          className="bg-gray-100 dark:bg-gray-300"
+          style={{ flexGrow: evalTopPercent, minHeight: 0 }}
+        />
+        <div
+          className="bg-neutral-900 dark:bg-neutral-800"
+          style={{ flexGrow: 100 - evalTopPercent, minHeight: 0 }}
+        />
+      </div>
     </div>
   ) : undefined;
 
   // ─── Arrows ───────────────────────────────────────────────────────────────
   const customArrows = useMemo<[string, string, string][]>(() => {
-    if (!showAnalysis || posLines.length === 0) return [];
+    if (!showAnalysis || !showArrows || posLines.length === 0) return [];
     const arrows: [string, string, string][] = [];
     const pv0 = posLines[0]?.pv[0];
     if (pv0 && pv0.length >= 4)
-      arrows.push([pv0.slice(0, 2), pv0.slice(2, 4), "rgba(210, 115, 0, 0.90)"]);
+      arrows.push([
+        pv0.slice(0, 2),
+        pv0.slice(2, 4),
+        "rgba(210, 115, 0, 0.90)",
+      ]);
     const pv1 = posLines[1]?.pv[0];
     if (pv1 && pv1.length >= 4)
-      arrows.push([pv1.slice(0, 2), pv1.slice(2, 4), "rgba(255, 185, 75, 0.80)"]);
+      arrows.push([
+        pv1.slice(0, 2),
+        pv1.slice(2, 4),
+        "rgba(255, 185, 75, 0.80)",
+      ]);
     return arrows;
-  }, [showAnalysis, posLines]);
+  }, [showAnalysis, showArrows, posLines]);
 
   const canAnalyze = pgn.trim().length > 0;
 
   return (
-    <Dialog
-      open
-      onOpenChange={(v) => {
-        if (!v) onClose();
-      }}
-    >
-      <DialogContent className="max-w-lg max-h-[95vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle
-            className="text-base leading-snug"
-            data-testid="drive-viewer-title"
-          >
-            {white}{" "}
-            <span className="text-muted-foreground font-normal text-sm">
-              vs
-            </span>{" "}
-            {black}
-          </DialogTitle>
-          {(date || result) && (
-            <div className="flex items-center gap-2 pt-1">
-              {date && (
-                <Badge
-                  variant="outline"
-                  className="text-xs"
-                  data-testid="drive-viewer-date"
-                >
-                  {date}
-                </Badge>
-              )}
-              {result && (
-                <Badge
-                  variant="secondary"
-                  className="text-xs"
-                  data-testid="drive-viewer-result"
-                >
-                  {result}
-                </Badge>
-              )}
-            </div>
-          )}
-        </DialogHeader>
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* ── Sticky header ─────────────────────────────────────────────────── */}
+      <header className="border-b border-border bg-white/50 dark:bg-background/80 backdrop-blur-md sticky top-0 z-10">
+        <div
+          className={`max-w-7xl mx-auto px-4 flex items-center justify-between transition-all ${
+            showAnalysis ? "h-10" : "h-16"
+          }`}
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              data-testid="button-drive-viewer-back"
+              className="shrink-0"
+            >
+              <ArrowLeft className="w-4 h-4 mr-1" />
+              {lbl.back}
+            </Button>
 
-        <div className="space-y-3 pb-2">
+            {!showAnalysis && (
+              <div className="flex items-center gap-2 min-w-0">
+                <span
+                  className="text-sm font-semibold truncate"
+                  data-testid="drive-viewer-title"
+                >
+                  {white}{" "}
+                  <span className="text-muted-foreground font-normal">vs</span>{" "}
+                  {black}
+                </span>
+                {date && (
+                  <Badge
+                    variant="outline"
+                    className="text-xs shrink-0"
+                    data-testid="drive-viewer-date"
+                  >
+                    {date}
+                  </Badge>
+                )}
+                {result && (
+                  <Badge
+                    variant="secondary"
+                    className="text-xs shrink-0"
+                    data-testid="drive-viewer-result"
+                  >
+                    {result}
+                  </Badge>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      {/* ── Main content ──────────────────────────────────────────────────── */}
+      <main className="flex-1 max-w-2xl mx-auto w-full px-4 sm:px-6 py-6 space-y-4">
+
+        {/* Analitzar button — shown above board when not in analysis mode */}
+        {canAnalyze && !showAnalysis && (
+          <div className="flex items-center justify-center">
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => {
+                posStop();
+                setShowAnalysis(true);
+                setJumpSignal({ index: 0, counter: Date.now() });
+              }}
+              data-testid="button-drive-analyze"
+              className="gap-1.5 bg-black text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+            >
+              <TrendingUp className="w-4 h-4" />
+              {lbl.analyze}
+            </Button>
+          </div>
+        )}
+
+        {/* ── Board section ────────────────────────────────────────────────── */}
+        <div className="space-y-2">
           {/* Sandbox variant indicator */}
           {showAnalysis && isSandboxActive && (
             <div
@@ -383,89 +473,102 @@ export function DriveGameViewer({
             </div>
           )}
 
-          {/* Board */}
-          <ChessboardViewer
-            pgn={pgn}
-            boardOrientation={boardOrientation}
-            onOrientationChange={setBoardOrientation}
-            appLanguage={appLanguage}
-            scoresheetLanguage={appLanguage}
-            enableInput={false}
-            lockToEnd={!showAnalysis}
-            onMoveIndexChange={(idx) => {
-              setBoardIndex(idx);
-            }}
-            jumpSignal={jumpSignal}
-            evalBar={evalBarNode}
-            customArrows={showAnalysis ? customArrows : []}
-            enableAnalysisSandbox={showAnalysis}
-            sandboxFen={currentSandboxFen ?? undefined}
-            sandboxCanPrev={sandboxCanPrev}
-            sandboxCanNext={sandboxCanNext}
-            onSandboxMove={showAnalysis ? handleSandboxMove : undefined}
-            onSandboxPrev={
-              showAnalysis && isSandboxActive ? handleSandboxPrev : undefined
-            }
-            onSandboxNext={
-              showAnalysis && isSandboxActive ? handleSandboxNext : undefined
-            }
-          />
-
-          <PgnActions pgn={pgn} gameId={0} appLanguage={appLanguage} />
-
-          {/* Tornar a la partida — only when sandbox is active */}
-          {showAnalysis && isSandboxActive && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={clearSandbox}
-              data-testid="button-return-to-game"
-              className="text-xs gap-1.5 text-muted-foreground"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-              {RETURN_TO_GAME_LABEL[appLanguage]}
-            </Button>
-          )}
-
-          {/* Analitzar / Sortir d'anàlisi */}
-          {canAnalyze && (
-            <div className="flex items-center gap-2">
-              {!showAnalysis ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    posStop();
-                    setShowAnalysis(true);
-                    setJumpSignal({ index: 0, counter: Date.now() });
-                  }}
-                  data-testid="button-drive-analyze"
-                  className="gap-1.5"
-                >
-                  <TrendingUp className="w-4 h-4" />
-                  {ANALYZE_LABEL[appLanguage]}
-                </Button>
-              ) : (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    posStop();
-                    setShowAnalysis(false);
-                  }}
-                  data-testid="button-drive-exit-analysis"
-                  className="text-xs gap-1.5 text-muted-foreground"
-                >
-                  {EXIT_ANALYSIS_LABEL[appLanguage]}
-                </Button>
-              )}
+          {/* Board + sidebar */}
+          <div className="flex items-start gap-3">
+            {/* Board column */}
+            <div className="flex-1 min-w-0">
+              <ChessboardViewer
+                pgn={pgn}
+                boardOrientation={boardOrientation}
+                onOrientationChange={setBoardOrientation}
+                appLanguage={appLanguage}
+                scoresheetLanguage={appLanguage}
+                enableInput={false}
+                lockToEnd={!showAnalysis}
+                onMoveIndexChange={(idx) => {
+                  setBoardIndex(idx);
+                }}
+                jumpSignal={jumpSignal}
+                evalBar={evalBarNode}
+                customArrows={customArrows}
+                enableAnalysisSandbox={showAnalysis}
+                sandboxFen={currentSandboxFen ?? undefined}
+                sandboxCanPrev={sandboxCanPrev}
+                sandboxCanNext={sandboxCanNext}
+                onSandboxMove={showAnalysis ? handleSandboxMove : undefined}
+                onSandboxPrev={
+                  showAnalysis && isSandboxActive
+                    ? handleSandboxPrev
+                    : undefined
+                }
+                onSandboxNext={
+                  showAnalysis && isSandboxActive
+                    ? handleSandboxNext
+                    : undefined
+                }
+              />
             </div>
-          )}
+
+            {/* Lateral button column — only in analysis mode */}
+            {showAnalysis && (
+              <div className="shrink-0 flex flex-col justify-between w-[148px] min-h-[460px]">
+                {/* Top: toggle arrows */}
+                <div className="flex flex-col gap-3">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="w-full justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight"
+                    onClick={() => setShowArrows((v) => !v)}
+                    data-testid="button-toggle-arrows-sidebar"
+                  >
+                    {showArrows ? (
+                      <EyeOff className="w-3.5 h-3.5 shrink-0" />
+                    ) : (
+                      <Eye className="w-3.5 h-3.5 shrink-0" />
+                    )}
+                    <span>{showArrows ? lbl.hideArrows : lbl.showArrows}</span>
+                  </Button>
+                </div>
+
+                {/* Middle: Tornar a la partida — only when sandbox active */}
+                {isSandboxActive && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="w-full justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight"
+                    onClick={clearSandbox}
+                    data-testid="button-return-to-game"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 shrink-0" />
+                    <span>{lbl.returnToGame}</span>
+                  </Button>
+                )}
+
+                {/* Bottom: Sortir d'anàlisi */}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="w-full justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight"
+                  onClick={() => {
+                    setShowAnalysis(false);
+                    posStop();
+                  }}
+                  data-testid="button-hide-analysis-sidebar"
+                >
+                  <X className="w-3.5 h-3.5 shrink-0" />
+                  <span>{lbl.exitAnalysis}</span>
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
-      </DialogContent>
-    </Dialog>
+
+        {/* PGN actions */}
+        <PgnActions pgn={pgn} gameId={0} appLanguage={appLanguage} />
+      </main>
+    </div>
   );
 }
