@@ -1,0 +1,164 @@
+Nueva tarea ChessLens — SF.4F: abrir partidas de Drive en vista completa, no en modal.
+
+Modo recomendado: Economy.
+App testing automático: OFF.
+
+Contexto:
+El análisis Stockfish en partidas recién escaneadas/completed ya funciona bien.
+
+Pero al abrir una partida desde “Les meves partides” / Drive, la partida se muestra dentro de una ventana/modal. Esto crea problemas:
+
+1. La pantalla queda encajonada con zonas oscuras laterales.
+2. El usuario debe hacer demasiado scroll dentro del modal.
+3. Los botones y acciones quedan muy abajo.
+4. El análisis no se siente igual que en una partida recién generada.
+5. Al arrastrar una pieza en análisis/sandbox, el cursor queda desplazado respecto a la pieza, probablemente por el contenedor modal/scroll/overlay.
+
+Objetivo:
+Cuando el usuario selecciona una partida desde “Les meves partides”, debe abrirse en una vista completa tipo game-detail, no en un modal.
+
+Comportamiento deseado:
+
+1. En “Les meves partides”, el usuario clica una partida.
+2. La lista/biblioteca se oculta o queda atrás.
+3. Se muestra la partida en vista completa, con:
+
+   * botón volver a “Les meves partides”;
+   * tablero;
+   * lista de jugadas;
+   * Accions del PGN;
+   * botón Analitzar;
+   * análisis por posición;
+   * flechas;
+   * sandbox de variantes;
+   * Tornar a la partida.
+4. Visualmente debe parecerse lo máximo posible a una partida recién escaneada/completed.
+5. No debe aparecer fondo oscuro lateral ni modal encajonado.
+6. No debe haber scroll interno raro dentro de la partida.
+7. El drag de piezas debe quedar alineado: el cursor debe arrastrar la pieza desde la casilla correcta.
+
+Recomendación de implementación:
+Opción preferida:
+
+* En la página/componente de biblioteca, cuando selectedGame existe, renderizar DriveGameViewer como vista completa en lugar de abrirlo en Dialog/modal.
+* Añadir botón “Tornar” para volver a la lista de partidas.
+* Mantener estado local; no hace falta crear ruta nueva si complica.
+
+Opción alternativa si lo anterior es demasiado grande:
+
+* Convertir el modal actual en full-screen white panel:
+
+  * fixed inset-0;
+  * fondo blanco;
+  * sin transform/scale;
+  * sin overlay oscuro;
+  * sin contenedor estrecho;
+  * scroll normal de página o contenedor simple.
+    Pero preferimos vista completa sin modal.
+
+Revisar:
+
+* página/componente de “Les meves partides”
+* client/src/components/drive-game-viewer.tsx
+* cualquier Dialog/Modal que esté envolviendo DriveGameViewer
+
+Cambios concretos:
+
+1. Eliminar modal encajonado
+
+* DriveGameViewer no debe renderizarse dentro de un Dialog estrecho.
+* Evitar wrappers con:
+
+  * transform;
+  * scale;
+  * translate;
+  * overflow interno complejo;
+  * max-height con scroll interno.
+    Estos pueden causar desfase en drag & drop del tablero.
+
+2. Layout similar a game-detail
+   Reutilizar el estilo/layout del análisis que ya funciona:
+
+* tablero centrado;
+* acciones PGN visibles;
+* botón Analitzar arriba del tablero;
+* al entrar en análisis, misma UX que game-detail;
+* sidebar de análisis si aplica.
+
+3. Accions del PGN visible
+   Debe quedar más arriba, como en game-detail.
+   Evitar que el usuario tenga que bajar mucho dentro de un modal.
+
+4. Botones en análisis Drive
+   Dentro de análisis desde Drive deben aparecer también:
+
+* Amagar/Mostrar fletxes;
+* Veure planella si aplica;
+* Tornar a la partida cuando haya variante;
+* Sortir d’anàlisi.
+
+Si en Drive no hay imagen de planilla, “Veure planella” puede no mostrarse o quedar desactivado, según lógica existente.
+
+5. Drag de piezas
+   Tras quitar modal/scroll raro:
+
+* probar que al arrastrar una pieza el cursor y la pieza quedan alineados.
+  Si sigue desfasado:
+* revisar si hay CSS transform en algún padre del tablero;
+* revisar si react-chessboard está dentro de contenedor escalado;
+* evitar transform en padres del tablero;
+* no usar zoom/scale CSS.
+
+6. No volver al análisis completo antiguo
+   Confirmar que Drive sigue usando análisis por posición, no AnalysisPanel antiguo.
+
+7. No tocar motor
+   No tocar:
+
+* OCR
+* parser
+* reviewState
+* resume
+* backend
+* server/process_image_gemini.py
+* server/routes.ts
+* shared/schema.ts
+* PGN real
+* game.moves real
+* Google Drive storage
+
+Archivos probables:
+
+* página de biblioteca / “Mis partidas”
+* client/src/components/drive-game-viewer.tsx
+* quizá componentes Dialog/modal que lo envuelven
+
+Checks obligatorios:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Ir a “Les meves partides”.
+2. Clicar una partida.
+3. Confirmar que abre en vista completa, no modal oscuro.
+4. Confirmar que hay botón para volver a la lista.
+5. Confirmar que Accions del PGN queda visible sin scroll excesivo.
+6. Pulsar Analitzar.
+7. Confirmar que usa análisis por posición, no análisis completo antiguo.
+8. Crear variante.
+9. Confirmar que el drag de piezas queda alineado con el cursor.
+10. Confirmar que Variant y Tornar a la partida funcionan.
+11. Confirmar que copiar/descargar PGN siguen funcionando.
+12. Confirmar npm check/build limpios.
+
+Al final dime:
+
+1. archivos modificados;
+2. si eliminaste el modal o lo convertiste en vista completa;
+3. cómo se vuelve a “Les meves partides”;
+4. si desaparecieron las zonas oscuras laterales;
+5. si el drag de piezas quedó alineado;
+6. resultado de npm run check;
+7. resultado de npm run build.
