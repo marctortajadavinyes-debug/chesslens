@@ -1,0 +1,140 @@
+Nueva tarea ChessLens — SF.4E: unificar análisis de partidas Drive con el análisis por posición actual.
+
+Modo recomendado: Economy.
+App testing automático: OFF.
+
+Contexto:
+El análisis Stockfish en partidas recién escaneadas/completed ya funciona correctamente:
+
+* análisis por posición;
+* barra de evaluación junto al tablero;
+* 2 líneas Stockfish;
+* flechas;
+* sandbox de variantes;
+* Tornar a la partida;
+* sin revisión completa automática;
+* sin doble botón Analitzar;
+* PGN/lista real protegidos.
+
+Problema detectado:
+Cuando abro una partida desde “Mis partidas” / Google Drive:
+
+* aparece un botón Analitzar;
+* al pulsarlo aparece otro botón Analitzar dentro del panel;
+* luego ejecuta el análisis antiguo de revisión completa;
+* tarda varios minutos;
+* muestra resumen de calidad/momentos críticos;
+* esa UX ya fue descartada.
+
+Objetivo:
+Las partidas abiertas desde Drive deben usar la misma experiencia de análisis que las partidas recién escaneadas/completed.
+
+No crear una UX nueva.
+No recuperar el panel de revisión completa.
+No analizar toda la partida por defecto.
+
+Comportamiento deseado en Drive:
+
+1. Abro una partida guardada.
+2. Veo tablero, lista de movimientos, acciones PGN.
+3. Pulso Analitzar.
+4. La interfaz pasa al mismo modo de análisis por posición que en game-detail:
+
+   * empieza en posición inicial / ply 0;
+   * muestra barra de evaluación;
+   * muestra 2 líneas Stockfish;
+   * muestra flechas;
+   * permite navegar jugadas;
+   * permite sandbox de variantes;
+   * permite Tornar a la partida;
+   * no modifica PGN ni lista real.
+5. No debe aparecer un segundo botón Analitzar.
+6. No debe ejecutarse el análisis completo de partida.
+7. No debe aparecer el panel antiguo con:
+
+   * Qualitat de jugades;
+   * Moments crítics;
+   * resumen de errores;
+   * análisis completado de 124 jugadas.
+
+Revisar:
+
+* client/src/components/drive-game-viewer.tsx
+* client/src/components/analysis-panel.tsx
+* client/src/pages/game-detail.tsx
+* client/src/components/chessboard-viewer.tsx
+
+Recomendación:
+Extraer o reutilizar la lógica de análisis por posición de game-detail si es razonable.
+Si extraer un componente común es demasiado grande ahora, aplicar el mismo patrón en drive-game-viewer.tsx con el menor cambio seguro.
+
+Ideal:
+Crear un componente reutilizable tipo:
+
+* PositionAnalysisBoard
+  o
+* GameAnalysisViewer
+
+Pero solo si no complica demasiado.
+Prioridad: resultado estable y no romper nada.
+
+Eliminar o dejar de usar en Drive:
+
+* AnalysisPanel antiguo de revisión completa.
+* useStockfishAnalysis de revisión completa si solo se usaba ahí.
+
+Mantener:
+
+* copiar PGN;
+* descargar PGN;
+* guardar a Drive si aplica;
+* visor de partida;
+* lista de movimientos;
+* responsive;
+* navegación.
+
+No tocar:
+
+* OCR
+* parser
+* reviewState
+* resume
+* backend
+* server/process_image_gemini.py
+* server/routes.ts
+* shared/schema.ts
+* Google Drive storage
+* PGN real
+* game.moves real
+
+Checks obligatorios:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Abrir “Mis partidas”.
+2. Abrir una partida desde Drive.
+3. Confirmar que no aparece el panel antiguo de revisión completa.
+4. Pulsar Analitzar.
+5. Confirmar que no aparece segundo botón Analitzar.
+6. Confirmar que empieza en posición inicial.
+7. Confirmar barra de evaluación junto al tablero.
+8. Confirmar 2 líneas Stockfish.
+9. Confirmar flechas.
+10. Confirmar sandbox de variantes.
+11. Confirmar Tornar a la partida.
+12. Confirmar que PGN/lista real no cambian.
+13. Confirmar copiar/descargar PGN siguen funcionando.
+14. Confirmar npm check/build limpios.
+
+Al final dime:
+
+1. archivos modificados;
+2. si eliminaste o dejaste de usar AnalysisPanel en Drive;
+3. si extrajiste componente común o duplicaste patrón mínimo;
+4. cómo evitas el segundo botón Analitzar;
+5. cómo evitas el análisis completo lento;
+6. resultado de npm run check;
+7. resultado de npm run build.
