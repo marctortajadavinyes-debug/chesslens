@@ -1,6 +1,14 @@
 import { useMemo, useState } from "react";
 import { Copy, Download, Share2, CloudUpload, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import {
   requestGoogleDriveToken,
@@ -47,6 +55,17 @@ type ActionsText = {
   driveSaved: string;
   driveImageErrorTitle: string;
   driveImageErrorDescription: string;
+  export: string;
+  exportTitle: string;
+  exportLichess: string;
+  exportLichessDesc: string;
+  exportChessCom: string;
+  exportChessComDesc: string;
+  exportChessBase: string;
+  exportChessBaseDesc: string;
+  exportLichessToast: string;
+  exportChessComToast: string;
+  exportChessBaseToast: string;
 };
 
 const TEXT: Record<AppLanguage, ActionsText> = {
@@ -71,6 +90,17 @@ const TEXT: Record<AppLanguage, ActionsText> = {
     driveImageErrorTitle: "Error en pujar la planella",
     driveImageErrorDescription:
       "El PGN s'ha guardat, però no s'ha pogut pujar alguna imatge.",
+    export: "Exportar",
+    exportTitle: "Exportar partida",
+    exportLichess: "Lichess",
+    exportLichessDesc: "Copiar PGN i obrir Lichess",
+    exportChessCom: "Chess.com",
+    exportChessComDesc: "Copiar PGN i obrir Chess.com",
+    exportChessBase: "ChessBase",
+    exportChessBaseDesc: "Descarregar PGN compatible",
+    exportLichessToast: "PGN copiat. Enganxa'l a Lichess per importar la partida.",
+    exportChessComToast: "PGN copiat. Enganxa'l a Chess.com per carregar la partida.",
+    exportChessBaseToast: "PGN descarregat. El pots obrir amb ChessBase.",
   },
   en: {
     title: "PGN actions",
@@ -93,6 +123,17 @@ const TEXT: Record<AppLanguage, ActionsText> = {
     driveImageErrorTitle: "Error uploading scoresheet",
     driveImageErrorDescription:
       "The PGN was saved, but one or more images could not be uploaded.",
+    export: "Export",
+    exportTitle: "Export game",
+    exportLichess: "Lichess",
+    exportLichessDesc: "Copy PGN and open Lichess",
+    exportChessCom: "Chess.com",
+    exportChessComDesc: "Copy PGN and open Chess.com",
+    exportChessBase: "ChessBase",
+    exportChessBaseDesc: "Download compatible PGN",
+    exportLichessToast: "PGN copied. Paste it into Lichess to import the game.",
+    exportChessComToast: "PGN copied. Paste it into Chess.com to load the game.",
+    exportChessBaseToast: "PGN downloaded. You can open it with ChessBase.",
   },
   es: {
     title: "Acciones del PGN",
@@ -115,6 +156,17 @@ const TEXT: Record<AppLanguage, ActionsText> = {
     driveImageErrorTitle: "Error al subir la planilla",
     driveImageErrorDescription:
       "El PGN se ha guardado, pero no se ha podido subir alguna imagen.",
+    export: "Exportar",
+    exportTitle: "Exportar partida",
+    exportLichess: "Lichess",
+    exportLichessDesc: "Copiar PGN y abrir Lichess",
+    exportChessCom: "Chess.com",
+    exportChessComDesc: "Copiar PGN y abrir Chess.com",
+    exportChessBase: "ChessBase",
+    exportChessBaseDesc: "Descargar PGN compatible",
+    exportLichessToast: "PGN copiado. Pégalo en Lichess para importar la partida.",
+    exportChessComToast: "PGN copiado. Pégalo en Chess.com para cargar la partida.",
+    exportChessBaseToast: "PGN descargado. Puedes abrirlo con ChessBase.",
   },
 };
 
@@ -377,6 +429,25 @@ export function PgnActions({
     if (!drivePending) setShowMetaDialog(false);
   };
 
+  // ── Export handlers ──────────────────────────────────────────────────────
+
+  const handleExportLichess = async () => {
+    await copyToClipboard(trimmedPgn);
+    window.open("https://lichess.org/paste", "_blank", "noopener,noreferrer");
+    toast({ title: t.exportLichessToast, duration: 4000 });
+  };
+
+  const handleExportChessCom = async () => {
+    await copyToClipboard(trimmedPgn);
+    window.open("https://www.chess.com/analysis", "_blank", "noopener,noreferrer");
+    toast({ title: t.exportChessComToast, duration: 4000 });
+  };
+
+  const handleExportChessBase = () => {
+    handleDownload();
+    toast({ title: t.exportChessBaseToast, duration: 3000 });
+  };
+
   const driveLabel = (() => {
     if (driveState === "connecting") return t.driveConnecting;
     if (driveState === "uploading") {
@@ -460,6 +531,57 @@ export function PgnActions({
             )}
             {driveLabel}
           </Button>
+
+          {/* Exportar — alineat a la dreta quan hi ha espai */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size={size}
+                disabled={disabled}
+                data-testid="button-pgn-export"
+                className="ml-auto"
+              >
+                <Share2 className="w-4 h-4 mr-2" />
+                {t.export}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuLabel>{t.exportTitle}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={handleExportLichess}
+                data-testid="menu-item-export-lichess"
+                className="flex flex-col items-start gap-0.5 cursor-pointer"
+              >
+                <span className="font-medium">{t.exportLichess}</span>
+                <span className="text-xs text-muted-foreground">
+                  {t.exportLichessDesc}
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={handleExportChessCom}
+                data-testid="menu-item-export-chesscom"
+                className="flex flex-col items-start gap-0.5 cursor-pointer"
+              >
+                <span className="font-medium">{t.exportChessCom}</span>
+                <span className="text-xs text-muted-foreground">
+                  {t.exportChessComDesc}
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={handleExportChessBase}
+                data-testid="menu-item-export-chessbase"
+                className="flex flex-col items-start gap-0.5 cursor-pointer"
+              >
+                <span className="font-medium">{t.exportChessBase}</span>
+                <span className="text-xs text-muted-foreground">
+                  {t.exportChessBaseDesc}
+                </span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 

@@ -1,0 +1,189 @@
+Nueva tarea ChessLens — EXP.1: añadir botón “Exportar” con icono Share2 y menú de destinos PGN.
+
+Modo recomendado: Economy.
+App testing automático: OFF.
+
+Contexto:
+ChessLens ya genera PGN válido, permite copiar, descargar .pgn, guardar en Drive y analizar con Stockfish. Ahora añadimos una acción post-PGN para exportar la partida a plataformas externas.
+
+Objetivo UX:
+En la tarjeta “Accions del PGN”, añadir un botón nuevo a la derecha:
+
+[Copiar PGN] [Descarregar .pgn] [Guardar a Drive]            [Share2 Exportar]
+
+El botón debe usar icono Share2 de lucide-react y texto “Exportar”.
+
+Al pulsar “Exportar”, abrir un menú/popup/dropdown/bottom sheet sencillo con 3 opciones:
+
+1. Lichess
+2. Chess.com
+3. ChessBase
+
+No queremos llenar la pantalla con más botones visibles. Exportar debe estar presente pero un poco más escondido que Copiar/Descargar/Guardar.
+
+Dónde debe aparecer:
+
+* En partida recién generada/completed: game-detail.
+* En partida abierta desde Drive / biblioteca: drive-game-viewer.
+  Idealmente usando el mismo componente de acciones PGN si ya existe; si no existe, crear o consolidar un componente reutilizable tipo PgnActions para evitar duplicar.
+
+Icono:
+Usar:
+import { Share2 } from "lucide-react";
+
+Botón:
+
+* variant outline o equivalente al estilo de “Descarregar .pgn” / “Guardar a Drive”.
+* className coherente con botones actuales.
+* icono h-4 w-4.
+* texto: “Exportar”.
+
+Diseño desktop:
+Dentro de “Accions del PGN”, mantener Copiar/Descargar/Guardar a la izquierda y Exportar alineado a la derecha si el espacio lo permite.
+
+Ejemplo visual:
+Accions del PGN
+
+[Copiar PGN] [Descarregar .pgn] [Guardar a Drive]              [Exportar]
+
+Diseño móvil:
+Si no cabe en la misma línea, que baje a la siguiente línea sin romper layout:
+[Copiar PGN]
+[Descarregar .pgn]
+[Guardar a Drive]
+[Exportar]
+
+Menú al pulsar Exportar:
+Título:
+“Exportar partida”
+
+Opciones:
+
+* Lichess
+  Texto secundario: “Copiar PGN i obrir Lichess”
+* Chess.com
+  Texto secundario: “Copiar PGN i obrir Chess.com”
+* ChessBase
+  Texto secundario: “Descarregar PGN compatible”
+
+Comportamiento MVP:
+No implementar todavía OAuth ni APIs complejas.
+
+Lichess:
+
+* Copiar PGN al portapapeles.
+* Abrir https://lichess.org/paste en nueva pestaña.
+* Mostrar toast: “PGN copiat. Enganxa’l a Lichess per importar la partida.”
+
+Chess.com:
+
+* Copiar PGN al portapapeles.
+* Abrir la página de análisis/importación de Chess.com en nueva pestaña. Si no hay URL segura específica ya usada en el proyecto, usar una URL genérica prudente:
+  https://www.chess.com/analysis
+* Mostrar toast: “PGN copiat. Enganxa’l a Chess.com per carregar la partida.”
+
+ChessBase:
+
+* Reutilizar la misma función de descargar .pgn.
+* Mostrar toast: “PGN descarregat. El pots obrir amb ChessBase.”
+
+Importante:
+
+* Exportar es post-PGN.
+* No tocar OCR.
+* No tocar parser.
+* No tocar reviewState.
+* No tocar resume.
+* No tocar backend.
+* No tocar server/process_image_gemini.py.
+* No tocar server/routes.ts.
+* No tocar shared/schema.ts.
+* No tocar generación PGN.
+* No tocar Stockfish salvo imports visuales si hiciera falta.
+* No modificar game.moves ni PGN real.
+
+Archivos probables:
+
+* client/src/pages/game-detail.tsx
+* client/src/components/drive-game-viewer.tsx
+* quizá crear client/src/components/pgn-actions.tsx o similar
+* quizá usar componentes existentes de dropdown/dialog/toast/button
+
+Recomendación técnica:
+Si actualmente las acciones PGN están duplicadas en game-detail y drive-game-viewer, crear un componente común:
+client/src/components/pgn-actions.tsx
+
+Props sugeridas:
+
+* pgn: string
+* fileName?: string
+* canSaveToDrive?: boolean
+* onSaveToDrive?: () => void
+* showSaveToDrive?: boolean
+
+Este componente debe incluir:
+
+* Copiar PGN
+* Descarregar .pgn
+* Guardar a Drive si aplica
+* Exportar con menú Lichess / Chess.com / ChessBase
+
+Si crear componente común implica demasiado riesgo, duplicar el cambio mínimo en ambos archivos, pero preferimos componente común si está limpio.
+
+Detalles de seguridad:
+
+* Para window.open, usar "_blank" y "noopener,noreferrer".
+* Si navigator.clipboard falla, mostrar toast de error o fallback.
+* No bloquear si popup blocker impide abrir pestaña; al menos PGN debe quedar copiado.
+* No guardar tokens ni credenciales.
+* No usar APIs externas con login en esta fase.
+
+Idioma:
+Mantener catalán en la UI actual:
+
+* Exportar
+* Exportar partida
+* PGN copiat
+* Descarregar PGN compatible
+* El pots obrir amb ChessBase
+
+Checks obligatorios:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Abrir partida completed recién generada.
+2. Ver “Accions del PGN”.
+3. Confirmar que aparece Share2 + Exportar a la derecha de Guardar a Drive.
+4. Pulsar Exportar.
+5. Confirmar menú con Lichess, Chess.com, ChessBase.
+6. Pulsar Lichess:
+
+   * copia PGN;
+   * abre Lichess;
+   * toast correcto.
+7. Pulsar Chess.com:
+
+   * copia PGN;
+   * abre Chess.com;
+   * toast correcto.
+8. Pulsar ChessBase:
+
+   * descarga .pgn;
+   * toast correcto.
+9. Repetir desde partida abierta desde Drive.
+10. Confirmar que Analitzar/Stockfish sigue igual.
+11. Confirmar que PGN/lista real no cambian.
+12. Confirmar npm check/build limpios.
+
+Al final dime:
+
+1. archivos modificados;
+2. si creaste componente común PgnActions o duplicaste cambio mínimo;
+3. cómo funciona Exportar;
+4. qué URLs se abren para Lichess y Chess.com;
+5. cómo funciona ChessBase;
+6. resultado de npm run check;
+7. resultado de npm run build.
