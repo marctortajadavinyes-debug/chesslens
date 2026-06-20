@@ -1,0 +1,99 @@
+Nueva tarea ChessLens — HOME.1: incorporar imagen hero visual en la home.
+
+Modo recomendado: Lite.
+App testing automático: OFF.
+
+Contexto:
+Ya tenemos la imagen hero final, sin nombre de app incrustado, porque “ChessLens” es provisional y puede cambiar.
+
+La imagen ya está subida al proyecto en:
+
+client/public/hero-scoresheet-scan.png
+
+Objetivo:
+Incorporar esta imagen en la pantalla inicial como hero/banner principal.
+
+Archivo probable a tocar:
+
+* client/src/pages/home.tsx
+
+Comportamiento deseado:
+
+1. La home debe mostrar la imagen:
+   /hero-scoresheet-scan.png
+2. La imagen debe sustituir el visual/hero actual.
+3. El nombre de la app y el subtítulo deben seguir siendo texto HTML/CSS editable, no texto incrustado en la imagen.
+4. Mantener el diseño actual:
+
+   * fondo blanco;
+   * bordes redondeados;
+   * sombra suave;
+   * aspecto premium;
+   * ancho similar al bloque hero actual.
+5. No deformar la imagen.
+6. No crear scroll horizontal.
+7. Debe verse bien en desktop.
+8. Debe adaptarse razonablemente en móvil/tablet.
+9. No tocar lógica de subida de planillas.
+10. No tocar OCR, parser, backend, Stockfish, Drive ni exportaciones.
+
+Implementación sugerida:
+Como la imagen está en `client/public`, se referencia así:
+
+```tsx
+<img
+  src="/hero-scoresheet-scan.png"
+  alt="Escaneig de planella d'escacs per generar PGN"
+  className="w-full h-auto object-cover"
+/>
+```
+
+Ajusta las clases al wrapper actual de la home.
+
+Importante:
+No usar:
+
+* `/client/public/hero-scoresheet-scan.png`
+
+Usar:
+
+* `/hero-scoresheet-scan.png`
+
+No tocar:
+
+* server/process_image_gemini.py
+* server/routes.ts
+* shared/schema.ts
+* client/src/components/chessboard-viewer.tsx
+* client/src/components/drive-game-viewer.tsx
+* client/src/components/pgn-actions.tsx
+* Stockfish
+* Google Drive
+* OCR/parser/review/resume
+
+Checks obligatorios:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Abrir home.
+2. Confirmar que aparece la nueva imagen hero.
+3. Confirmar que el nombre de la app no está incrustado en la imagen.
+4. Confirmar que el nombre/subtítulo siguen siendo texto editable de la app.
+5. Confirmar que no se deforma.
+6. Confirmar que no hay scroll horizontal.
+7. Confirmar que la zona de subir planilla sigue funcionando.
+8. Confirmar que “Les meves partides” sigue funcionando.
+9. Confirmar que “Configuració” sigue funcionando.
+10. Confirmar npm check/build limpios.
+
+Al final dime:
+
+1. archivo modificado;
+2. dónde quedó guardada la imagen;
+3. cómo se referencia la imagen;
+4. si el nombre/subtítulo quedan como texto editable;
+5. resultado de npm run check;
+6. resultado de npm run build.

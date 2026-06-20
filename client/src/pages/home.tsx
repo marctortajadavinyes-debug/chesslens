@@ -518,6 +518,16 @@ export default function Home() {
             </p>
           </motion.div>
 
+          {/* Hero visual — planella escanejada */}
+          <div className="max-w-xl mx-auto mb-10">
+            <img
+              src="/hero-scoresheet-scan.png"
+              alt="Escaneig de planella d'escacs per generar PGN"
+              className="w-full h-auto rounded-xl shadow-md object-cover"
+              loading="eager"
+            />
+          </div>
+
           <div className="max-w-xl mx-auto">
             {showSettings ? (
               <motion.div
