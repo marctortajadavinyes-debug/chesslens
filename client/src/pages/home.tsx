@@ -504,36 +504,36 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
-        <section className="mb-10 text-center">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <section className="mb-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <h1 className="text-4xl md:text-5xl font-display font-bold mb-4">
+            <h1 className="text-3xl md:text-4xl font-display font-bold mb-3">
               {t.heroTitle}
             </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
+            <p className="text-base text-muted-foreground max-w-2xl mx-auto mb-5">
               {t.heroSubtitle}
             </p>
           </motion.div>
 
-          {/* Hero banner — planella escanejada + Configuració actual */}
-          <div className="mx-auto mb-5 w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="grid items-stretch md:grid-cols-[52%_48%]">
+          {/* Hero — sempre 2 columnes (apila sols a mòbil molt estret) */}
+          <div className="mx-auto mb-4 w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="grid grid-cols-[46%_54%] items-stretch max-[480px]:grid-cols-1">
               {/* Columna esquerra — imatge escorada a l'esquerra */}
-              <div className="relative h-[160px] overflow-hidden bg-white sm:h-[175px] md:h-[190px]">
+              <div className="relative h-[145px] overflow-hidden bg-white sm:h-[155px] lg:h-[165px]">
                 <img
                   src="/hero-scoresheet-scan.png"
                   alt="Escaneig de planella d'escacs per generar PGN"
-                  className="absolute inset-y-0 left-0 h-full w-full object-contain object-left"
+                  className="absolute inset-y-0 left-[-12px] h-full w-full object-contain object-left"
                   loading="eager"
                 />
               </div>
 
-              {/* Columna dreta — Configuració actual integrada */}
-              <div className="flex items-center justify-center bg-white px-5 py-4">
-                <div className="w-full rounded-xl border border-slate-200 bg-slate-50 p-4 text-left">
+              {/* Columna dreta — Configuració actual */}
+              <div className="flex items-center justify-center bg-white px-4 py-3">
+                <div className="w-full rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-left">
                   <div className="text-sm font-semibold text-slate-900 mb-1">
                     {t.currentSettings}
                   </div>
@@ -860,20 +860,20 @@ export default function Home() {
                 {images.length === 0 ? (
                   <div
                     {...getRootProps()}
-                    className={`border-2 border-dashed rounded-2xl p-7 cursor-pointer transition-colors ${
+                    className={`border-2 border-dashed rounded-xl p-5 cursor-pointer transition-colors ${
                       isDragActive
                         ? "border-primary bg-primary/10"
                         : "border-primary/50 bg-primary/5 hover:bg-primary/10"
                     } ${isUploading ? "opacity-50 pointer-events-none" : ""}`}
                   >
                     <input {...getInputProps()} />
-                    <div className="flex flex-col items-center gap-3">
-                      <Upload className="w-9 h-9 text-primary" />
+                    <div className="flex flex-col items-center gap-2">
+                      <Upload className="w-7 h-7 text-primary" />
                       <div>
-                        <p className="text-lg font-medium text-foreground">
+                        <p className="text-base font-medium text-foreground">
                           {isDragActive ? t.dropActive : t.dropIdle}
                         </p>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="text-xs text-muted-foreground mt-0.5">
                           {t.dropHint}
                         </p>
                       </div>
@@ -934,7 +934,7 @@ export default function Home() {
               <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
             </div>
           ) : games?.length === 0 ? (
-            <div className="text-center p-8 border rounded-xl bg-muted/20 text-muted-foreground">
+            <div className="text-center p-5 border rounded-xl bg-muted/20 text-muted-foreground">
               {t.noGames}
             </div>
           ) : (

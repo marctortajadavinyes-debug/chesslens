@@ -1,0 +1,200 @@
+Nueva tarea ChessLens — HOME.1.6: corregir hero side-by-side real y compactar para reducir scroll.
+
+Modo recomendado: Economy.
+App testing automático: OFF.
+
+Contexto:
+HOME.1.5 NO está correcto visualmente.
+
+Problema real visto en captura del usuario:
+
+1. “Configuració actual” aparece DEBAJO de la imagen, no a la derecha.
+2. El hero queda feo y alargado.
+3. Sigue apareciendo mucha barra vertical de scroll.
+4. El espacio derecho del hero sigue vacío.
+5. El agente anterior cerró la tarea, pero la UI real no cumple.
+
+Causa probable:
+Se está usando algo tipo `md:grid-cols-[52%_48%]`.
+En el ancho real de Replit/desktop del usuario, `md` no se activa o no entra como esperamos, por eso el layout se apila.
+
+Objetivo:
+El hero debe estar partido en 2 columnas visibles en la pantalla actual del usuario:
+
+IZQUIERDA:
+
+* Dama + planilla;
+* Dama pequeña/mediana;
+* Dama escorada lo máximo posible a la izquierda;
+* sin gran margen blanco a la izquierda;
+* sin ocupar demasiado protagonismo.
+
+DERECHA:
+
+* Configuració actual;
+* en la misma fila que la imagen, no debajo;
+* ocupando el espacio blanco derecho.
+
+Debajo del hero:
+
+* bloque upload más compacto;
+* Partides recents visible con menos scroll.
+
+Archivo a tocar:
+
+* client/src/pages/home.tsx
+
+Cambio obligatorio 1 — activar dos columnas antes:
+Cambiar el grid del hero para que las 2 columnas existan desde `sm`, no desde `md`.
+
+Ejemplo:
+
+```tsx
+<div className="grid grid-cols-[44%_56%] sm:grid-cols-[45%_55%] items-stretch">
+```
+
+o:
+
+```tsx
+<div className="grid sm:grid-cols-[45%_55%] items-stretch">
+```
+
+Pero en la captura del usuario debe verse side-by-side. No puede quedar apilado.
+
+Si hace falta, usar dos columnas por defecto en pantallas no móviles y solo apilar en `max-[520px]` o similar.
+
+Cambio obligatorio 2 — configuración a la derecha:
+El bloque “Configuració actual” debe estar dentro de la columna derecha del hero, alineado verticalmente al centro.
+
+No debe aparecer debajo de la imagen.
+
+Cambio obligatorio 3 — reducir protagonismo de la Dama:
+La Dama debe quedar:
+
+* más pequeña que ahora;
+* muy escorada a la izquierda;
+* sin dominar el hero.
+
+Probar algo así en la columna izquierda:
+
+```tsx
+<div className="relative h-[145px] sm:h-[160px] md:h-[175px] overflow-hidden bg-white">
+  <img
+    src="/hero-scoresheet-scan.png"
+    alt="Escaneig de planella d'escacs per generar PGN"
+    className="absolute inset-y-0 left-[-12px] h-full w-full object-contain object-left"
+    loading="eager"
+  />
+</div>
+```
+
+Si sigue habiendo margen blanco a la izquierda, probar:
+
+* `left-[-20px]`
+* `scale-[0.94]` o `scale-[0.9]` si reduce protagonismo;
+* `origin-left`
+* pero sin cortar la Dama de forma fea.
+
+Cambio obligatorio 4 — usar bien el espacio derecho:
+La columna derecha no debe quedar vacía.
+Debe contener el bloque:
+
+Configuració actual
+App: Català · Planella: Català
+Format: FCE · 75 jugades · 3 columnes x 25
+
+Usar variables/traducciones existentes, no hardcodear si ya existen.
+
+El bloque debe ser compacto:
+
+```tsx
+<div className="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-left">
+```
+
+No usar demasiada altura.
+
+Cambio obligatorio 5 — compactar la home:
+Reducir altura y márgenes para minimizar scroll.
+
+Ajustar moderadamente:
+
+* padding vertical general de la página;
+* margen bajo del título/subtítulo;
+* margen bajo del hero;
+* altura del upload.
+
+Sugerencia upload:
+
+* icono más pequeño;
+* padding menor;
+* altura visual aprox. 115–130px, no gigante.
+
+Ejemplo:
+
+```tsx
+className="p-5 sm:p-6"
+```
+
+y no `p-7`, `p-10`, `p-12`.
+
+Cambio obligatorio 6 — recent games:
+Si “Partides recents” queda muy abajo, compactar el bloque vacío:
+
+* reducir padding del contenedor “No hi ha partides encara”;
+* no hacerlo enorme.
+
+Objetivo visual en pantalla portátil:
+Sin necesidad de scroll excesivo, idealmente deben verse:
+
+* header;
+* título/subtítulo;
+* hero con imagen izquierda + configuración derecha;
+* upload compacto;
+* título Partides recents.
+
+No tocar:
+
+* OCR
+* parser
+* backend
+* review/resume
+* Stockfish
+* Drive
+* exportaciones
+* pgn-actions.tsx
+* rutas
+* schema
+* lógica de upload
+
+Checks:
+
+* npm run check
+* npm run build
+
+Verificación manual real:
+No cerrar solo porque compile.
+
+Abrir la home en el mismo ancho del preview de Replit y confirmar:
+
+1. Configuració actual está a la derecha de la Dama, no debajo.
+2. La Dama está escorada a la izquierda.
+3. La Dama tiene menos protagonismo.
+4. No hay gran espacio derecho vacío.
+5. El bloque upload es más bajo.
+6. La barra vertical de scroll se reduce mucho.
+7. La home se parece más a la referencia JPEG del usuario.
+8. No hay scroll horizontal.
+9. Upload sigue funcionando.
+10. Les meves partides y Configuració siguen funcionando.
+11. npm run check/build limpios.
+
+Al final dime:
+
+1. archivo modificado;
+2. qué breakpoint usaste para activar las 2 columnas;
+3. cómo garantizas que Configuració actual queda a la derecha y no debajo;
+4. altura final del hero;
+5. cómo redujiste el protagonismo de la Dama;
+6. cómo compactaste upload y Partides recents;
+7. resultado de npm run check;
+8. resultado de npm run build.
