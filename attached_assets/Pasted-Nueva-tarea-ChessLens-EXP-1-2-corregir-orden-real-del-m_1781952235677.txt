@@ -1,0 +1,126 @@
+Nueva tarea ChessLens — EXP.1.2: corregir orden real del menú Exportar y ajustar responsive del botón.
+
+Modo recomendado: Lite.
+App testing automático: OFF.
+
+Contexto:
+EXP.1.1 supuestamente cambió el orden del dropdown a:
+
+1. Chess.com
+2. Lichess
+3. ChessBase
+
+Pero en prueba manual real sigue apareciendo:
+
+1. Lichess
+2. Chess.com
+3. ChessBase
+
+Por tanto, el cambio no está aplicado en la UI real o hay caché/duplicación.
+
+Archivo a tocar:
+
+* client/src/components/pgn-actions.tsx
+
+Objetivo 1 — orden real del dropdown:
+El menú de Exportar debe mostrarse exactamente así, de arriba a abajo:
+
+1. Chess.com
+2. Lichess
+3. ChessBase
+
+Verificar en el JSX real de `DropdownMenuContent` que los `DropdownMenuItem` están físicamente en ese orden.
+
+Buscar posibles duplicados:
+
+* `handleExportLichess`
+* `handleExportChessCom`
+* `handleExportChessBase`
+* `DropdownMenuItem`
+* `exportLichess`
+* `exportChessCom`
+* `exportChessBase`
+
+Si hay más de un bloque de exportación, corregir el que realmente se renderiza y eliminar duplicación si es seguro.
+
+Objetivo 2 — botón Exportar responsive:
+Ahora “Exportar partida” queda bien en partida recién generada, pero en la vista Drive/biblioteca se va a segunda línea y queda visualmente menos ordenado.
+
+Cambiar el texto responsive para que sea:
+
+* Pantalla grande: “Exportar partida”
+* Pantalla media/móvil: “Exportar”
+
+Implementación sugerida:
+
+```tsx
+<span className="hidden lg:inline">{t.exportTitle}</span>
+<span className="lg:hidden">{t.export}</span>
+```
+
+No usar `sm`, porque en anchos medios como Drive viewer aún puede no caber.
+
+Mantener:
+
+* icono Share2
+* variant="outline"
+* estilo secundario
+* Copiar PGN como único botón negro principal
+
+Objetivo 3 — layout de botones:
+Intentar que, cuando haya espacio razonable, los botones queden en una sola línea:
+
+[Copiar PGN] [Descarregar .pgn] [Guardar a Drive] [Exportar]
+
+Si en pantallas estrechas hace wrap, debe hacerlo de forma limpia, sin dejar Exportar descolgado de forma rara.
+
+No hacer cambios grandes de layout si no son necesarios.
+
+No tocar:
+
+* OCR
+* parser
+* reviewState
+* resume
+* backend
+* server/process_image_gemini.py
+* server/routes.ts
+* shared/schema.ts
+* Stockfish
+* Drive storage
+* PGN real
+* game.moves real
+
+Checks:
+
+* npm run check
+* npm run build
+
+Verificación manual obligatoria:
+
+1. Abrir partida recién generada/completed.
+2. Pulsar Exportar.
+3. Confirmar visualmente que el orden es:
+
+   * Chess.com
+   * Lichess
+   * ChessBase
+4. Abrir partida desde Drive/biblioteca.
+5. Pulsar Exportar.
+6. Confirmar visualmente el mismo orden:
+
+   * Chess.com
+   * Lichess
+   * ChessBase
+7. Confirmar que en Drive el botón aparece como Share2 + “Exportar” si “Exportar partida” no cabe.
+8. Confirmar que los botones quedan más ordenados.
+9. Confirmar npm run check/build limpios.
+
+Al final dime:
+
+1. qué estaba causando que el orden siguiera mal;
+2. archivo modificado;
+3. orden final verificado visualmente;
+4. si el botón usa `lg` para “Exportar partida”;
+5. resultado de npm run check;
+6. resultado de npm run build.

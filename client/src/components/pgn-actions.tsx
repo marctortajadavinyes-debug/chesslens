@@ -544,23 +544,13 @@ export function PgnActions({
                 className="ml-auto"
               >
                 <Share2 className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">{t.exportTitle}</span>
-                <span className="sm:hidden">{t.export}</span>
+                <span className="hidden lg:inline">{t.exportTitle}</span>
+                <span className="lg:hidden">{t.export}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64">
               <DropdownMenuLabel>{t.exportTitle}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={handleExportLichess}
-                data-testid="menu-item-export-lichess"
-                className="flex flex-col items-start gap-0.5 cursor-pointer"
-              >
-                <span className="font-medium">{t.exportLichess}</span>
-                <span className="text-xs text-muted-foreground">
-                  {t.exportLichessDesc}
-                </span>
-              </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={handleExportChessCom}
                 data-testid="menu-item-export-chesscom"
@@ -569,6 +559,16 @@ export function PgnActions({
                 <span className="font-medium">{t.exportChessCom}</span>
                 <span className="text-xs text-muted-foreground">
                   {t.exportChessComDesc}
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={handleExportLichess}
+                data-testid="menu-item-export-lichess"
+                className="flex flex-col items-start gap-0.5 cursor-pointer"
+              >
+                <span className="font-medium">{t.exportLichess}</span>
+                <span className="text-xs text-muted-foreground">
+                  {t.exportLichessDesc}
                 </span>
               </DropdownMenuItem>
               <DropdownMenuItem
