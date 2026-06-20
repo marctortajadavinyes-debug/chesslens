@@ -531,10 +531,10 @@ export default function Home() {
                 />
               </div>
 
-              {/* Columna dreta — Configuració actual (discret, integrat) */}
-              <div className="flex h-full items-center justify-center bg-white px-5">
-                <div className="text-left">
-                  <div className="text-sm font-semibold text-slate-900">
+              {/* Columna dreta — Configuració actual (cajita integrada) */}
+              <div className="flex h-full items-center justify-center bg-white px-4">
+                <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm">
+                  <div className="text-sm font-semibold text-slate-950">
                     {t.currentSettings}
                   </div>
                   <div className="mt-1 text-xs text-slate-600 sm:text-sm">

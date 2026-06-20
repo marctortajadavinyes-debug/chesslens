@@ -1,0 +1,113 @@
+Nueva tarea ChessLens — HOME.1.8: restaurar Configuració actual como tarjeta/botón discreto integrado.
+
+Modo recomendado: Lite.
+App testing automático: OFF.
+
+Contexto:
+HOME.1.7 NO es correcto visualmente.
+
+El usuario NO quería que “Configuració actual” quedara como texto plano.
+Quería mantenerlo como una cajita/tarjeta tipo botón dentro del hero, pero integrada con el fondo del banner.
+
+Problema actual:
+
+* “Configuració actual” aparece como texto plano.
+* Ha perdido la sensación de bloque/botón.
+* Visualmente queda demasiado vacío y poco cuidado.
+
+Objetivo exacto:
+Restaurar “Configuració actual” como una tarjeta discreta dentro de la parte derecha del hero.
+
+Debe verse como:
+
+* una cajita/botón suave;
+* fondo blanco, igual que el fondo del hero;
+* borde muy suave;
+* esquinas redondeadas;
+* sombra mínima o ninguna;
+* tamaño contenido;
+* sin fondo gris marcado;
+* sin parecer una tarjeta pesada dentro de otra tarjeta.
+
+Archivo a tocar:
+
+* client/src/pages/home.tsx
+
+Cambio concreto:
+Buscar el bloque actual de texto plano de “Configuració actual” dentro del hero y envolverlo de nuevo en una caja.
+
+Usar algo parecido a:
+
+```tsx
+<div className="flex h-full items-center justify-center bg-white px-4">
+  <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm">
+    <div className="text-sm font-semibold text-slate-950">
+      {t.currentSettings}
+    </div>
+    <div className="mt-1 text-xs text-slate-600 sm:text-sm">
+      {t.app}: {getLanguageOptionLabel(settings.appLanguage)} · {t.scoresheet}: {getLanguageOptionLabel(settings.scoresheetLanguage)}
+    </div>
+    <div className="text-xs text-slate-600 sm:text-sm">
+      {t.format}: {getSheetFormatLabel(settings.sheetFormat)}
+    </div>
+  </div>
+</div>
+```
+
+Adaptar nombres exactos de variables a los que ya existen en `home.tsx`.
+
+Importante:
+
+* NO usar `bg-slate-50` fuerte.
+* NO dejarlo como texto plano.
+* NO hacerlo más grande.
+* NO cambiar la Dama.
+* NO cambiar el hero.
+* NO cambiar upload.
+* NO cambiar Partides recents.
+* Solo restaurar el bloque de Configuració actual como cajita integrada.
+
+Estilo deseado:
+La caja debe parecer integrada con el hero:
+
+* fondo blanco;
+* borde suave;
+* sombra muy ligera;
+* como un botón informativo discreto.
+
+No tocar:
+
+* OCR
+* parser
+* backend
+* review/resume
+* Stockfish
+* Drive
+* exportaciones
+* pgn-actions.tsx
+* rutas
+* schema
+* lógica de upload
+
+Checks:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Abrir home.
+2. Confirmar que Configuració actual vuelve a verse como cajita/botón discreto.
+3. Confirmar que el fondo de la cajita es blanco, integrado con el hero.
+4. Confirmar que no queda como texto plano.
+5. Confirmar que no tiene fondo gris fuerte.
+6. Confirmar que la Dama, hero, upload y Partides recents no han cambiado.
+7. Confirmar npm run check/build limpios.
+
+Al final dime:
+
+1. archivo modificado;
+2. qué clases aplicaste a la caja;
+3. confirmación de que no tocaste Dama/hero/upload;
+4. resultado de npm run check;
+5. resultado de npm run build.
