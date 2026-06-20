@@ -544,7 +544,8 @@ export function PgnActions({
                 className="ml-auto"
               >
                 <Share2 className="w-4 h-4 mr-2" />
-                {t.export}
+                <span className="hidden sm:inline">{t.exportTitle}</span>
+                <span className="sm:hidden">{t.export}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-64">

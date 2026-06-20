@@ -1,0 +1,139 @@
+Nueva tarea ChessLens — EXP.1.1: pulir botón Exportar y ordenar destinos.
+
+Modo recomendado: Lite.
+App testing automático: OFF.
+
+Contexto:
+EXP.1 ya añadió el botón Exportar en `client/src/components/pgn-actions.tsx` usando Share2 y dropdown. Funciona y los checks salieron limpios.
+
+Ahora solo queremos pulido visual y orden del menú. No tocar motor, OCR, parser, backend ni Stockfish.
+
+Archivo a tocar:
+
+* client/src/components/pgn-actions.tsx
+
+Cambios pedidos:
+
+1. Cambiar texto del botón
+   Ahora dice:
+
+* Exportar
+
+Debe decir:
+
+* Exportar partida en desktop
+* Exportar en móvil si el texto largo no cabe bien
+
+Implementación sugerida:
+Usar spans responsive:
+
+* `hidden sm:inline` → “Exportar partida”
+* `sm:hidden` → “Exportar”
+
+Mantener icono:
+
+* Share2
+* h-4 w-4
+
+2. Mantener estilo visual
+   No convertir Exportar en botón negro.
+   Debe seguir como botón secundario/outline, parecido a Descarregar .pgn y Guardar a Drive.
+
+Jerarquía deseada:
+
+* Copiar PGN: botón negro principal
+* Descarregar .pgn: outline
+* Guardar a Drive: outline
+* Exportar partida: outline con Share2
+
+3. Alinear mejor el botón Exportar
+   En desktop, si es fácil y no rompe responsive, dejar Exportar partida alineado a la derecha dentro de la tarjeta “Accions del PGN”.
+
+Visual deseado:
+[Copiar PGN] [Descarregar .pgn] [Guardar a Drive]        [Share2 Exportar partida]
+
+En móvil:
+que los botones hagan wrap sin romper:
+[Copiar PGN]
+[Descarregar .pgn]
+[Guardar a Drive]
+[Exportar]
+
+No forzar anchuras raras.
+
+4. Cambiar orden del menú desplegable
+   El orden actual es:
+
+* Lichess
+* Chess.com
+* ChessBase
+
+Cambiar a:
+
+* Chess.com
+* Lichess
+* ChessBase
+
+Mantener handlers existentes:
+
+* Chess.com copia PGN + abre https://www.chess.com/analysis
+* Lichess copia PGN + abre https://lichess.org/paste
+* ChessBase reutiliza descarga .pgn
+
+5. Textos
+   Mantener catalán/español/inglés si ya se añadieron en EXP.1.
+
+En catalán:
+
+* Exportar partida
+* Chess.com
+* Lichess
+* ChessBase
+
+No hace falta cambiar lógica de URLs ni toasts salvo que el orden del menú lo requiera.
+
+No tocar:
+
+* OCR
+* parser
+* reviewState
+* resume
+* backend
+* server/process_image_gemini.py
+* server/routes.ts
+* shared/schema.ts
+* Stockfish
+* usePositionAnalysis
+* Drive storage
+* PGN real
+* game.moves real
+
+Checks:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Abrir partida completed.
+2. Confirmar botón Share2 + “Exportar partida” en desktop.
+3. Reducir ancho o comprobar móvil: debe verse “Exportar” si aplica.
+4. Pulsar Exportar.
+5. Confirmar orden:
+
+   * Chess.com
+   * Lichess
+   * ChessBase
+6. Confirmar que Chess.com abre chess.com/analysis.
+7. Confirmar que Lichess abre lichess.org/paste.
+8. Confirmar que ChessBase descarga .pgn.
+9. Confirmar que Copiar PGN, Descargar y Guardar Drive siguen igual.
+10. Confirmar npm run check/build limpios.
+
+Al final dime:
+
+1. archivo modificado;
+2. cómo dejaste el texto responsive del botón;
+3. orden final del dropdown;
+4. resultado de npm run check;
+5. resultado de npm run build.
