@@ -533,25 +533,25 @@ export default function Home() {
 
               {/* Columna dreta — Configuració actual (cajita integrada) */}
               <div className="flex h-full items-center justify-center px-4">
-                <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm">
+                <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-[#fbfbf8] px-4 py-3 text-left shadow-sm">
                   <div className="text-sm font-semibold text-slate-950">
                     {t.currentSettings}
                   </div>
                   <div className="mt-1 text-xs text-slate-600 sm:text-sm">
-                    {t.app}:{" "}
+                    <span className="font-semibold text-slate-900">{t.app}:</span>{" "}
                     {getLanguageOptionLabel(
                       APP_LANGUAGE_OPTIONS,
                       settings.appLanguage,
                     )}
                     {" · "}
-                    {t.scoresheet}:{" "}
+                    <span className="font-semibold text-slate-900">{t.scoresheet}:</span>{" "}
                     {getLanguageOptionLabel(
                       SCORESHEET_LANGUAGE_OPTIONS,
                       settings.scoresheetLanguage,
                     )}
                   </div>
                   <div className="text-xs text-slate-600 sm:text-sm">
-                    {t.format}:{" "}
+                    <span className="font-semibold text-slate-900">{t.format}:</span>{" "}
                     {getSheetFormatLabel(
                       settings.appLanguage,
                       settings.sheetFormat,
