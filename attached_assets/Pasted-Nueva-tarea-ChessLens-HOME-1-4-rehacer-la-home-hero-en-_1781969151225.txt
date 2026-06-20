@@ -1,0 +1,155 @@
+Nueva tarea ChessLens — HOME.1.4: rehacer la home hero en 2 bloques compactos, como la referencia JPEG del usuario.
+
+Modo recomendado: Economy
+App testing automático: OFF
+
+Contexto real:
+La imagen hero `hero-scoresheet-scan.png` ya existe y es válida.
+No queremos regenerar la imagen.
+El problema NO es la imagen, sino cómo se está integrando en `home.tsx`.
+
+Problemas actuales reales:
+
+1. La home sigue siendo demasiado larga verticalmente.
+2. La Dama está demasiado centrada y tiene demasiado protagonismo.
+3. El hero no se parece lo suficiente a la referencia JPEG del usuario.
+4. El agente anterior ha dado por bueno un resultado que visualmente NO cumple.
+5. El usuario quiere que la Dama quede lo más escorada a la izquierda posible.
+6. El usuario quiere aprovechar la parte derecha del hero para poner el texto editable de la app (“ChessLens” provisional + subtítulo).
+7. También quiere reducir aproximadamente un 20% el tamaño visual del hero y del bloque “Clica per afegir la teva planella”, para que quepa mejor todo y haya menos scroll.
+
+Archivo a tocar:
+
+* client/src/pages/home.tsx
+
+Objetivo visual exacto:
+Parecerse mucho más a la referencia JPEG del usuario:
+
+* hero tipo tarjeta horizontal compacta;
+* izquierda: Dama Gaudí + planilla;
+* derecha: texto editable “ChessLens” + subtítulo;
+* la Dama debe ir MUY escorada a la izquierda;
+* menos protagonismo de la Dama;
+* menos altura total de la home;
+* menos scroll;
+* sin franjas blancas laterales raras;
+* sin deformar la imagen;
+* mantener el nombre de la app como HTML/CSS editable, NO incrustado dentro de la imagen.
+
+Implementación:
+NO usar la imagen como banner único ocupando todo el ancho interno.
+Hay que partir visualmente el hero en 2 columnas.
+
+Estructura deseada del hero:
+
+* contenedor general más compacto, por ejemplo `max-w-4xl` o incluso `max-w-[980px]`;
+* grid/flex de dos columnas en desktop;
+* columna izquierda un poco más ancha;
+* columna derecha con texto centrado verticalmente.
+
+Propuesta de layout aproximado:
+
+* columna izquierda: 55%–60%
+* columna derecha: 40%–45%
+
+Muy importante:
+Dentro de la columna izquierda, la imagen debe quedar:
+
+* alineada lo máximo posible a la izquierda;
+* con `object-contain`;
+* con `object-left center`;
+* sin centrarse dentro de toda la tarjeta;
+* sin ocupar tanto alto;
+* con la Dama visible entera o casi entera, pero claramente más pequeña que ahora.
+
+Ejemplo orientativo (ajustar si hace falta):
+
+```tsx
+<div className="mx-auto mb-5 w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+  <div className="grid md:grid-cols-[58%_42%] items-stretch">
+    <div className="relative h-[170px] sm:h-[190px] md:h-[220px] overflow-hidden bg-white">
+      <img
+        src="/hero-scoresheet-scan.png"
+        alt="Escaneig de planella d'escacs per generar PGN"
+        className="absolute inset-y-0 left-0 h-full w-full object-contain object-left"
+        loading="eager"
+      />
+    </div>
+
+    <div className="hidden md:flex items-center justify-center bg-white px-6">
+      <div className="text-center">
+        <div className="font-serif text-4xl lg:text-5xl font-bold tracking-tight text-slate-950">
+          ChessLens<span className="text-cyan-500">.</span>
+        </div>
+        <div className="mt-3 text-base lg:text-lg text-slate-600">
+          Escaneja la teva planella. Genera el PGN.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+En móvil / pantallas estrechas:
+
+* NO mostrar la columna derecha dentro del hero si hace que crezca demasiado.
+* En móvil, el hero debe ser solo la tarjeta compacta de imagen.
+* El título principal y subtítulo general de la página siguen fuera, arriba, como ya están.
+* Evitar que el hero crezca mucho en altura.
+
+Ajustes adicionales obligatorios:
+
+1. Reducir algo los márgenes verticales de la home.
+2. Reducir el bloque de upload (“Clica per afegir la teva planella”) aproximadamente un 15–20%:
+
+   * menos altura;
+   * menos padding vertical;
+   * mismo aspecto general.
+3. Intentar que en una pantalla tipo portátil estándar el usuario vea:
+
+   * título;
+   * hero;
+   * configuración actual;
+   * bloque de upload;
+   * y al menos el título de “Partides recents”
+     con menos necesidad de scroll.
+
+Importante sobre la verificación:
+NO des por buena la tarea solo porque compile.
+La validación es visual y debe respetar el feedback del usuario:
+
+* Dama más a la izquierda;
+* menos protagonismo;
+* hero partido en 2;
+* texto a la derecha;
+* home más compacta;
+* menos altura;
+* más parecido a la referencia JPEG.
+
+No tocar:
+
+* OCR
+* parser
+* backend
+* review/resume
+* Stockfish
+* Drive
+* exportaciones
+* otras páginas fuera de home
+* nombre final de la app a nivel global (sigue provisional)
+
+Checks:
+
+* npm run check
+* npm run build
+
+Al final responde solo con:
+
+1. archivo modificado;
+2. altura final del hero en móvil/tablet/desktop;
+3. anchura máxima final;
+4. cómo has escorado la Dama a la izquierda;
+5. cómo has reducido el protagonismo de la Dama;
+6. cómo has compactado el bloque de upload;
+7. resultado de npm run check;
+8. resultado de npm run build.

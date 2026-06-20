@@ -519,14 +519,14 @@ export default function Home() {
           </motion.div>
 
           {/* Hero banner — planella escanejada */}
-          <div className="mx-auto mb-6 w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="grid md:grid-cols-[58%_42%]">
-              {/* Columna esquerra — imatge */}
-              <div className="h-[200px] sm:h-[230px] md:h-[250px] overflow-hidden bg-white">
+          <div className="mx-auto mb-5 w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="grid md:grid-cols-[58%_42%] items-stretch">
+              {/* Columna esquerra — imatge escorada a l'esquerra */}
+              <div className="relative h-[170px] sm:h-[190px] md:h-[220px] overflow-hidden bg-white">
                 <img
                   src="/hero-scoresheet-scan.png"
                   alt="Escaneig de planella d'escacs per generar PGN"
-                  className="h-full w-full object-contain object-center"
+                  className="absolute inset-y-0 left-0 h-full w-full object-contain object-left"
                   loading="eager"
                 />
               </div>
@@ -537,7 +537,7 @@ export default function Home() {
                   <div className="font-serif text-4xl font-bold tracking-tight text-slate-950 lg:text-5xl">
                     ChessLens<span className="text-cyan-500">.</span>
                   </div>
-                  <div className="mt-3 text-base font-medium text-slate-600 lg:text-lg">
+                  <div className="mt-2 text-sm font-medium text-slate-600 lg:text-base">
                     {t.heroSubtitle}
                   </div>
                 </div>
@@ -869,20 +869,20 @@ export default function Home() {
                 {images.length === 0 ? (
                   <div
                     {...getRootProps()}
-                    className={`border-2 border-dashed rounded-2xl p-12 cursor-pointer transition-colors ${
+                    className={`border-2 border-dashed rounded-2xl p-7 cursor-pointer transition-colors ${
                       isDragActive
                         ? "border-primary bg-primary/10"
                         : "border-primary/50 bg-primary/5 hover:bg-primary/10"
                     } ${isUploading ? "opacity-50 pointer-events-none" : ""}`}
                   >
                     <input {...getInputProps()} />
-                    <div className="flex flex-col items-center gap-4">
-                      <Upload className="w-12 h-12 text-primary" />
+                    <div className="flex flex-col items-center gap-3">
+                      <Upload className="w-9 h-9 text-primary" />
                       <div>
-                        <p className="text-xl font-medium text-foreground">
+                        <p className="text-lg font-medium text-foreground">
                           {isDragActive ? t.dropActive : t.dropIdle}
                         </p>
-                        <p className="text-sm text-muted-foreground mt-2">
+                        <p className="text-sm text-muted-foreground mt-1">
                           {t.dropHint}
                         </p>
                       </div>
