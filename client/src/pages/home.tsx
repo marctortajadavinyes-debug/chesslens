@@ -504,8 +504,8 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <section className="mb-16 text-center">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+        <section className="mb-10 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -513,18 +513,18 @@ export default function Home() {
             <h1 className="text-4xl md:text-5xl font-display font-bold mb-4">
               {t.heroTitle}
             </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
               {t.heroSubtitle}
             </p>
           </motion.div>
 
           {/* Hero banner — planella escanejada */}
-          <div className="relative mx-auto mb-10 w-full max-w-5xl overflow-hidden rounded-2xl border bg-card shadow-sm">
-            <div className="relative aspect-[16/6] min-h-[220px] sm:min-h-[260px]">
+          <div className="mx-auto mb-6 w-full max-w-5xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="relative h-[220px] sm:h-[300px] lg:h-[320px]">
               <img
                 src="/hero-scoresheet-scan.png"
                 alt="Escaneig de planella d'escacs per generar PGN"
-                className="absolute inset-0 h-full w-full object-cover object-center"
+                className="h-full w-full object-contain object-center"
                 loading="eager"
               />
 

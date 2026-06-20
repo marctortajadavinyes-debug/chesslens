@@ -1,0 +1,125 @@
+Nueva tarea ChessLens — HOME.1.2: corregir hero para que la Dama se vea entera y la home quede más compacta.
+
+Modo recomendado: Lite.
+App testing automático: OFF.
+
+Contexto:
+HOME.1.1 dejó el hero como banner ancho, pero visualmente sigue mal:
+
+Problemas actuales:
+
+1. La Dama de Gaudí queda cortada por arriba/abajo.
+2. La página queda demasiado alargada y obliga a hacer scroll excesivo.
+3. El uso de `object-cover` está recortando la imagen.
+4. El resultado no se parece todavía a la referencia deseada.
+
+Archivo a tocar:
+
+* client/src/pages/home.tsx
+
+Objetivo visual:
+El hero debe parecerse a la referencia del usuario:
+
+* tarjeta horizontal ancha;
+* Dama visible entera;
+* planilla visible;
+* mucho aire blanco;
+* aspecto premium;
+* no imagen estrecha;
+* no recortar la Dama;
+* home más compacta.
+
+Cambio principal:
+NO usar `object-cover` para esta imagen.
+
+Cambiar a:
+
+* `object-contain`
+* `bg-white`
+* altura controlada
+* sin recortar contenido importante.
+
+Implementación sugerida:
+Reemplazar el bloque hero actual por algo de este estilo:
+
+```tsx
+<div className="mx-auto mb-6 w-full max-w-5xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+  <div className="relative h-[300px] sm:h-[340px] lg:h-[360px]">
+    <img
+      src="/hero-scoresheet-scan.png"
+      alt="Escaneig de planella d'escacs per generar PGN"
+      className="h-full w-full object-contain object-center"
+      loading="eager"
+    />
+  </div>
+</div>
+```
+
+Si 360px es demasiado alto, probar:
+
+* desktop `lg:h-[320px]`
+* tablet `sm:h-[300px]`
+* móvil `h-[220px]`
+
+Lo importante:
+
+* La Dama debe verse entera.
+* La imagen no debe quedar cortada.
+* La home no debe quedar innecesariamente larga.
+
+Compactar verticalmente:
+Reducir márgenes si hace falta:
+
+* margen inferior del título/subtítulo;
+* margen inferior del hero;
+* espacio entre hero y “Configuració actual”.
+
+Buscar clases tipo:
+
+* `mb-10`
+* `mb-8`
+* `py-12`
+* `space-y-...`
+
+y reducirlas moderadamente, sin romper el diseño.
+
+No hacer:
+
+* No usar `object-cover`.
+* No usar `min-h` grande que alargue la home.
+* No meter el hero en `max-w-xl`.
+* No tocar lógica de upload.
+* No tocar OCR/parser/backend/Stockfish/Drive/exportaciones.
+
+Sobre el texto dentro del hero:
+Como el nombre “ChessLens” es provisional, el texto de marca debe seguir siendo editable si aparece. Pero ahora prioriza corregir la imagen:
+
+* Dama entera;
+* banner compacto;
+* sin recortes.
+
+Checks:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Abrir home.
+2. Confirmar que la Dama se ve entera.
+3. Confirmar que la planilla se ve bien.
+4. Confirmar que la imagen no está recortada.
+5. Confirmar que la home es más compacta y no queda tan alargada.
+6. Confirmar que no hay scroll horizontal.
+7. Confirmar que la zona de subir planilla sigue funcionando.
+8. Confirmar que “Les meves partides” y “Configuració” siguen funcionando.
+9. Confirmar npm run check/build limpios.
+
+Al final dime:
+
+1. archivo modificado;
+2. qué cambio hiciste para evitar el recorte;
+3. qué altura final usaste para desktop/tablet/móvil;
+4. si redujiste márgenes;
+5. resultado de npm run check;
+6. resultado de npm run build.
