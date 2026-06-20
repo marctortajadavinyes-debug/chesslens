@@ -1,0 +1,133 @@
+Nueva tarea ChessLens — HOME.1.1: corregir layout del hero para que sea banner ancho, no imagen estrecha.
+
+Modo recomendado: Lite.
+App testing automático: OFF.
+
+Contexto:
+HOME.1 incorporó correctamente la imagen `/hero-scoresheet-scan.png`, pero visualmente quedó mal porque se añadió como imagen centrada estrecha con `max-w-xl`.
+
+Resultado actual:
+
+* la imagen queda demasiado estrecha;
+* la página se alarga demasiado;
+* no se parece al diseño objetivo;
+* falta usar el aire blanco derecho de la imagen para colocar el nombre/subtítulo como HTML editable.
+
+Objetivo:
+El hero debe quedar como un banner ancho similar a la referencia:
+
+* bloque grande horizontal;
+* casi todo el ancho útil de la home;
+* dentro de una tarjeta blanca con bordes redondeados y sombra suave;
+* imagen visual a la izquierda/centro;
+* texto editable de la app a la derecha;
+* no deformado;
+* sin scroll horizontal.
+
+Archivo a tocar:
+
+* client/src/pages/home.tsx
+
+Cambio principal:
+Sustituir el bloque actual:
+
+```tsx
+<div className="max-w-xl mx-auto mb-10">
+  <img
+    src="/hero-scoresheet-scan.png"
+    ...
+  />
+</div>
+```
+
+por un hero ancho tipo banner.
+
+Implementación sugerida:
+
+```tsx
+<div className="relative mx-auto mb-8 w-full max-w-5xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+  <div className="relative aspect-[16/6] min-h-[260px]">
+    <img
+      src="/hero-scoresheet-scan.png"
+      alt="Escaneig de planella d'escacs per generar PGN"
+      className="absolute inset-0 h-full w-full object-cover object-center"
+      loading="eager"
+    />
+
+    <div className="absolute inset-y-0 right-0 hidden w-1/2 items-center justify-center px-8 md:flex">
+      <div className="text-center">
+        <div className="font-serif text-5xl font-bold tracking-tight text-slate-950">
+          ChessLens<span className="text-cyan-500">.</span>
+        </div>
+        <div className="mt-3 text-lg font-medium text-slate-600">
+          Escaneja la teva planella. Genera el PGN.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+Importante:
+
+* El texto “ChessLens.” está permitido aquí porque es HTML/CSS editable, no está incrustado en la imagen.
+* Más adelante, cuando cambiemos el nombre de la app, solo cambiaremos este texto.
+* Si ya existe una variable/traducción para el nombre o subtítulo, usarla en vez de texto hardcoded.
+* Si el texto se duplica demasiado con el título superior, mantenerlo solo dentro del hero si visualmente queda bien, pero no quitar el título principal de la página sin revisarlo.
+
+Responsive:
+
+* En desktop/tablet: hero ancho con texto a la derecha.
+* En móvil: si el texto sobre la imagen no cabe bien, ocultar el texto interno del hero y dejar solo la imagen.
+* No debe generar scroll horizontal.
+* No debe cortar de forma fea la Dama. Si `object-cover` recorta demasiado, probar `object-contain bg-white`, pero primero intentar `object-cover`.
+
+Diseño deseado:
+
+* No usar `max-w-xl`.
+* Usar algo tipo `max-w-5xl`.
+* La imagen debe verse como banner horizontal, no como foto pequeña.
+* La tarjeta debe quedar más parecida a la referencia enviada por el usuario.
+
+No tocar:
+
+* OCR
+* parser
+* reviewState
+* resume
+* backend
+* server/process_image_gemini.py
+* server/routes.ts
+* shared/schema.ts
+* Stockfish
+* Drive
+* exportaciones
+* pgn-actions.tsx
+* lógica de upload
+
+Checks obligatorios:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Abrir home.
+2. Confirmar que el hero ocupa ancho grande, similar a la referencia.
+3. Confirmar que no queda como imagen estrecha `max-w-xl`.
+4. Confirmar que el nombre/subtítulo del hero son HTML/CSS editables, no parte de la imagen.
+5. Confirmar que la imagen no se deforma.
+6. Confirmar que no hay scroll horizontal.
+7. Confirmar que la zona de subir planilla sigue funcionando.
+8. Confirmar que “Les meves partides” funciona.
+9. Confirmar que “Configuració” funciona.
+10. Confirmar npm check/build limpios.
+
+Al final dime:
+
+1. archivo modificado;
+2. qué cambiaste respecto al `max-w-xl`;
+3. si usaste `object-cover` u `object-contain`;
+4. dónde queda el texto editable del nombre/subtítulo;
+5. resultado de npm run check;
+6. resultado de npm run build.

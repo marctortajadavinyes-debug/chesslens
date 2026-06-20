@@ -518,14 +518,28 @@ export default function Home() {
             </p>
           </motion.div>
 
-          {/* Hero visual — planella escanejada */}
-          <div className="max-w-xl mx-auto mb-10">
-            <img
-              src="/hero-scoresheet-scan.png"
-              alt="Escaneig de planella d'escacs per generar PGN"
-              className="w-full h-auto rounded-xl shadow-md object-cover"
-              loading="eager"
-            />
+          {/* Hero banner — planella escanejada */}
+          <div className="relative mx-auto mb-10 w-full max-w-5xl overflow-hidden rounded-2xl border bg-card shadow-sm">
+            <div className="relative aspect-[16/6] min-h-[220px] sm:min-h-[260px]">
+              <img
+                src="/hero-scoresheet-scan.png"
+                alt="Escaneig de planella d'escacs per generar PGN"
+                className="absolute inset-0 h-full w-full object-cover object-center"
+                loading="eager"
+              />
+
+              {/* Text editable a la dreta — amagat a mòbil */}
+              <div className="absolute inset-y-0 right-0 hidden w-1/2 items-center justify-center px-6 md:flex">
+                <div className="text-center">
+                  <div className="font-serif text-4xl font-bold tracking-tight text-slate-950 lg:text-5xl">
+                    ChessLens<span className="text-cyan-500">.</span>
+                  </div>
+                  <div className="mt-2 text-base font-medium text-slate-600 lg:text-lg">
+                    {t.heroSubtitle}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="max-w-xl mx-auto">
