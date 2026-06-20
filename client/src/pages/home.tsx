@@ -519,22 +519,25 @@ export default function Home() {
           </motion.div>
 
           {/* Hero banner — planella escanejada */}
-          <div className="mx-auto mb-6 w-full max-w-5xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="relative h-[220px] sm:h-[300px] lg:h-[320px]">
-              <img
-                src="/hero-scoresheet-scan.png"
-                alt="Escaneig de planella d'escacs per generar PGN"
-                className="h-full w-full object-contain object-center"
-                loading="eager"
-              />
+          <div className="mx-auto mb-6 w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="grid md:grid-cols-[58%_42%]">
+              {/* Columna esquerra — imatge */}
+              <div className="h-[200px] sm:h-[230px] md:h-[250px] overflow-hidden bg-white">
+                <img
+                  src="/hero-scoresheet-scan.png"
+                  alt="Escaneig de planella d'escacs per generar PGN"
+                  className="h-full w-full object-contain object-center"
+                  loading="eager"
+                />
+              </div>
 
-              {/* Text editable a la dreta — amagat a mòbil */}
-              <div className="absolute inset-y-0 right-0 hidden w-1/2 items-center justify-center px-6 md:flex">
+              {/* Columna dreta — text editable, amagat a mòbil */}
+              <div className="hidden items-center justify-center bg-white px-6 md:flex">
                 <div className="text-center">
                   <div className="font-serif text-4xl font-bold tracking-tight text-slate-950 lg:text-5xl">
                     ChessLens<span className="text-cyan-500">.</span>
                   </div>
-                  <div className="mt-2 text-base font-medium text-slate-600 lg:text-lg">
+                  <div className="mt-3 text-base font-medium text-slate-600 lg:text-lg">
                     {t.heroSubtitle}
                   </div>
                 </div>

@@ -1,0 +1,162 @@
+Nueva tarea ChessLens — HOME.1.3: compactar hero visual para que no alargue la home.
+
+Modo recomendado: Economy.
+App testing automático: OFF.
+
+Contexto:
+HOME.1.2 mejoró el recorte de la Dama usando object-contain, pero visualmente sigue sin estar bien.
+
+Problemas actuales:
+
+1. El hero sigue demasiado alto y alarga la página.
+2. La Dama se ve, pero ocupa demasiado protagonismo.
+3. Aparecen franjas/zonas blancas verticales a izquierda y derecha dentro de la tarjeta.
+4. La home obliga a demasiado scroll.
+5. El resultado deseado es más parecido a la referencia enviada por el usuario: hero compacto, elegante, con la Dama visible pero sin distraer de las funciones principales.
+
+Archivo a tocar:
+
+* client/src/pages/home.tsx
+
+Objetivo visual:
+Crear un hero más compacto tipo tarjeta horizontal, parecido a la referencia:
+
+* no enorme;
+* no max-w-5xl gigante;
+* no h-[320px];
+* Dama visible pero más contenida;
+* planilla visible;
+* texto de marca/subtítulo editable a la derecha;
+* sin franjas verticales raras;
+* menos scroll vertical.
+
+Cambio de enfoque:
+No usar la imagen como un banner gigante de ancho completo.
+Usarla dentro de una tarjeta compacta con layout en dos columnas en desktop:
+
+Izquierda:
+
+* imagen / visual de Dama + planilla.
+
+Derecha:
+
+* texto editable:
+
+  * nombre actual de app como HTML/CSS, provisional;
+  * subtítulo editable.
+
+En móvil:
+
+* mostrar solo la imagen compacta o apilar texto debajo si queda bien.
+* Evitar una tarjeta demasiado alta.
+
+Implementación sugerida:
+
+```tsx
+<div className="mx-auto mb-6 w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+  <div className="grid min-h-[220px] md:grid-cols-[58%_42%]">
+    <div className="relative h-[210px] overflow-hidden bg-white sm:h-[230px] md:h-[250px]">
+      <img
+        src="/hero-scoresheet-scan.png"
+        alt="Escaneig de planella d'escacs per generar PGN"
+        className="h-full w-full object-contain object-center"
+        loading="eager"
+      />
+    </div>
+
+    <div className="hidden items-center justify-center bg-white px-6 md:flex">
+      <div className="text-center">
+        <div className="font-serif text-4xl font-bold tracking-tight text-slate-950 lg:text-5xl">
+          ChessLens<span className="text-cyan-500">.</span>
+        </div>
+        <div className="mt-3 text-base font-medium text-slate-600 lg:text-lg">
+          Escaneja la teva planella. Genera el PGN.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+Pero ajustar si hace falta.
+
+Puntos importantes:
+
+* Cambiar `max-w-5xl` a algo más compacto, preferiblemente `max-w-4xl`.
+* Evitar alturas grandes:
+
+  * móvil aprox. 200–220px;
+  * tablet aprox. 230px;
+  * desktop aprox. 240–260px máximo.
+* El hero no debe empujar demasiado hacia abajo la configuración y el upload.
+* La Dama debe verse entera o casi entera, pero no hace falta que sea enorme.
+* El efecto debe ser como la referencia JPEG: elegante, contenido, no invasivo.
+
+Sobre las franjas blancas verticales:
+Si aparecen por `object-contain`, probar una de estas soluciones:
+
+1. poner la imagen dentro de una columna izquierda más pequeña con fondo blanco, para que el blanco no parezca franja;
+2. usar `object-contain` pero sin que ocupe toda la anchura del hero;
+3. si hace falta, usar `object-cover object-left` solo en la zona visual izquierda, pero verificar que no corta la Dama;
+4. evitar que la imagen completa se estire como banner de extremo a extremo.
+
+Compactación vertical:
+Revisar y reducir moderadamente:
+
+* márgenes entre título/subtítulo y hero;
+* margen entre hero y configuración;
+* padding vertical general de la home.
+
+No tocar:
+
+* lógica de upload;
+* OCR;
+* parser;
+* reviewState;
+* resume;
+* backend;
+* server/process_image_gemini.py;
+* server/routes.ts;
+* shared/schema.ts;
+* Stockfish;
+* Drive;
+* exportaciones;
+* pgn-actions.tsx.
+
+Checks:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Abrir home.
+2. Confirmar que el hero es más compacto que antes.
+3. Confirmar que la Dama se ve, pero no domina toda la página.
+4. Confirmar que no aparecen franjas blancas verticales raras.
+5. Confirmar que la home requiere menos scroll.
+6. Confirmar que se parece más a la referencia JPEG enviada por el usuario.
+7. Confirmar que upload sigue funcionando.
+8. Confirmar que “Les meves partides” funciona.
+9. Confirmar que “Configuració” funciona.
+10. Confirmar npm check/build limpios.
+
+Importante:
+No cierres la tarea solo porque “compila”.
+El criterio principal es visual:
+
+* hero compacto;
+* no demasiado largo;
+* Dama visible;
+* sin franjas raras;
+* parecido a la referencia.
+
+Al final dime:
+
+1. archivo modificado;
+2. altura final del hero en desktop/tablet/móvil;
+3. max-width final usado;
+4. cómo evitaste las franjas blancas;
+5. si el texto de marca sigue editable;
+6. resultado de npm run check;
+7. resultado de npm run build.
