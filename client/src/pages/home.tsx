@@ -531,13 +531,13 @@ export default function Home() {
                 />
               </div>
 
-              {/* Columna dreta — Configuració actual */}
-              <div className="flex items-center justify-center bg-white px-4 py-3">
-                <div className="w-full rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-left">
-                  <div className="text-sm font-semibold text-slate-900 mb-1">
+              {/* Columna dreta — Configuració actual (discret, integrat) */}
+              <div className="flex h-full items-center justify-center bg-white px-5">
+                <div className="text-left">
+                  <div className="text-sm font-semibold text-slate-900">
                     {t.currentSettings}
                   </div>
-                  <div className="text-xs text-slate-600">
+                  <div className="mt-1 text-xs text-slate-600 sm:text-sm">
                     {t.app}:{" "}
                     {getLanguageOptionLabel(
                       APP_LANGUAGE_OPTIONS,
@@ -550,7 +550,7 @@ export default function Home() {
                       settings.scoresheetLanguage,
                     )}
                   </div>
-                  <div className="text-xs text-slate-600">
+                  <div className="text-xs text-slate-600 sm:text-sm">
                     {t.format}:{" "}
                     {getSheetFormatLabel(
                       settings.appLanguage,

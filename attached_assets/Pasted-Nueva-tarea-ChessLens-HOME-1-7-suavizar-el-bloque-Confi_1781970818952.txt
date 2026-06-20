@@ -1,0 +1,116 @@
+Nueva tarea ChessLens — HOME.1.7: suavizar el bloque “Configuració actual” dentro del hero.
+
+Modo recomendado: Lite.
+App testing automático: OFF.
+
+Contexto:
+HOME.1.6 ya ha dejado la home mucho mejor:
+
+* ya no hay barra lateral problemática;
+* el hero está compacto;
+* la Dama está a la izquierda;
+* Configuració actual está a la derecha.
+
+Problema actual:
+El bloque “Configuració actual” aparece como una tarjeta dentro de otra tarjeta, con demasiado protagonismo visual. Es solo un recordatorio, no debe competir con el upload ni con el hero.
+
+Objetivo:
+Mantener “Configuració actual” a la derecha del hero, pero hacerlo más discreto e integrado.
+
+Archivo a tocar:
+
+* client/src/pages/home.tsx
+
+Cambios deseados:
+
+1. No agrandar el bloque de configuración.
+   No hacer que ocupe todo el espacio derecho como una tarjeta grande.
+
+2. Quitar aspecto de tarjeta fuerte.
+   Eliminar o suavizar:
+
+* borde fuerte;
+* fondo gris marcado;
+* sombra;
+* padding excesivo.
+
+3. Usar el mismo fondo limpio del hero.
+   La zona derecha debe integrarse con el fondo blanco del hero.
+
+Ejemplo visual deseado:
+En lugar de una caja marcada, usar un bloque de texto discreto:
+
+```tsx
+<div className="flex h-full items-center justify-center bg-white px-4">
+  <div className="text-left">
+    <div className="text-sm font-semibold text-slate-900">
+      Configuració actual
+    </div>
+    <div className="mt-1 text-xs sm:text-sm text-slate-600">
+      App: Català · Planella: Català
+    </div>
+    <div className="text-xs sm:text-sm text-slate-600">
+      Format: FCE · 75 jugades · 3 columnes x 25
+    </div>
+  </div>
+</div>
+```
+
+Si se quiere mantener una caja, que sea muy suave:
+
+```tsx
+className="rounded-xl bg-white/60 px-4 py-3 text-left"
+```
+
+Pero preferimos sin borde fuerte.
+
+4. Mantener layout actual.
+   No tocar:
+
+* altura del hero;
+* tamaño de la Dama;
+* columnas;
+* upload;
+* Partides recents;
+  salvo ajuste mínimo si fuera necesario.
+
+5. Mantener valores dinámicos.
+   Usar las variables/traducciones actuales, no hardcodear si ya existen.
+
+No tocar:
+
+* OCR
+* parser
+* backend
+* review/resume
+* Stockfish
+* Drive
+* exportaciones
+* pgn-actions.tsx
+* rutas
+* schema
+* lógica de upload
+
+Checks:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Abrir home.
+2. Confirmar que Configuració actual sigue a la derecha del hero.
+3. Confirmar que ya no parece una tarjeta importante dentro de otra tarjeta.
+4. Confirmar que se integra con el fondo blanco del hero.
+5. Confirmar que la Dama sigue igual.
+6. Confirmar que el upload sigue compacto.
+7. Confirmar que no vuelve la barra lateral rara.
+8. Confirmar npm check/build limpios.
+
+Al final dime:
+
+1. archivo modificado;
+2. qué estilos quitaste del bloque Configuració actual;
+3. si mantuviste la Dama/hero/upload sin cambios grandes;
+4. resultado de npm run check;
+5. resultado de npm run build.
