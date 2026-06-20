@@ -519,10 +519,10 @@ export default function Home() {
           </motion.div>
 
           {/* Hero — sempre 2 columnes (apila sols a mòbil molt estret) */}
-          <div className="mx-auto mb-4 w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="mx-auto mb-4 w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-200 bg-[#f7f7f4] shadow-sm">
             <div className="grid grid-cols-[46%_54%] items-stretch max-[480px]:grid-cols-1">
               {/* Columna esquerra — imatge escorada a l'esquerra */}
-              <div className="relative h-[145px] overflow-hidden bg-white sm:h-[155px] lg:h-[165px]">
+              <div className="relative h-[145px] overflow-hidden sm:h-[155px] lg:h-[165px]">
                 <img
                   src="/hero-scoresheet-scan.png"
                   alt="Escaneig de planella d'escacs per generar PGN"
@@ -532,7 +532,7 @@ export default function Home() {
               </div>
 
               {/* Columna dreta — Configuració actual (cajita integrada) */}
-              <div className="flex h-full items-center justify-center bg-white px-4">
+              <div className="flex h-full items-center justify-center px-4">
                 <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white px-4 py-3 text-left shadow-sm">
                   <div className="text-sm font-semibold text-slate-950">
                     {t.currentSettings}

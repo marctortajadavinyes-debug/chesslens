@@ -1,0 +1,101 @@
+Nueva tarea ChessLens — HOME.1.8b
+
+Modo recomendado: Lite
+App testing automático: OFF
+
+Objetivo:
+Corregir el hero de la home para que el área derecha de “Configuració actual” quede integrada visualmente con el área izquierda de la Dama.
+
+Problema actual:
+
+* La cajita “Configuració actual” está bien.
+* Lo que está mal es el fondo que la rodea.
+* La parte derecha del hero se ve como un bloque separado y no integrado con la parte izquierda de la Dama.
+* El usuario quiere que el fondo alrededor de la cajita tenga el mismo color visual que el fondo del área de la Dama.
+
+Archivo a tocar:
+
+* client/src/pages/home.tsx
+
+Instrucción exacta:
+
+1. Mantener la cajita “Configuració actual” como una tarjeta/botón discreto.
+2. NO dejar “Configuració actual” debajo del hero.
+3. NO dejarlo como texto plano.
+4. El hero debe tener un ÚNICO fondo común para las dos columnas.
+5. La columna izquierda (imagen de la Dama) y la columna derecha (donde está la cajita) deben compartir exactamente el mismo fondo.
+6. Solo la cajita de “Configuració actual” debe ir encima, en blanco, con borde suave.
+7. Eliminar cualquier fondo blanco independiente en wrappers internos que rompa la continuidad visual.
+
+Implementación deseada:
+
+* Contenedor exterior del hero:
+
+  * rounded-2xl
+  * border border-slate-200
+  * overflow-hidden
+  * bg-[#f7f7f4]  (o un tono muy parecido que combine mejor con la imagen)
+* Grid interior:
+
+  * 2 columnas
+  * misma altura
+  * ambas columnas con fondo transparente o heredando el fondo del hero
+* Columna izquierda:
+
+  * SIN bg-white propio
+  * SIN tarjeta propia
+  * solo imagen alineada a la izquierda
+* Columna derecha:
+
+  * SIN bg-white propio
+  * usar el mismo fondo heredado del hero
+  * centrar verticalmente la cajita
+* Cajita “Configuració actual”:
+
+  * rounded-xl
+  * border border-slate-200
+  * bg-white
+  * shadow-sm o sombra muy ligera
+  * px-4 py-3
+  * max-w-sm
+  * text-left
+
+Importante:
+
+* NO tocar la lógica.
+* NO tocar OCR.
+* NO tocar parser.
+* NO tocar backend.
+* NO tocar Stockfish.
+* NO tocar Drive.
+* NO tocar exportaciones.
+* NO mover “Configuració actual” debajo del hero.
+* NO convertir el bloque en texto plano.
+
+Extra importante:
+Si la imagen está dentro de un wrapper con bg-white, eliminar ese bg-white.
+Si la columna derecha tiene bg-white, eliminarlo también.
+Ambas zonas deben compartir el mismo fondo del hero.
+
+Checks:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Abrir home.
+2. Confirmar que la zona derecha alrededor de “Configuració actual” tiene el mismo color de fondo que la zona izquierda alrededor de la Dama.
+3. Confirmar que la cajita sigue viéndose como botón/tarjeta discreta.
+4. Confirmar que “Configuració actual” sigue dentro del hero, a la derecha.
+5. Confirmar que no aparecen bloques blancos separados.
+6. Confirmar npm run check/build limpios.
+
+Al final dime:
+
+1. archivo modificado;
+2. color/fondo final del hero;
+3. clases finales de la cajita;
+4. confirmación de que quitaste bg-white de wrappers internos;
+5. resultado de npm run check;
+6. resultado de npm run build.
