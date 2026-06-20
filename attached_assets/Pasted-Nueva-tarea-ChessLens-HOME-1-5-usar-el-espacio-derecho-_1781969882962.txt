@@ -1,0 +1,168 @@
+Nueva tarea ChessLens — HOME.1.5: usar el espacio derecho del hero para Configuració actual y compactar la home.
+
+Modo recomendado: Economy.
+App testing automático: OFF.
+
+Contexto:
+HOME.1.4 ha mejorado la imagen hero, pero todavía no está resuelto visualmente.
+
+Problemas actuales:
+
+1. Sigue apareciendo una barra lateral de scroll porque la home queda demasiado alta.
+2. La Dama ya tiene buen tamaño y está más a la izquierda, pero aún hay espacio vacío mal aprovechado.
+3. En la zona derecha del hero queda un gran espacio blanco.
+4. El bloque “Configuració actual” está debajo del hero, ocupando altura extra.
+5. El nombre “ChessLens” es provisional, así que no queremos darle todavía demasiado protagonismo dentro del hero.
+
+Decisión UX:
+Usar la opción B:
+Mover el módulo “Configuració actual” dentro del espacio derecho del hero.
+
+Objetivo visual:
+Hero compacto en 2 zonas:
+
+Izquierda:
+
+* Dama de Gaudí + planilla;
+* Dama escorada a la izquierda;
+* tamaño contenido;
+* sin recortes feos.
+
+Derecha:
+
+* tarjeta o bloque “Configuració actual” integrado dentro del hero;
+* texto:
+
+  * Configuració actual
+  * App: Català · Planella: Català
+  * Format: FCE · 75 jugades · 3 columnes x 25
+
+Debajo del hero:
+
+* ya NO debe aparecer otro bloque separado de “Configuració actual”.
+* debe venir directamente el bloque de upload.
+
+Resultado buscado:
+
+* home más compacta;
+* menos scroll vertical;
+* mejor uso del espacio derecho;
+* la Dama visible pero sin distraer;
+* nada de gran espacio vacío.
+
+Archivo a tocar:
+
+* client/src/pages/home.tsx
+
+Cambios concretos:
+
+1. Mover “Configuració actual” dentro del hero
+   Buscar el bloque actual de Configuració actual que aparece debajo del hero.
+   Integrarlo dentro de la columna derecha del hero.
+
+2. Eliminar el bloque separado de Configuració actual
+   Una vez integrado en el hero, no duplicarlo debajo.
+
+3. Ajustar hero
+   Estructura sugerida:
+
+```tsx
+<div className="mx-auto mb-5 w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+  <div className="grid items-stretch md:grid-cols-[52%_48%]">
+    <div className="relative h-[160px] overflow-hidden bg-white sm:h-[175px] md:h-[190px]">
+      <img
+        src="/hero-scoresheet-scan.png"
+        alt="Escaneig de planella d'escacs per generar PGN"
+        className="absolute inset-y-0 left-0 h-full w-full object-contain object-left"
+        loading="eager"
+      />
+    </div>
+
+    <div className="flex items-center justify-center bg-white px-5 py-4">
+      <div className="w-full rounded-xl border border-slate-200 bg-white/80 p-4 text-left shadow-sm">
+        <div className="text-sm font-semibold text-slate-950">
+          Configuració actual
+        </div>
+        <div className="mt-1 text-sm text-slate-600">
+          App: Català · Planella: Català
+        </div>
+        <div className="text-sm text-slate-600">
+          Format: FCE · 75 jugades · 3 columnes x 25
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+Usar las variables/traducciones existentes del archivo, no hardcodear si ya están disponibles.
+
+4. Reducir aún más altura del upload
+   El bloque “Clica per afegir la teva planella” sigue algo alto.
+   Reducirlo aproximadamente otro 10–15%:
+
+* menos padding vertical;
+* icono algo más pequeño si hace falta;
+* mantener claridad.
+
+Objetivo:
+que en pantalla portátil estándar se vea:
+
+* header;
+* título/subtítulo;
+* hero con Configuració actual dentro;
+* upload;
+* Partides recents;
+  con la mínima barra de scroll posible.
+
+5. Ajustar la Dama más a la izquierda
+   Si sigue quedando una franja blanca a la izquierda de la Dama, probar:
+
+* `object-left`
+* reducir anchura de la columna izquierda;
+* usar `translate-x-[-8px]` o similar;
+* usar `scale-[1.03]` si no recorta la Dama.
+
+Pero no cortar la Dama de forma fea.
+
+No tocar:
+
+* OCR
+* parser
+* backend
+* review/resume
+* Stockfish
+* Drive
+* exportaciones
+* pgn-actions.tsx
+* rutas
+* schema
+* lógica de upload
+
+Checks:
+
+* npm run check
+* npm run build
+
+Verificación manual:
+
+1. Abrir home.
+2. Confirmar que “Configuració actual” aparece dentro del hero, a la derecha.
+3. Confirmar que ya no aparece “Configuració actual” como bloque separado debajo.
+4. Confirmar que el espacio derecho del hero ya no queda vacío.
+5. Confirmar que la Dama queda escorada a la izquierda y no domina la pantalla.
+6. Confirmar que la home queda más compacta y la barra de scroll se reduce mucho o desaparece.
+7. Confirmar que el bloque upload sigue funcionando.
+8. Confirmar que “Les meves partides” funciona.
+9. Confirmar que “Configuració” funciona.
+10. Confirmar npm check/build limpios.
+
+Al final dime:
+
+1. archivo modificado;
+2. cómo integraste Configuració actual en el hero;
+3. si eliminaste el bloque separado de Configuració actual;
+4. altura final del hero;
+5. cómo compactaste el bloque upload;
+6. resultado de npm run check;
+7. resultado de npm run build.

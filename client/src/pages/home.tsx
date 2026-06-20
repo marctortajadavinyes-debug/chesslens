@@ -518,11 +518,11 @@ export default function Home() {
             </p>
           </motion.div>
 
-          {/* Hero banner — planella escanejada */}
+          {/* Hero banner — planella escanejada + Configuració actual */}
           <div className="mx-auto mb-5 w-full max-w-4xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="grid md:grid-cols-[58%_42%] items-stretch">
+            <div className="grid items-stretch md:grid-cols-[52%_48%]">
               {/* Columna esquerra — imatge escorada a l'esquerra */}
-              <div className="relative h-[170px] sm:h-[190px] md:h-[220px] overflow-hidden bg-white">
+              <div className="relative h-[160px] overflow-hidden bg-white sm:h-[175px] md:h-[190px]">
                 <img
                   src="/hero-scoresheet-scan.png"
                   alt="Escaneig de planella d'escacs per generar PGN"
@@ -531,14 +531,31 @@ export default function Home() {
                 />
               </div>
 
-              {/* Columna dreta — text editable, amagat a mòbil */}
-              <div className="hidden items-center justify-center bg-white px-6 md:flex">
-                <div className="text-center">
-                  <div className="font-serif text-4xl font-bold tracking-tight text-slate-950 lg:text-5xl">
-                    ChessLens<span className="text-cyan-500">.</span>
+              {/* Columna dreta — Configuració actual integrada */}
+              <div className="flex items-center justify-center bg-white px-5 py-4">
+                <div className="w-full rounded-xl border border-slate-200 bg-slate-50 p-4 text-left">
+                  <div className="text-sm font-semibold text-slate-900 mb-1">
+                    {t.currentSettings}
                   </div>
-                  <div className="mt-2 text-sm font-medium text-slate-600 lg:text-base">
-                    {t.heroSubtitle}
+                  <div className="text-xs text-slate-600">
+                    {t.app}:{" "}
+                    {getLanguageOptionLabel(
+                      APP_LANGUAGE_OPTIONS,
+                      settings.appLanguage,
+                    )}
+                    {" · "}
+                    {t.scoresheet}:{" "}
+                    {getLanguageOptionLabel(
+                      SCORESHEET_LANGUAGE_OPTIONS,
+                      settings.scoresheetLanguage,
+                    )}
+                  </div>
+                  <div className="text-xs text-slate-600">
+                    {t.format}:{" "}
+                    {getSheetFormatLabel(
+                      settings.appLanguage,
+                      settings.sheetFormat,
+                    )}
                   </div>
                 </div>
               </div>
@@ -839,33 +856,7 @@ export default function Home() {
                 </div>
               </motion.div>
             ) : (
-              <div className="space-y-6">
-                <div className="text-xs text-muted-foreground bg-muted/30 border rounded-xl p-3 text-left">
-                  <div className="font-medium text-foreground mb-1">
-                    {t.currentSettings}
-                  </div>
-                  <div>
-                    {t.app}:{" "}
-                    {getLanguageOptionLabel(
-                      APP_LANGUAGE_OPTIONS,
-                      settings.appLanguage,
-                    )}
-                    {" · "}
-                    {t.scoresheet}:{" "}
-                    {getLanguageOptionLabel(
-                      SCORESHEET_LANGUAGE_OPTIONS,
-                      settings.scoresheetLanguage,
-                    )}
-                  </div>
-                  <div>
-                    {t.format}:{" "}
-                    {getSheetFormatLabel(
-                      settings.appLanguage,
-                      settings.sheetFormat,
-                    )}
-                  </div>
-                </div>
-
+              <div className="space-y-4">
                 {images.length === 0 ? (
                   <div
                     {...getRootProps()}
