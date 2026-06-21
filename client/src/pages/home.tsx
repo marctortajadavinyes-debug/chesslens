@@ -362,6 +362,7 @@ export default function Home() {
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [hasSavedSettings, setHasSavedSettings] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showLicenses, setShowLicenses] = useState(false);
   const [settings, setSettings] =
     useState<ChessLensUserSettings>(DEFAULT_SETTINGS);
   // draftSettings holds unsaved form changes; only applied to settings on Save.
@@ -725,19 +726,16 @@ export default function Home() {
                 </div>
 
                 {/* Suggestions section */}
-                <div className="border border-border rounded-xl p-3 space-y-2 bg-muted/20">
+                <div className="border border-border rounded-xl p-2.5 space-y-1.5 bg-muted/20">
                   <div className="flex items-center gap-2">
-                    <MessageSquare className="w-4 h-4 text-muted-foreground" />
-                    <h3 className="text-sm font-semibold">{t.suggestionsTitle}</h3>
+                    <MessageSquare className="w-3.5 h-3.5 text-muted-foreground" />
+                    <h3 className="text-xs font-semibold">{t.suggestionsTitle}</h3>
                   </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    {t.suggestionsDescription}
-                  </p>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="w-full"
+                    className="w-full text-xs h-7"
                     onClick={() => {
                       const subject =
                         settings.appLanguage === "ca"
@@ -751,9 +749,21 @@ export default function Home() {
                     }}
                     data-testid="button-send-suggestion"
                   >
-                    <MessageSquare className="w-4 h-4 mr-2" />
+                    <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
                     {t.suggestionsButton}
                   </Button>
+                </div>
+
+                {/* Licenses link */}
+                <div className="flex items-center justify-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowLicenses(true)}
+                    data-testid="button-licenses-trigger"
+                    className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
+                  >
+                    {t.licensesTrigger}
+                  </button>
                 </div>
 
                 <div className="flex gap-2 justify-end">
@@ -864,6 +874,19 @@ export default function Home() {
         </section>
 
       </main>
+
+      <LicensesDialog
+        open={showLicenses}
+        onOpenChange={setShowLicenses}
+        t={{
+          title: t.licensesTitle,
+          stockfish: t.licensesStockfish,
+          pythonChess: t.licensesPythonChess,
+          openSource: t.licensesOpenSource,
+          gemini: t.licensesGemini,
+          close: t.licensesClose,
+        }}
+      />
     </div>
   );
 }

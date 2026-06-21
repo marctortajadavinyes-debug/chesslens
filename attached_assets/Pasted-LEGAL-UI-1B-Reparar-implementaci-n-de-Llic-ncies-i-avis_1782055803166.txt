@@ -1,0 +1,186 @@
+LEGAL.UI.1B — Reparar implementación de “Llicències i avisos de tercers” y pastilla Stockfish
+
+Modo recomendado:
+Economy
+
+Opciones:
+
+* App testing: NO
+* High effort: NO
+* Turbo: NO
+
+Objetivo:
+La tarea anterior no ha quedado visible. En Configuració no aparece “Llicències i avisos de tercers” y en modo análisis no aparece “Anàlisi amb Stockfish 18”. Corrige la implementación de forma directa y verificable.
+
+IMPORTANTE:
+No hagas solo imports o traducciones. El resultado debe verse en pantalla.
+
+Puede tocar:
+
+* client/src/pages/home.tsx, si ahí está la pantalla de Configuració
+* el componente real donde se renderiza Configuració, si no es home.tsx
+* client/src/pages/game-detail.tsx, solo para mostrar la pastilla en análisis de partidas escaneadas
+* client/src/components/drive-game-viewer.tsx, solo para mostrar la pastilla en análisis de partidas abiertas desde Drive
+* componentes UI existentes de Dialog/Button si ya se usan
+* archivos de traducciones solo si son imprescindibles
+
+No puede tocar:
+
+* server/process_image_gemini.py
+* server/routes.ts
+* server/storage.ts
+* shared/schema.ts
+* OCR
+* parser
+* normalización
+* python-chess
+* generación PGN
+* review/corrección
+* resume/reanudación
+* multi-planilla
+* salto de fila
+* Drive saving
+* exportaciones
+* lógica real de Stockfish
+* hooks de análisis salvo que sea estrictamente necesario
+* package.json
+* vite.config.ts
+
+Paso 1 — Diagnóstico obligatorio
+
+Antes de editar, localiza dónde se renderiza realmente Configuració y dónde se renderizan los controles visibles de análisis.
+
+Ejecuta búsquedas como:
+
+grep -RIn "Suggeriments" client/src
+grep -RIn "Desar configuració" client/src
+grep -RIn "Sortir d.anàlisi|Sortir d’anàlisi|Amagar fletxes|Mostrar fletxes|Analitzar" client/src
+
+No asumas que Configuració está en un archivo concreto. Toca el archivo que realmente pinta esa pantalla.
+
+Paso 2 — Configuració: añadir enlace visible
+
+En la parte inferior de Configuració, donde ahora se ve el bloque “Suggeriments” y los botones “Cancel·lar” / “Desar configuració”:
+
+1. Mantén el bloque de “Suggeriments”, pero hazlo menos alto y menos protagonista.
+2. Añade un botón/enlace visible con este texto exacto:
+
+Llicències i avisos de tercers
+
+3. Debe aparecer en la zona inferior de Configuració, preferiblemente junto al bloque de Suggeriments o debajo de él, antes de Cancel·lar / Desar configuració.
+4. No debe quedar oculto por condicionales, traducciones incompletas o componentes no usados.
+
+Paso 3 — Modal visible
+
+Al hacer clic en “Llicències i avisos de tercers”, debe abrirse un modal/dialog.
+
+Título exacto:
+Llicències i avisos de tercers
+
+Texto exacto del modal:
+
+ChessLens utilitza Stockfish per a l’anàlisi d’escacs. Stockfish és un motor d’escacs lliure i de codi obert sota llicència GPLv3.
+
+ChessLens utilitza python-chess al servidor per validar jugades i generar PGN.
+
+ChessLens també utilitza biblioteques de codi obert com chess.js, react-chessboard i Lucide Icons per a la interfície i la gestió de posicions.
+
+Les imatges de planilles pujades per l’usuari poden ser processades mitjançant Gemini API / Google AI Studio per extreure’n les jugades.
+
+Botón de cierre:
+Tancar
+
+Si el sistema de traducciones complica esto, usa texto literal en catalán directamente en el componente. Es mejor visible y simple que traducido pero no conectado.
+
+Paso 4 — Pastilla visible en análisis
+
+Cuando el usuario está en modo análisis, debe aparecer una etiqueta/pastilla pequeña con este texto exacto:
+
+Anàlisi amb Stockfish 18
+
+Debe aparecer en:
+
+1. Partidas recién escaneadas/completed games.
+2. Partidas abiertas desde Drive/biblioteca.
+
+Ubicación recomendada:
+
+* cerca de las líneas de análisis o de los controles de análisis;
+* sin tapar el tablero;
+* sin mover la pantalla;
+* sin molestar a “Sortir d’anàlisi” ni a “Amagar/Mostrar fletxes”.
+
+La pastilla debe mostrarse solo cuando el análisis está activo.
+
+No cambies:
+
+* cálculo de evaluación;
+* líneas PV;
+* flechas;
+* sandbox;
+* navegación;
+* PGN;
+* movimientos originales.
+
+Paso 5 — Verificación por texto
+
+Después de editar, verifica que los textos existen en archivos realmente usados:
+
+grep -RIn "Llicències i avisos de tercers" client/src
+grep -RIn "Anàlisi amb Stockfish 18" client/src
+
+Ambos comandos deben devolver resultados.
+
+Paso 6 — Build/check
+
+Ejecuta:
+
+npm run check
+npm run build
+
+Paso 7 — Comprobación manual mínima
+
+Comprueba en la app:
+
+A. Configuració:
+
+* se ve “Llicències i avisos de tercers”;
+* al hacer clic se abre el modal;
+* el modal se cierra con “Tancar”;
+* “Cancel·lar” sigue funcionando;
+* “Desar configuració” sigue funcionando.
+
+B. Análisis en partida escaneada:
+
+* activar “Analitzar”;
+* se ve “Anàlisi amb Stockfish 18”;
+* análisis sigue funcionando.
+
+C. Análisis en partida Drive/biblioteca:
+
+* abrir partida guardada;
+* activar “Analitzar”;
+* se ve “Anàlisi amb Stockfish 18”;
+* análisis sigue funcionando.
+
+Criterios de aceptación:
+
+* Los dos textos son visibles en UI.
+* No se han tocado archivos protegidos.
+* No ha cambiado OCR/parser/review/resume.
+* No ha cambiado la lógica de análisis.
+* npm run check pasa.
+* npm run build pasa.
+
+Respuesta final obligatoria:
+Indica claramente:
+
+1. Archivos modificados.
+2. Resultado de grep para “Llicències i avisos de tercers”.
+3. Resultado de grep para “Anàlisi amb Stockfish 18”.
+4. Si se tocó algún archivo protegido.
+5. Resultado de npm run check.
+6. Resultado de npm run build.
+7. Confirmación visual de que aparece en Configuració.
+8. Confirmación visual de que aparece en análisis de partida escaneada.
+9. Confirmación visual de que aparece en análisis de partida Drive/biblioteca.

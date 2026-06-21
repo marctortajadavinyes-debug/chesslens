@@ -15,6 +15,7 @@ import {
 import type { DriveGameFile } from "@/lib/google-drive";
 import { Chess } from "chess.js";
 import { usePositionAnalysis } from "@/hooks/use-position-analysis";
+import { LicensesDialog } from "@/components/licenses-dialog";
 
 type AppLanguage = "ca" | "en" | "es";
 
@@ -39,6 +40,7 @@ const LABEL: Record<
     returnToGame: "Tornar a la partida",
     showArrows: "Mostrar fletxes",
     hideArrows: "Amagar fletxes",
+    analysisWithStockfish: "Anàlisi amb Stockfish 18",
   },
   en: {
     back: "Back",
@@ -47,6 +49,7 @@ const LABEL: Record<
     returnToGame: "Return to game",
     showArrows: "Show arrows",
     hideArrows: "Hide arrows",
+    analysisWithStockfish: "Analysis with Stockfish 18",
   },
   es: {
     back: "Volver",
@@ -55,6 +58,7 @@ const LABEL: Record<
     returnToGame: "Volver a la partida",
     showArrows: "Mostrar flechas",
     hideArrows: "Ocultar flechas",
+    analysisWithStockfish: "Análisis con Stockfish 18",
   },
 };
 
@@ -168,6 +172,7 @@ export function DriveGameViewer({
     defaultOrientation,
   );
   const [showAnalysis, setShowAnalysis] = useState(false);
+  const [showLicenses, setShowLicenses] = useState(false);
   const [boardIndex, setBoardIndex] = useState<number>(0);
 
   // showArrows — persisted in localStorage
@@ -420,6 +425,18 @@ export function DriveGameViewer({
           </div>
         )}
 
+        {/* Stockfish 18 pill — shown when analysis is active */}
+        {showAnalysis && (
+          <div className="flex items-center justify-center">
+            <span
+              data-testid="badge-analysis-stockfish"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-300 dark:border-amber-700"
+            >
+              {lbl.analysisWithStockfish}
+            </span>
+          </div>
+        )}
+
         {/* ── Board section ────────────────────────────────────────────────── */}
         <div className="space-y-2">
           {/* Sandbox variant indicator */}
@@ -570,6 +587,19 @@ export function DriveGameViewer({
         {/* PGN actions */}
         <PgnActions pgn={pgn} gameId={0} appLanguage={appLanguage} />
       </main>
+
+      <LicensesDialog
+        open={showLicenses}
+        onOpenChange={setShowLicenses}
+        t={{
+          title: "Llicències i avisos de tercers",
+          stockfish: "ChessLens utilitza Stockfish per a l'anàlisi d'escacs. Stockfish és un motor d'escacs lliure i de codi obert sota llicència GPLv3.",
+          pythonChess: "ChessLens utilitza python-chess al servidor per validar jugades i generar PGN.",
+          openSource: "ChessLens també utilitza biblioteques de codi obert com chess.js, react-chessboard i Lucide Icons per a la interfície i la gestió de posicions.",
+          gemini: "Les imatges de planelles pujades per l'usuari poden ser processades mitjançant Gemini API / Google AI Studio per extreure'n les jugades.",
+          close: "Tancar",
+        }}
+      />
     </div>
   );
 }

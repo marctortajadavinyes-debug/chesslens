@@ -22,6 +22,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import type { AppLanguage } from "@shared/schema";
 import { usePositionAnalysis } from "@/hooks/use-position-analysis";
+import { LicensesDialog } from "@/components/licenses-dialog";
 import { Chess } from "chess.js";
 
 type ReviewSide = "w" | "b";
@@ -133,6 +134,14 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
     showArrows: "Mostrar fletxes",
     hideArrows: "Amagar fletxes",
     returnToGame: "Tornar a la partida",
+    analysisWithStockfish: "Anàlisi amb Stockfish 18",
+    licensesTitle: "Llicències i avisos de tercers",
+    licensesClose: "Tancar",
+    licensesStockfish: "ChessLens utilitza Stockfish per a l'anàlisi d'escacs. Stockfish és un motor d'escacs lliure i de codi obert sota llicència GPLv3.",
+    licensesPythonChess: "ChessLens utilitza python-chess al servidor per validar jugades i generar PGN.",
+    licensesOpenSource: "ChessLens també utilitza biblioteques de codi obert com chess.js, react-chessboard i Lucide Icons per a la interfície i la gestió de posicions.",
+    licensesGemini: "Les imatges de planelles pujades per l'usuari poden ser processades mitjançant Gemini API / Google AI Studio per extreure'n les jugades.",
+    licensesTrigger: "Llicències i avisos de tercers",
   },
   en: {
     gameNotFound: "Game not found",
@@ -188,6 +197,14 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
     showArrows: "Show arrows",
     hideArrows: "Hide arrows",
     returnToGame: "Return to game",
+    analysisWithStockfish: "Analysis with Stockfish 18",
+    licensesTitle: "Licences and third-party notices",
+    licensesClose: "Close",
+    licensesStockfish: "ChessLens uses Stockfish for chess analysis. Stockfish is a free and open-source chess engine licensed under GPLv3.",
+    licensesPythonChess: "ChessLens uses python-chess on the server to validate moves and generate PGN.",
+    licensesOpenSource: "ChessLens also uses open-source libraries such as chess.js, react-chessboard, and Lucide Icons for the interface and position management.",
+    licensesGemini: "Images of scoresheets uploaded by the user may be processed via Gemini API / Google AI Studio to extract the moves.",
+    licensesTrigger: "Licences and third-party notices",
   },
   es: {
     gameNotFound: "Partida no encontrada",
@@ -245,6 +262,14 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
     showArrows: "Mostrar flechas",
     hideArrows: "Ocultar flechas",
     returnToGame: "Volver a la partida",
+    analysisWithStockfish: "Análisis con Stockfish 18",
+    licensesTitle: "Licencias y avisos de terceros",
+    licensesClose: "Cerrar",
+    licensesStockfish: "ChessLens utiliza Stockfish para el análisis de ajedrez. Stockfish es un motor de ajedrez libre y de código abierto bajo licencia GPLv3.",
+    licensesPythonChess: "ChessLens utiliza python-chess en el servidor para validar jugadas y generar PGN.",
+    licensesOpenSource: "ChessLens también utiliza bibliotecas de código abierto como chess.js, react-chessboard y Lucide Icons para la interfaz y la gestión de posiciones.",
+    licensesGemini: "Las imágenes de planillas subidas por el usuario pueden ser procesadas mediante Gemini API / Google AI Studio para extraer las jugadas.",
+    licensesTrigger: "Licencias y avisos de terceros",
   },
 };
 
@@ -412,6 +437,7 @@ export default function GameDetail() {
   const [showSheetMobile, setShowSheetMobile] = useState(false);
   const [sheetOverride, setSheetOverride] = useState<number | null>(null);
   const [showAnalysis, setShowAnalysis] = useState(false);
+  const [showLicenses, setShowLicenses] = useState(false);
 
   // ─── Analysis sandbox ────────────────────────────────────────────────────────
   // Gate verbose sandbox tracing behind this flag.
@@ -818,6 +844,18 @@ export default function GameDetail() {
 
       <main className="flex-1 max-w-7xl mx-auto w-full pt-2 px-4 pb-4 flex flex-col gap-1">
 
+        {/* Stockfish 18 pill — shown when analysis is active */}
+        {showAnalysis && (
+          <div className="flex items-center justify-center py-1">
+            <span
+              data-testid="badge-analysis-stockfish"
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-300 dark:border-amber-700"
+            >
+              {t.analysisWithStockfish}
+            </span>
+          </div>
+        )}
+
         {/* ── Shared header bar — hidden in analysis mode (controls move to sidebar) */}
         {!showAnalysis && (
           <div className="flex items-stretch gap-8">
@@ -1216,6 +1254,19 @@ export default function GameDetail() {
         </div>
         </div>{/* end content grid */}
       </main>
+
+      <LicensesDialog
+        open={showLicenses}
+        onOpenChange={setShowLicenses}
+        t={{
+          title: t.licensesTitle,
+          stockfish: t.licensesStockfish,
+          pythonChess: t.licensesPythonChess,
+          openSource: t.licensesOpenSource,
+          gemini: t.licensesGemini,
+          close: t.licensesClose,
+        }}
+      />
     </div>
   );
 }
