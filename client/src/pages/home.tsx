@@ -81,6 +81,7 @@ type UiText = {
   licensesPythonChess: string;
   licensesOpenSource: string;
   licensesGemini: string;
+  licensesTrademarks: string;
   licensesTrigger: string;
   analysisWithStockfish: string;
 };
@@ -211,6 +212,8 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
       "ChessLens també utilitza biblioteques de codi obert com chess.js, react-chessboard i Lucide Icons per a la interfície i la gestió de posicions.",
     licensesGemini:
       "Les imatges de planelles pujades per l'usuari poden ser processades mitjançant Gemini API / Google AI Studio per extreure'n les jugades.",
+    licensesTrademarks:
+      "Chess.com, Lichess.org i ChessBase són marques dels seus respectius titulars. ChessLens no està afiliada, patrocinada ni avalada per aquests serveis.",
     licensesTrigger: "Llicències i avisos de tercers",
     analysisWithStockfish: "Anàlisi amb Stockfish 18",
   },
@@ -272,6 +275,8 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
       "ChessLens also uses open-source libraries such as chess.js, react-chessboard and Lucide Icons for the interface and position management.",
     licensesGemini:
       "User-uploaded scoresheet images may be processed via Gemini API / Google AI Studio to extract moves.",
+    licensesTrademarks:
+      "Chess.com, Lichess.org and ChessBase are trademarks of their respective owners. ChessLens is not affiliated with, sponsored by, or endorsed by these services.",
     licensesTrigger: "Licences and third-party notices",
     analysisWithStockfish: "Analysis with Stockfish 18",
   },
@@ -332,6 +337,8 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
       "ChessLens también utiliza bibliotecas de código abierto como chess.js, react-chessboard y Lucide Icons para la interfaz y la gestión de posiciones.",
     licensesGemini:
       "Las imágenes de planillas subidas por el usuario pueden ser procesadas mediante Gemini API / Google AI Studio para extraer las jugadas.",
+    licensesTrademarks:
+      "Chess.com, Lichess.org y ChessBase son marcas de sus respectivos titulares. ChessLens no está afiliada, patrocinada ni avalada por estos servicios.",
     licensesTrigger: "Licencias y avisos de terceros",
     analysisWithStockfish: "Análisis con Stockfish 18",
   },
@@ -884,6 +891,7 @@ export default function Home() {
           pythonChess: t.licensesPythonChess,
           openSource: t.licensesOpenSource,
           gemini: t.licensesGemini,
+          trademarks: t.licensesTrademarks,
           close: t.licensesClose,
         }}
       />

@@ -23,6 +23,7 @@ interface LicensesDialogProps {
     pythonChess: string;
     openSource: string;
     gemini: string;
+    trademarks: string;
     close: string;
   };
 }
@@ -42,6 +43,7 @@ export function LicensesDialog({ open, onOpenChange, t }: LicensesDialogProps) {
           <p className="text-sm leading-relaxed">{t.pythonChess}</p>
           <p className="text-sm leading-relaxed">{t.openSource}</p>
           <p className="text-sm leading-relaxed">{t.gemini}</p>
+          <p className="text-sm leading-relaxed border-t pt-3">{t.trademarks}</p>
         </div>
 
         <DialogFooter>

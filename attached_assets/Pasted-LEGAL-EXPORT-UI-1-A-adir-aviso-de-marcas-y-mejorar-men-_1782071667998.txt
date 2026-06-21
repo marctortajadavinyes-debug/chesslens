@@ -1,0 +1,198 @@
+LEGAL.EXPORT.UI.1 — Añadir aviso de marcas y mejorar menú de exportación
+
+Modo recomendado:
+Lite
+
+Opciones:
+
+* App testing: NO
+* High effort: NO
+* Turbo: NO
+
+Objetivo:
+Actualizar el modal “Llicències i avisos de tercers” añadiendo una frase breve sobre marcas/no afiliación en los 3 idiomas actuales, y mejorar visualmente el menú de exportación PGN con iconos Lucide y botones diferenciados para Chess.com, Lichess.org y ChessBase.
+
+Esto es una tarea de UI/textos. No tocar motor.
+
+Puede tocar:
+
+* client/src/components/licenses-dialog.tsx
+* client/src/components/pgn-actions.tsx
+* archivos de traducciones/i18n si las traducciones están centralizadas
+* client/src/pages/home.tsx, solo si ahí están los textos/traducciones del modal de licencias
+* client/src/pages/game-detail.tsx, solo si ahí están duplicadas las traducciones del modal o del export menu
+* client/src/components/drive-game-viewer.tsx, solo si ahí están duplicadas las traducciones del modal o del export menu
+
+No puede tocar:
+
+* server/process_image_gemini.py
+* server/routes.ts
+* server/storage.ts
+* shared/schema.ts
+* OCR
+* parser
+* normalización
+* python-chess
+* generación PGN
+* review/corrección
+* resume/reanudación
+* multi-planilla
+* salto de fila
+* lógica de Stockfish
+* hooks de análisis
+* guardado en Drive
+* lógica real de exportación
+* package.json
+* vite.config.ts
+
+Tarea 1 — Añadir frase de marcas/no afiliación al modal
+
+En el modal “Llicències i avisos de tercers”, añadir al final del texto una frase breve en los 3 idiomas actuales.
+
+Catalán:
+Chess.com, Lichess.org i ChessBase són marques dels seus respectius titulars. ChessLens no està afiliada, patrocinada ni avalada per aquests serveis.
+
+Español:
+Chess.com, Lichess.org y ChessBase son marcas de sus respectivos titulares. ChessLens no está afiliada, patrocinada ni avalada por estos servicios.
+
+Inglés:
+Chess.com, Lichess.org and ChessBase are trademarks of their respective owners. ChessLens is not affiliated with, sponsored by, or endorsed by these services.
+
+Importante:
+
+* No añadir textos largos.
+* No añadir logos.
+* No mencionar partnerships, integraciones oficiales, colaboración ni patrocinio.
+* Mantener el modal limpio y discreto.
+
+Tarea 2 — Mejorar menú Exportar PGN
+
+Localiza el componente real del menú Exportar PGN.
+
+Probablemente:
+client/src/components/pgn-actions.tsx
+
+Actualizar las opciones del dropdown:
+
+1. Chess.com
+
+* Texto principal: Chess.com
+* Subtexto: Copiar PGN i obrir Chess.com / Copiar PGN y abrir Chess.com / Copy PGN and open Chess.com
+* Añadir icono Lucide ExternalLink delante del nombre.
+* Botón/fila con fondo negro y letras blancas.
+* No usar logo de Chess.com.
+* No copiar estética oficial de Chess.com.
+
+2. Lichess.org
+
+* Cambiar el texto visible de “Lichess” a:
+  Lichess.org
+* Subtexto: Copiar PGN i obrir Lichess.org / Copiar PGN y abrir Lichess.org / Copy PGN and open Lichess.org
+* Añadir icono Lucide ExternalLink delante del nombre.
+* Botón/fila con fondo gris y letras negras.
+* No usar logo de Lichess.
+* No copiar estética oficial de Lichess.
+
+3. ChessBase
+
+* Texto principal: ChessBase
+* Subtexto: Descarregar PGN compatible / Descargar PGN compatible / Download compatible PGN
+* Añadir icono Lucide Download o FileDown delante del nombre.
+* Botón/fila con fondo rojo y letras blancas.
+* No usar logo de ChessBase.
+* No copiar estética oficial de ChessBase.
+
+Tarea 3 — Mantener comportamiento actual
+
+No cambiar lo que hace cada opción:
+
+* Chess.com:
+  sigue copiando PGN y abriendo Chess.com.
+* Lichess.org:
+  sigue copiando PGN y abriendo Lichess.
+* ChessBase:
+  sigue descargando el archivo .pgn compatible.
+
+Solo cambiar:
+
+* textos visibles;
+* iconos;
+* estilos visuales de las filas/botones.
+
+Tarea 4 — Estilo visual
+
+El menú debe seguir pareciendo de ChessLens.
+
+Permitido:
+
+* fondos negro/gris/rojo como diferenciación visual;
+* iconos Lucide genéricos;
+* bordes suaves;
+* hover limpio;
+* texto legible.
+
+No permitido:
+
+* logos oficiales;
+* colores exactos copiados de guías de marca;
+* estética completa de Chess.com, Lichess o ChessBase;
+* claims de afiliación.
+
+Tarea 5 — Verificación por grep
+
+Después de editar, ejecutar:
+
+grep -RIn "marques dels seus respectius titulars|marcas de sus respectivos titulares|trademarks of their respective owners" client/src
+
+grep -RIn "Lichess.org" client/src
+
+grep -RIn "ExternalLink|Download|FileDown" client/src/components/pgn-actions.tsx
+
+Deben aparecer resultados coherentes.
+
+Tarea 6 — Check/build
+
+Ejecutar:
+
+npm run check
+npm run build
+
+Tarea 7 — Comprobación manual mínima
+
+Comprobar:
+
+A. Modal de licencias:
+
+* en catalán aparece la frase de marcas/no afiliación;
+* en español aparece la frase de marcas/no afiliación;
+* en inglés aparece la frase de marcas/no afiliación;
+* el modal sigue cerrando con “Tancar” / “Cerrar” / “Close” según idioma.
+
+B. Menú Exportar:
+
+* Chess.com aparece con icono ExternalLink;
+* Lichess.org aparece con icono ExternalLink;
+* ChessBase aparece con icono Download/FileDown;
+* Chess.com tiene fondo negro y letras blancas;
+* Lichess.org tiene fondo gris y letras negras;
+* ChessBase tiene fondo rojo y letras blancas;
+* las acciones siguen funcionando igual que antes.
+
+Criterios de aceptación:
+
+* No se han usado logos oficiales.
+* No se han tocado archivos protegidos.
+* No se ha cambiado la lógica de exportación, solo UI/texto.
+* npm run check pasa.
+* npm run build pasa.
+
+Respuesta final obligatoria:
+Indica:
+
+1. Archivos modificados.
+2. Resultado de los grep.
+3. Si se tocó algún archivo protegido.
+4. Resultado de npm run check.
+5. Resultado de npm run build.
+6. Confirmación visual del modal de licencias.
+7. Confirmación visual del menú Exportar actualizado.

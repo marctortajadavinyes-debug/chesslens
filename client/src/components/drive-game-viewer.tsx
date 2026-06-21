@@ -597,6 +597,7 @@ export function DriveGameViewer({
           pythonChess: "ChessLens utilitza python-chess al servidor per validar jugades i generar PGN.",
           openSource: "ChessLens també utilitza biblioteques de codi obert com chess.js, react-chessboard i Lucide Icons per a la interfície i la gestió de posicions.",
           gemini: "Les imatges de planelles pujades per l'usuari poden ser processades mitjançant Gemini API / Google AI Studio per extreure'n les jugades.",
+          trademarks: "Chess.com, Lichess.org i ChessBase són marques dels seus respectius titulars. ChessLens no està afiliada, patrocinada ni avalada per aquests serveis.",
           close: "Tancar",
         }}
       />

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Copy, Download, Share2, CloudUpload, Check } from "lucide-react";
+import { Copy, Download, Share2, CloudUpload, Check, ExternalLink, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -92,8 +92,8 @@ const TEXT: Record<AppLanguage, ActionsText> = {
       "El PGN s'ha guardat, però no s'ha pogut pujar alguna imatge.",
     export: "Exportar",
     exportTitle: "Exportar partida",
-    exportLichess: "Lichess",
-    exportLichessDesc: "Copiar PGN i obrir Lichess",
+    exportLichess: "Lichess.org",
+    exportLichessDesc: "Copiar PGN i obrir Lichess.org",
     exportChessCom: "Chess.com",
     exportChessComDesc: "Copiar PGN i obrir Chess.com",
     exportChessBase: "ChessBase",
@@ -125,8 +125,8 @@ const TEXT: Record<AppLanguage, ActionsText> = {
       "The PGN was saved, but one or more images could not be uploaded.",
     export: "Export",
     exportTitle: "Export game",
-    exportLichess: "Lichess",
-    exportLichessDesc: "Copy PGN and open Lichess",
+    exportLichess: "Lichess.org",
+    exportLichessDesc: "Copy PGN and open Lichess.org",
     exportChessCom: "Chess.com",
     exportChessComDesc: "Copy PGN and open Chess.com",
     exportChessBase: "ChessBase",
@@ -158,8 +158,8 @@ const TEXT: Record<AppLanguage, ActionsText> = {
       "El PGN se ha guardado, pero no se ha podido subir alguna imagen.",
     export: "Exportar",
     exportTitle: "Exportar partida",
-    exportLichess: "Lichess",
-    exportLichessDesc: "Copiar PGN y abrir Lichess",
+    exportLichess: "Lichess.org",
+    exportLichessDesc: "Copiar PGN y abrir Lichess.org",
     exportChessCom: "Chess.com",
     exportChessComDesc: "Copiar PGN y abrir Chess.com",
     exportChessBase: "ChessBase",
@@ -548,38 +548,41 @@ export function PgnActions({
                 <span className="lg:hidden">{t.export}</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64">
-              <DropdownMenuLabel>{t.exportTitle}</DropdownMenuLabel>
+            <DropdownMenuContent align="end" className="w-64 p-1.5 space-y-1">
+              <DropdownMenuLabel className="px-1 pb-1">{t.exportTitle}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={handleExportChessCom}
                 data-testid="menu-item-export-chesscom"
-                className="flex flex-col items-start gap-0.5 cursor-pointer"
+                className="flex items-start gap-2.5 cursor-pointer rounded-md px-2.5 py-2 mt-1 bg-black text-white hover:bg-neutral-800 focus:bg-neutral-800 focus:text-white"
               >
-                <span className="font-medium">{t.exportChessCom}</span>
-                <span className="text-xs text-muted-foreground">
-                  {t.exportChessComDesc}
-                </span>
+                <ExternalLink className="w-4 h-4 mt-0.5 shrink-0" />
+                <div className="flex flex-col gap-0.5">
+                  <span className="font-medium text-sm">{t.exportChessCom}</span>
+                  <span className="text-xs opacity-70">{t.exportChessComDesc}</span>
+                </div>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={handleExportLichess}
                 data-testid="menu-item-export-lichess"
-                className="flex flex-col items-start gap-0.5 cursor-pointer"
+                className="flex items-start gap-2.5 cursor-pointer rounded-md px-2.5 py-2 bg-slate-100 text-slate-900 hover:bg-slate-200 focus:bg-slate-200 focus:text-slate-900 dark:bg-slate-700 dark:text-slate-100 dark:hover:bg-slate-600 dark:focus:bg-slate-600"
               >
-                <span className="font-medium">{t.exportLichess}</span>
-                <span className="text-xs text-muted-foreground">
-                  {t.exportLichessDesc}
-                </span>
+                <ExternalLink className="w-4 h-4 mt-0.5 shrink-0" />
+                <div className="flex flex-col gap-0.5">
+                  <span className="font-medium text-sm">{t.exportLichess}</span>
+                  <span className="text-xs opacity-60">{t.exportLichessDesc}</span>
+                </div>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={handleExportChessBase}
                 data-testid="menu-item-export-chessbase"
-                className="flex flex-col items-start gap-0.5 cursor-pointer"
+                className="flex items-start gap-2.5 cursor-pointer rounded-md px-2.5 py-2 bg-red-600 text-white hover:bg-red-700 focus:bg-red-700 focus:text-white"
               >
-                <span className="font-medium">{t.exportChessBase}</span>
-                <span className="text-xs text-muted-foreground">
-                  {t.exportChessBaseDesc}
-                </span>
+                <FileDown className="w-4 h-4 mt-0.5 shrink-0" />
+                <div className="flex flex-col gap-0.5">
+                  <span className="font-medium text-sm">{t.exportChessBase}</span>
+                  <span className="text-xs opacity-80">{t.exportChessBaseDesc}</span>
+                </div>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
