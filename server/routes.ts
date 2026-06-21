@@ -5,6 +5,7 @@ import path from "path";
 import type { Express } from "express";
 import { Chess } from "chess.js";
 import type { Server } from "http";
+import { analyzePosition as sfAnalyzePosition } from "./stockfish";
 
 type ReviewSide = "w" | "b";
 
@@ -1090,6 +1091,33 @@ export async function registerRoutes(_httpServer: Server, app: Express) {
       return res.status(500).json({
         message: String(e),
       });
+    }
+  });
+
+  // ── POST /api/analysis/position ─────────────────────────────────────────────
+  // Server-side Stockfish analysis. Frontend never loads Stockfish WASM/JS.
+  app.post("/api/analysis/position", async (req, res) => {
+    try {
+      const { fen, multipv, depth, maxTimeMs } = req.body as {
+        fen?: unknown;
+        multipv?: unknown;
+        depth?: unknown;
+        maxTimeMs?: unknown;
+      };
+
+      if (typeof fen !== "string" || !fen.trim()) {
+        return res.status(400).json({ ok: false, error: "Missing or invalid fen" });
+      }
+
+      const result = await sfAnalyzePosition(fen.trim(), {
+        multiPV: typeof multipv === "number" ? Math.min(Math.max(1, multipv), 5) : 2,
+        depth: typeof depth === "number" ? Math.min(Math.max(1, depth), 20) : 12,
+        maxTimeMs: typeof maxTimeMs === "number" ? Math.min(Math.max(1000, maxTimeMs), 15000) : 8000,
+      });
+
+      return res.json(result);
+    } catch (e) {
+      return res.status(500).json({ ok: false, error: String(e) });
     }
   });
 }

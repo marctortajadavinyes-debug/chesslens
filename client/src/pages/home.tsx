@@ -13,7 +13,6 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { useCreateGame, useGames } from "@/hooks/use-games";
-import { getStockfishWorker } from "@/lib/stockfish-worker";
 import { analyzePgn } from "@/lib/pgn-analysis";
 import { AnalysisPanel } from "@/components/analysis-panel";
 import { Button } from "@/components/ui/button";
@@ -306,9 +305,6 @@ function getSheetFormatLabel(appLanguage: AppLanguage, value: SheetFormat) {
   );
 }
 
-/** Set to true only during local Stockfish dev — never ships enabled. */
-const SHOW_STOCKFISH_DEV_TOOLS = false;
-
 export default function Home() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
@@ -326,7 +322,6 @@ export default function Home() {
   // draftSettings holds unsaved form changes; only applied to settings on Save.
   const [draftSettings, setDraftSettings] =
     useState<ChessLensUserSettings>(DEFAULT_SETTINGS);
-  const [showDevPanel, setShowDevPanel] = useState(false);
 
   const t = UI_TEXT[settings.appLanguage] ?? UI_TEXT.ca;
 
@@ -683,129 +678,6 @@ export default function Home() {
                     </select>
                   </div>
                 </div>
-
-                {/* [DEV] Stockfish tools — hidden in production via SHOW_STOCKFISH_DEV_TOOLS */}
-                {SHOW_STOCKFISH_DEV_TOOLS && (
-                <div className="border border-dashed border-border rounded-xl p-3 space-y-2 bg-muted/10 opacity-70">
-                  <p className="text-xs text-muted-foreground font-mono">[DEV] SF eval + panel (SF.1 · SF.2.1 · SF.3A)</p>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="flex-1 text-xs"
-                      onClick={async () => {
-                        const sf = getStockfishWorker();
-                        try {
-                          console.log("[SF.1] Init worker…");
-                          await sf.init();
-                          console.log("[SF.1] uciok + readyok ✓");
-                          const fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1";
-                          const r = await sf.analyze(fen, 10);
-                          console.log("[SF.1] bestmove:", r.bestMove, "depth:", r.depth, "cp:", r.scoreCp);
-                          toast({ title: `SF.1 OK · ${r.bestMove}`, duration: 3000 });
-                        } catch (err) {
-                          console.error("[SF.1]", err);
-                          toast({ title: `SF.1 Error`, variant: "destructive", duration: 3000 });
-                        }
-                      }}
-                      data-testid="button-dev-sf1-test"
-                    >SF.1 Worker</Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="flex-1 text-xs"
-                      onClick={async () => {
-                        // SF.2.1 eval direction validation
-                        // Rule: evalLossCp always ≥ 0; good move → 0; bad move → high positive
-                        // Eval always from White's perspective: + = White better, - = Black better
-
-                        function logMove(prefix: string, mv: { ply: number; side: string; san: string; evalBeforeCpWhite?: number; evalAfterCpWhite?: number; evalLossCp?: number; label?: string }) {
-                          const before = mv.evalBeforeCpWhite !== undefined ? (mv.evalBeforeCpWhite / 100).toFixed(2) : "?";
-                          const after  = mv.evalAfterCpWhite  !== undefined ? (mv.evalAfterCpWhite  / 100).toFixed(2) : "?";
-                          const loss   = mv.evalLossCp !== undefined ? mv.evalLossCp : "?";
-                          console.log(
-                            `${prefix} ply=${mv.ply} ${mv.side === "w" ? "W" : "B"} ${mv.san}` +
-                            ` | before=${before} after=${after} loss=${loss}cp label=${mv.label ?? "-"}`
-                          );
-                        }
-
-                        // PGN A: normal Ruy Lopez — expect all excellent/good
-                        const pgnA = `[Event "A-Normal"]
-1. d4 d5 2. Nf3 Nf6 3. c4 e6 4. Nc3 Be7 5. e3 O-O *`;
-
-                        // PGN B: White queen blunder on ply 7 (4.Qxg6?? loses the queen to hxg6)
-                        // Expect ply 7 White move: high evalLossCp → blunder
-                        const pgnB = `[Event "B-WhiteBlunder"]
-1. e4 e5 2. Qh5 Nc6 3. Bc4 g6 4. Qxg6 hxg6 *`;
-
-                        // PGN C: Black falls into Legal's Trap (6...Bxd1?? loses to Bxf7+ Ke7 Nd5#)
-                        // Expect ply 12 Black move: high evalLossCp → blunder
-                        const pgnC = `[Event "C-BlackBlunder"]
-1. e4 e5 2. Nf3 Nc6 3. Bc4 d6 4. Nc3 Bg4 5. h3 Bh5 6. Nxe5 Bxd1 *`;
-
-                        const tests = [
-                          { label: "A (normal)", pgn: pgnA, blunderPly: null as number | null },
-                          { label: "B (White blunder ply 7)", pgn: pgnB, blunderPly: 7 },
-                          { label: "C (Black blunder ply 12)", pgn: pgnC, blunderPly: 12 },
-                        ];
-
-                        let allOk = true;
-                        for (const t of tests) {
-                          try {
-                            console.log(`\n[SF.2.1] ── ${t.label} ──`);
-                            const result = await analyzePgn(t.pgn, { depth: 10, multiPV: 2 });
-                            for (const mv of result.moves) {
-                              logMove(`[SF.2.1]`, mv);
-                            }
-                            if (t.blunderPly !== null) {
-                              const blunder = result.moves.find(m => m.ply === t.blunderPly);
-                              if (blunder) {
-                                const isBlunder = (blunder.evalLossCp ?? 0) > 200;
-                                console.log(`[SF.2.1] ply ${t.blunderPly} evalLossCp=${blunder.evalLossCp} label=${blunder.label} → ${isBlunder ? "✓ BLUNDER detected" : "✗ NOT detected as blunder"}`);
-                                if (!isBlunder) allOk = false;
-                              }
-                            } else {
-                              const maxLoss = Math.max(0, ...result.moves.map(m => m.evalLossCp ?? 0));
-                              console.log(`[SF.2.1] max evalLossCp in normal game = ${maxLoss}cp`);
-                            }
-                          } catch (err) {
-                            console.error(`[SF.2.1] Error in ${t.label}:`, err);
-                            allOk = false;
-                          }
-                        }
-                        toast({
-                          title: allOk ? "SF.2.1 ✓ eval validation passed" : "SF.2.1 ✗ check console",
-                          variant: allOk ? "default" : "destructive",
-                          duration: 5000,
-                        });
-                      }}
-                      data-testid="button-dev-sf21-test"
-                    >SF.2.1 Val</Button>
-                    <Button
-                      type="button"
-                      variant={showDevPanel ? "secondary" : "ghost"}
-                      size="sm"
-                      className="flex-1 text-xs"
-                      onClick={() => setShowDevPanel((v) => !v)}
-                      data-testid="button-dev-sf3a-panel"
-                    >SF.3A Panel</Button>
-                  </div>
-
-                  {/* SF.3A: isolated panel test */}
-                  {showDevPanel && (
-                    <div className="border border-border/40 rounded-lg p-3 bg-background mt-1">
-                      <AnalysisPanel
-                        pgn={`[Event "SF.3A-Dev"]
-1. d4 d5 2. Nf3 Nf6 3. c4 e6 4. Nc3 Be7 5. e3 O-O 6. Bd3 c5 7. O-O cxd4 8. exd4 dxc4 9. Bxc4 Nc6 10. Be3 Bd7 *`}
-                        lang={settings.appLanguage}
-                        depth={10}
-                      />
-                    </div>
-                  )}
-                </div>
-                )}
 
                 {/* Suggestions section */}
                 <div className="border border-border rounded-xl p-3 space-y-2 bg-muted/20">

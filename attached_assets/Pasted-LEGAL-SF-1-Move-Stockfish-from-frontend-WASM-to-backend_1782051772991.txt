@@ -1,0 +1,206 @@
+LEGAL.SF.1 — Move Stockfish from frontend WASM to backend API
+
+Goal:
+Move Stockfish analysis out of the frontend/browser and into the backend, so the public app does not distribute Stockfish JS/WASM to users.
+
+Important product/legal reason:
+ChessLens must remain a closed-source online app. Stockfish is GPLv3, so the public frontend should not download or bundle Stockfish. Stockfish should run only on our server/backend. The frontend should receive only JSON analysis results.
+
+Recommended mode:
+Economy
+
+Options:
+
+* App testing: ON
+* High effort: OFF
+* Turbo: OFF
+
+Critical constraints:
+
+* Do NOT modify the OCR/parser engine.
+* Do NOT modify server/process_image_gemini.py.
+* Do NOT modify PGN generation, review, resume, correction flow, multi-sheet logic, Drive saving, or export logic.
+* Do NOT change the visible analysis UX unless strictly necessary.
+* Keep the current analysis UI: Analyze button, evaluation bar, 2 best lines, arrows, sandbox variants, “Tornar a la partida”, and Drive game analysis.
+* Stockfish remains strictly post-PGN.
+
+Current situation:
+The frontend currently uses Stockfish through Web Worker/WASM. This must be replaced by a backend endpoint.
+
+Target architecture:
+Frontend React
+→ calls backend endpoint
+→ backend runs Stockfish server-side
+→ backend returns JSON with eval + best lines
+→ frontend renders the same analysis UI as before
+
+Tasks:
+
+1. Inspect current Stockfish usage
+   Find all frontend imports/usages of Stockfish, Stockfish worker, WASM files, or local engine helpers.
+   Likely areas include:
+
+* client/src/lib/*
+* client/src/hooks/*
+* client/src/pages/game-detail.tsx
+* client/src/components/drive-game-viewer.tsx
+* any use-position-analysis hook
+* any stockfish worker/helper file
+
+2. Add backend analysis endpoint
+
+Create a backend endpoint, for example:
+
+POST /api/analysis/position
+
+Input JSON:
+{
+"fen": string,
+"multipv": number optional, default 2,
+"depth": number optional,
+"maxTimeMs": number optional,
+"scoresheetLanguage": "ca" | "es" | "en" optional
+}
+
+Output JSON:
+{
+"ok": true,
+"fen": string,
+"evalCpWhite": number,
+"lines": [
+{
+"rank": 1,
+"uci": string,
+"san": string,
+"evalCpWhite": number,
+"pvSan": string[],
+"pvUci": string[]
+}
+]
+}
+
+If there is an error:
+{
+"ok": false,
+"error": string
+}
+
+3. Run Stockfish only in backend
+
+Implement server-side Stockfish execution.
+
+Preferred approach:
+
+* Run Stockfish as a backend/server-only process.
+* Communicate with it using UCI.
+* Do not expose Stockfish JS/WASM files through Vite/public/client.
+* Do not import Stockfish from client code.
+* Do not put Stockfish files in client/public.
+
+The backend may use the existing stockfish dependency only if it is strictly server-side and not bundled into the client.
+
+Important:
+The browser must not download stockfish.js, stockfish.wasm, or any Stockfish worker file after this change.
+
+4. Preserve frontend analysis behavior
+
+Update the frontend position-analysis hook so it calls:
+
+POST /api/analysis/position
+
+instead of running Stockfish locally.
+
+Keep current behavior:
+
+* 2 lines by default
+* eval normalized from White’s perspective
+* evaluation bar unchanged
+* arrows unchanged
+* sandbox variants unchanged
+* “Tornar a la partida” unchanged
+* works in completed scanned games
+* works in Drive game viewer
+
+5. Keep language display behavior
+
+The backend may return SAN internally.
+The frontend should continue displaying moves according to the scoresheet language:
+
+* ca/es: N→C, B→A, R→T, Q→D, K→R where currently expected
+* en: standard SAN
+
+Do not change PGN storage or original scanned moves.
+
+6. Add a safety flag if useful
+
+If needed, add a server/client config flag such as:
+
+ENABLE_SERVER_STOCKFISH=true
+
+But do not leave the production path using client-side Stockfish.
+
+7. Remove/disable client-side Stockfish bundling
+
+After the frontend uses the backend endpoint:
+
+* Remove unused client Stockfish imports.
+* Remove unused client Stockfish worker code if safe.
+* Ensure Vite does not bundle Stockfish into the browser build.
+* Ensure no Stockfish WASM/worker asset is served from client/public.
+
+Do not remove files blindly if they are still needed during the migration. Prefer disabling imports first, then removing dead code only if safe.
+
+8. Testing
+
+Run:
+
+npm run check
+npm run build
+
+Then test manually or with App testing:
+
+A. Completed scanned game:
+
+* Open a completed game.
+* Click “Analitzar”.
+* Evaluation bar appears.
+* 2 best lines appear.
+* Arrows appear if enabled.
+* Sandbox variants still work.
+* “Tornar a la partida” still works.
+* Original PGN/move list is not modified.
+
+B. Drive game viewer:
+
+* Open a saved/Drive game.
+* Click “Analitzar”.
+* Same behavior as completed scanned game.
+
+C. Browser/network check:
+
+* Confirm frontend calls /api/analysis/position.
+* Confirm browser does NOT download stockfish.js, stockfish.wasm, or a Stockfish worker file.
+
+D. Protected engine check:
+
+* Upload/parse/review/resume flow remains untouched.
+* No changes to OCR/parser behavior.
+
+Acceptance criteria:
+
+* Stockfish no longer runs in the browser.
+* Stockfish is not bundled into the public frontend.
+* Backend endpoint returns analysis results.
+* Existing analysis UI still works.
+* No OCR/parser/review/resume/PGN regression.
+* npm run check passes.
+* npm run build passes.
+
+Final response:
+Summarize:
+
+* files changed
+* whether any Stockfish frontend imports/assets remain
+* test results
+* whether npm run check/build passed
+* whether analysis still works in completed games and Drive viewer
