@@ -66,6 +66,14 @@ type GameDetailText = {
   showArrows: string;
   hideArrows: string;
   returnToGame: string;
+  analysisWithStockfish: string;
+  licensesTitle: string;
+  licensesClose: string;
+  licensesStockfish: string;
+  licensesPythonChess: string;
+  licensesOpenSource: string;
+  licensesGemini: string;
+  licensesTrigger: string;
 };
 
 const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {

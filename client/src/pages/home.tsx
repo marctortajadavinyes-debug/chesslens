@@ -16,6 +16,7 @@ import { useCreateGame, useGames } from "@/hooks/use-games";
 import { analyzePgn } from "@/lib/pgn-analysis";
 import { AnalysisPanel } from "@/components/analysis-panel";
 import { Button } from "@/components/ui/button";
+import { LicensesDialog } from "@/components/licenses-dialog";
 import { GameCard } from "@/components/game-card";
 import { useToast } from "@/hooks/use-toast";
 import type {
@@ -74,6 +75,14 @@ type UiText = {
   suggestionsDescription: string;
   suggestionsButton: string;
   suggestionsBody: string;
+  licensesTitle: string;
+  licensesClose: string;
+  licensesStockfish: string;
+  licensesPythonChess: string;
+  licensesOpenSource: string;
+  licensesGemini: string;
+  licensesTrigger: string;
+  analysisWithStockfish: string;
 };
 
 const SETTINGS_STORAGE_KEY = "chesslens_user_settings_v1";
@@ -192,6 +201,18 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
       "Ajuda'ns a millorar ChessLens. Escriu-nos qualsevol idea, problema o millora que vulguis proposar.",
     suggestionsButton: "Enviar suggeriment",
     suggestionsBody: "Escriu aquí el teu suggeriment:",
+    licensesTitle: "Llicències i avisos de tercers",
+    licensesClose: "Tancar",
+    licensesStockfish:
+      "ChessLens utilitza Stockfish per a l'anàlisi d'escacs. Stockfish és un motor d'escacs lliure i de codi obert sota llicència GPLv3.",
+    licensesPythonChess:
+      "ChessLens utilitza python-chess al servidor per validar jugades i generar PGN.",
+    licensesOpenSource:
+      "ChessLens també utilitza biblioteques de codi obert com chess.js, react-chessboard i Lucide Icons per a la interfície i la gestió de posicions.",
+    licensesGemini:
+      "Les imatges de planelles pujades per l'usuari poden ser processades mitjançant Gemini API / Google AI Studio per extreure'n les jugades.",
+    licensesTrigger: "Llicències i avisos de tercers",
+    analysisWithStockfish: "Anàlisi amb Stockfish 18",
   },
   en: {
     library: "My games",
@@ -241,6 +262,18 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
       "Help us improve ChessLens. Send us any idea, issue, or improvement you would like to suggest.",
     suggestionsButton: "Send suggestion",
     suggestionsBody: "Write your suggestion here:",
+    licensesTitle: "Licences and third-party notices",
+    licensesClose: "Close",
+    licensesStockfish:
+      "ChessLens uses Stockfish for chess analysis. Stockfish is a free and open-source chess engine under the GPLv3 licence.",
+    licensesPythonChess:
+      "ChessLens uses python-chess on the server to validate moves and generate PGN.",
+    licensesOpenSource:
+      "ChessLens also uses open-source libraries such as chess.js, react-chessboard and Lucide Icons for the interface and position management.",
+    licensesGemini:
+      "User-uploaded scoresheet images may be processed via Gemini API / Google AI Studio to extract moves.",
+    licensesTrigger: "Licences and third-party notices",
+    analysisWithStockfish: "Analysis with Stockfish 18",
   },
   es: {
     library: "Mis partidas",
@@ -289,6 +322,18 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
       "Ayúdanos a mejorar ChessLens. Escríbenos cualquier idea, problema o mejora que quieras proponer.",
     suggestionsButton: "Enviar sugerencia",
     suggestionsBody: "Escribe aquí tu sugerencia:",
+    licensesTitle: "Licencias y avisos de terceros",
+    licensesClose: "Cerrar",
+    licensesStockfish:
+      "ChessLens utiliza Stockfish para el análisis de ajedrez. Stockfish es un motor de ajedrez libre y de código abierto bajo licencia GPLv3.",
+    licensesPythonChess:
+      "ChessLens utiliza python-chess en el servidor para validar jugadas y generar PGN.",
+    licensesOpenSource:
+      "ChessLens también utiliza bibliotecas de código abierto como chess.js, react-chessboard y Lucide Icons para la interfaz y la gestión de posiciones.",
+    licensesGemini:
+      "Las imágenes de planillas subidas por el usuario pueden ser procesadas mediante Gemini API / Google AI Studio para extraer las jugadas.",
+    licensesTrigger: "Licencias y avisos de terceros",
+    analysisWithStockfish: "Análisis con Stockfish 18",
   },
 };
 

@@ -1,0 +1,172 @@
+LEGAL.UI.1 — Añadir avisos de terceros y atribución discreta a Stockfish
+
+Modo recomendado:
+Lite
+
+Opciones:
+
+* App testing: NO
+* High effort: NO
+* Turbo: NO
+
+Objetivo:
+Añadir en Configuració una sección discreta de “Llicències i avisos de tercers” y una pequeña atribución visual a Stockfish en modo análisis, sin tocar el motor OCR/parser ni cambiar cómo funciona el análisis.
+
+Esto es una tarea de UI/documentación. No es una tarea de motor.
+
+Puede tocar:
+
+* client/src/pages/settings.tsx, si existe y es donde está Configuració
+* client/src/pages/home.tsx, solo si Configuració está implementado ahí
+* client/src/components/settings*, si existen componentes específicos de configuración
+* client/src/components/analysis*, solo si ahí se pinta la zona visual del análisis
+* client/src/pages/game-detail.tsx, solo si es imprescindible para mostrar la pastilla “Anàlisi amb Stockfish 18”
+* client/src/components/drive-game-viewer.tsx, solo si es imprescindible para mostrar la misma pastilla en partidas abiertas desde Drive
+* componentes UI ya existentes de Dialog/Modal/Button si ya se usan en el proyecto
+* archivos de traducciones/i18n solo si las etiquetas están centralizadas ahí
+
+No puede tocar:
+
+* server/process_image_gemini.py
+* server/routes.ts, salvo que sea absolutamente necesario para leer un engineName ya existente; en principio NO tocar
+* server/storage.ts
+* shared/schema.ts
+* OCR
+* normalización
+* validación con python-chess
+* generación de PGN
+* review/corrección
+* resume/reanudación
+* multi-planilla
+* salto de fila
+* guardado en Drive
+* exportación PGN a Chess.com/Lichess/ChessBase
+* lógica real de Stockfish
+* hooks de análisis, salvo que sea estrictamente necesario para mostrar un texto visual
+* configuración de Vite/build
+* package.json
+
+Tarea 1 — Ajustar zona inferior de Configuració
+
+En la pantalla de Configuració, en la parte inferior donde ahora aparecen:
+
+* bloque grande de “Suggeriments”
+* botones “Cancel·lar” y “Desar configuració”
+
+hacer lo siguiente:
+
+* Reducir visualmente el bloque/botón de “Suggeriments” para que no ocupe tanto.
+* Añadir un enlace o botón discreto con el texto:
+  “Llicències i avisos de tercers”
+* Mantener “Cancel·lar” y “Desar configuració” a la derecha y sin cambiar su comportamiento.
+* En desktop, diseño recomendado:
+  izquierda: “Llicències i avisos de tercers” + “Suggeriments” pequeño
+  derecha: “Cancel·lar” + “Desar configuració”
+* En móvil, permitir que los enlaces se apilen de forma limpia por encima de Cancel/Save si hace falta.
+
+Tarea 2 — Modal de “Llicències i avisos de tercers”
+
+Al hacer clic en “Llicències i avisos de tercers”, abrir un modal/dialog sencillo.
+
+Título:
+Llicències i avisos de tercers
+
+Texto del modal:
+
+ChessLens utilitza Stockfish per a l’anàlisi d’escacs. Stockfish és un motor d’escacs lliure i de codi obert sota llicència GPLv3.
+
+ChessLens utilitza python-chess al servidor per validar jugades i generar PGN.
+
+ChessLens també utilitza biblioteques de codi obert com chess.js, react-chessboard i Lucide Icons per a la interfície i la gestió de posicions.
+
+Les imatges de planilles pujades per l’usuari poden ser processades mitjançant Gemini API / Google AI Studio per extreure’n les jugades.
+
+Botón de cierre:
+Tancar
+
+El modal debe ser discreto, limpio y no demasiado grande.
+
+Tarea 3 — Pastilla discreta de Stockfish en modo análisis
+
+En la UI de análisis, añadir una etiqueta pequeña, no protagonista.
+
+Texto preferido:
+Anàlisi amb Stockfish 18
+
+Debe aparecer solo cuando el modo análisis esté activo.
+
+Debe ser:
+
+* pequeña
+* discreta
+* tipo etiqueta/pastilla, no botón principal
+* sin añadir altura vertical innecesaria
+* sin molestar a:
+
+  * “Sortir d’anàlisi”
+  * “Amagar/Mostrar fletxes”
+  * líneas PV
+  * tablero
+  * flechas
+  * sandbox de variantes
+  * “Tornar a la partida”
+
+Si es fácil, la pastilla puede abrir el mismo modal de “Llicències i avisos de tercers”.
+Si no es fácil, dejarla como texto visual sin interacción.
+
+Tarea 4 — No añadir detalles internos
+
+No mencionar en la UI:
+
+* versión de Gemini
+* prompt OCR
+* pipeline A3
+* heurísticas de normalización
+* reglas internas del parser
+* profundidad Stockfish
+* MultiPV
+* arquitectura privada
+* detalles técnicos competitivos
+
+Tarea 5 — Pruebas
+
+Ejecutar:
+
+npm run check
+npm run build
+
+Comprobaciones manuales:
+
+* Configuració abre correctamente.
+* “Suggeriments” sigue existiendo, pero más pequeño.
+* “Llicències i avisos de tercers” abre el modal.
+* El modal se puede cerrar con “Tancar”.
+* “Cancel·lar” sigue descartando cambios.
+* “Desar configuració” sigue guardando cambios.
+* En modo análisis aparece “Anàlisi amb Stockfish 18”.
+* El análisis sigue funcionando igual que antes.
+* No cambia el PGN.
+* No cambia el tablero.
+* No cambia el sandbox.
+* No cambia Drive.
+* No cambia exportación.
+* No cambia OCR/parser/review/resume.
+
+Criterios de aceptación:
+
+* La zona inferior de Configuració queda más limpia.
+* Los avisos de terceros son accesibles.
+* La atribución de Stockfish aparece de forma discreta en análisis.
+* No se han tocado archivos protegidos del motor.
+* npm run check pasa.
+* npm run build pasa.
+
+Respuesta final esperada:
+Indica:
+
+* archivos modificados
+* si se tocó o no algún archivo protegido
+* dónde se añadió el modal
+* dónde aparece la pastilla “Anàlisi amb Stockfish 18”
+* resultado de npm run check
+* resultado de npm run build

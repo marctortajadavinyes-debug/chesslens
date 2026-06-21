@@ -29,6 +29,7 @@ const LABEL: Record<
     returnToGame: string;
     showArrows: string;
     hideArrows: string;
+    analysisWithStockfish: string;
   }
 > = {
   ca: {
