@@ -516,8 +516,8 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-white/50 backdrop-blur-md sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-12 sm:h-16 flex items-center gap-2">
-          {/* Logo — ancorat a l'esquerra */}
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-0 sm:h-16 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-2">
+          {/* Marca — fila 1 en mòbil, esquerra en sm+ */}
           <div className="flex items-center gap-2 shrink-0">
             <img
               src="/fotochess-icon.png"
@@ -527,14 +527,14 @@ export default function Home() {
             />
             <div className="flex flex-col leading-none">
               <span className="font-display font-bold text-base sm:text-xl">FotoChess</span>
-              <span className="hidden md:inline text-[10px] text-muted-foreground tracking-wide mt-0.5">
+              <span className="text-[10px] text-muted-foreground tracking-wide mt-0.5">
                 Scan. Save PGN. Analyze. Improve.
               </span>
             </div>
           </div>
 
-          {/* Botó biblioteca — centrat en mòbil */}
-          <div className="flex-1 flex justify-center">
+          {/* Botons — fila 2 en mòbil, centre/dreta en sm+ */}
+          <div className="flex items-center justify-center sm:justify-end gap-2 sm:flex-1">
             <Link href="/library">
               <Button
                 type="button"
@@ -542,26 +542,24 @@ export default function Home() {
                 size="sm"
                 data-testid="link-library"
               >
-                <Library className="w-4 h-4 sm:mr-2" />
+                <Library className="w-4 h-4 mr-2" />
                 {t.library}
               </Button>
             </Link>
+            {hasSavedSettings && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => { setDraftSettings(settings); setShowSettings(true); }}
+                disabled={isUploading}
+                className="shrink-0"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                {t.settingsButton}
+              </Button>
+            )}
           </div>
-
-          {/* Configuració — ancorat a la dreta, icona sola en mòbil */}
-          {hasSavedSettings && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => { setDraftSettings(settings); setShowSettings(true); }}
-              disabled={isUploading}
-              className="shrink-0"
-            >
-              <Settings className="w-4 h-4 sm:mr-2" />
-              <span className="hidden sm:inline">{t.settingsButton}</span>
-            </Button>
-          )}
         </div>
       </header>
 
@@ -592,8 +590,8 @@ export default function Home() {
                 />
               </div>
 
-              {/* Columna dreta — Configuració actual compacta en mòbil */}
-              <div className="flex h-full items-center justify-center px-2 sm:px-4">
+              {/* Columna dreta — Configuració actual alineada a la dreta */}
+              <div className="flex h-full items-center justify-end px-1 sm:px-4">
                 <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-[#fbfbf8] px-2.5 py-2 sm:px-4 sm:py-3 text-left shadow-sm">
                   <div className="text-xs sm:text-sm font-semibold text-slate-950">
                     {t.currentSettings}

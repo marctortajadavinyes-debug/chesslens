@@ -1,0 +1,94 @@
+Vamos a ajustar SOLO la home móvil en client/src/pages/home.tsx.
+
+Objetivo:
+Reorganizar el header móvil en dos niveles y ajustar la tarjeta “Configuració actual” dentro del hero.
+
+Archivo que puede tocar:
+- client/src/pages/home.tsx
+
+Archivos que NO debe tocar:
+- server/process_image_gemini.py
+- server/routes.ts
+- OCR
+- parser
+- Gemini
+- python-chess
+- Stockfish
+- Drive
+- exportaciones
+- game-detail.tsx
+- pgn-actions.tsx
+- licenses-dialog.tsx
+- save-game-metadata-dialog.tsx
+- biblioteca / drive viewer
+- manifest / service worker
+- assets / imágenes
+
+Cambios concretos:
+
+1. Header móvil en dos niveles
+En móvil, dejar de intentar meter marca, “Les meves partides” y “Configuració” en una sola fila.
+
+Crear una estructura móvil tipo:
+
+Nivel 1:
+- izquierda: icono FotoChess + texto FotoChess
+- debajo de FotoChess, visible también en móvil:
+  Scan. Save PGN. Analyze. Improve.
+
+Nivel 2:
+- botón “Les meves partides”
+- botón “Configuració” con icono de rueda + texto “Configuració”
+
+La idea visual:
+- FotoChess debe quedar un poco más arriba.
+- El tagline debe quedar justo debajo de FotoChess.
+- “Les meves partides” y “Configuració” deben quedar en una segunda fila debajo de la marca y antes del título “Digitalitza la teva partida d’escacs”.
+- Puede aumentar un poco la altura total del header móvil. Es aceptable.
+- Evitar scroll horizontal y evitar que los botones se pisen en 390px.
+
+2. Marca FotoChess
+- Mantener el icono actual:
+  /fotochess-icon.png
+- Mantener alt="" y aria-hidden="true".
+- Mantener el icono con buena presencia.
+- No reducir más el icono.
+- Mantener “FotoChess” como texto, no imagen.
+- Mostrar el tagline en móvil:
+  Scan. Save PGN. Analyze. Improve.
+- Tagline pequeño, gris/muted, debajo del nombre.
+
+3. Botones de segundo nivel móvil
+- “Les meves partides” debe quedar con protagonismo.
+- “Configuració” debe mostrar icono + texto también en móvil.
+- Ambos botones deben caber bien en 390px.
+- Si hace falta, usar size sm, gap-2, justify-between o layout equivalente.
+- No usar posicionamientos absolutos.
+
+4. Desktop/tablet
+- No romper tablet/desktop.
+- Si el layout actual de desktop funciona, mantenerlo o adaptar mínimamente.
+- El cambio prioritario es móvil 390x844.
+
+5. Hero móvil: tarjeta “Configuració actual”
+- Dentro del bloque hero donde está la Dama escaneando, mover la tarjeta “Configuració actual” más hacia la derecha.
+- La tarjeta debe acercarse al borde derecho del recuadro grande.
+- El borde derecho de la tarjeta debe quedar alineado, o casi alineado, con el borde derecho del recuadro hero.
+- No debe salirse ni romper en móvil.
+- Mantenerla dentro del recuadro hero, no debajo.
+
+6. Restricciones
+- No tocar upload.
+- No tocar configuración.
+- No tocar licencias.
+- No tocar sugerencias.
+- No tocar detalle de partida.
+- No tocar lógica funcional.
+- No cambiar textos salvo los necesarios para mostrar “Configuració” en el botón móvil.
+
+7. Al final ejecutar:
+npm run check
+
+8. Mostrar:
+git diff -- client/src/pages/home.tsx
+git diff --name-only
