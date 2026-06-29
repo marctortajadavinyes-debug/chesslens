@@ -1,0 +1,81 @@
+Queremos ajustar SOLO la marca visual del header principal de FotoChess.
+
+Objetivo:
+1. Agrandar ligeramente el icono de FotoChess.
+2. Añadir debajo del texto “FotoChess” un subtítulo pequeño:
+   Scan. Save PGN. Analyze. Improve.
+3. Mantener el header limpio y proporcionado.
+
+Archivos que puede tocar:
+- client/src/pages/home.tsx
+- si existe un componente específico de header/navbar usado por home, puede tocarlo solo para este ajuste
+
+Archivos que NO debe tocar:
+- server/process_image_gemini.py
+- server/routes.ts
+- OCR
+- parser
+- Gemini
+- python-chess
+- Stockfish
+- Drive logic
+- export logic
+- pgn-actions.tsx
+- game-detail.tsx
+- save-game-metadata-dialog.tsx
+- licenses-dialog.tsx
+- biblioteca / drive viewer
+- manifest / service worker
+
+Cambios concretos:
+
+1. Icono FotoChess
+- El icono actual ya carga correctamente desde:
+  /fotochess-icon.png
+- No cambiar la ruta.
+- No cambiar el archivo de imagen.
+- Aumentar ligeramente el tamaño visual del icono, aproximadamente un 15–20%.
+- Mantenerlo alineado con el bloque de texto.
+- No hacerlo demasiado grande.
+
+2. Texto FotoChess
+- Mantener “FotoChess” como texto HTML/React, no como imagen.
+- Mantener un tamaño y peso similares al actual.
+- Organizar el bloque de marca como:
+  icono a la izquierda
+  a la derecha:
+    FotoChess
+    Scan. Save PGN. Analyze. Improve.
+
+3. Subtítulo/tagline
+- Añadir exactamente este texto:
+  Scan. Save PGN. Analyze. Improve.
+- Debe ir debajo de “FotoChess”.
+- Tamaño pequeño, color gris/muted, poco protagonismo.
+- En móvil estrecho debe ocultarse para no recargar el header.
+  Usar algo tipo:
+  hidden md:block
+- En tablet/desktop sí puede verse.
+
+4. Responsive
+- En móvil debe seguir viéndose limpio:
+  icono + FotoChess
+  sin subtítulo
+- En tablet/desktop:
+  icono + FotoChess + subtítulo debajo
+- No tocar el resto del layout de la home.
+
+5. Importante
+- No cambiar textos de hero.
+- No cambiar configuración.
+- No cambiar licencias.
+- No cambiar Drive.
+- No cambiar ningún texto adicional de ChessLens/FotoChess en esta tarea.
+- No crear archivos en attached_assets.
+
+Al final ejecutar:
+npm run check
+
+Y mostrar:
+git diff -- client/src/pages/home.tsx
+git diff --name-only

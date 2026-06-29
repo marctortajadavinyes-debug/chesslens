@@ -517,15 +517,20 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-white/50 backdrop-blur-md sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-12 sm:h-16 flex items-center gap-2">
-          {/* Logo — ancorat a l'esquerra, més petit en mòbil */}
-          <div className="flex items-center gap-1.5 shrink-0">
+          {/* Logo — ancorat a l'esquerra */}
+          <div className="flex items-center gap-2 shrink-0">
             <img
               src="/fotochess-icon.png"
               alt=""
               aria-hidden="true"
-              className="w-6 h-6 sm:w-8 sm:h-8 rounded-md sm:rounded-lg object-cover"
+              className="w-7 h-7 sm:w-9 sm:h-9 rounded-md sm:rounded-lg object-cover"
             />
-            <span className="font-display font-bold text-base sm:text-xl">FotoChess</span>
+            <div className="flex flex-col leading-none">
+              <span className="font-display font-bold text-base sm:text-xl">FotoChess</span>
+              <span className="hidden md:inline text-[10px] text-muted-foreground tracking-wide mt-0.5">
+                Scan. Save PGN. Analyze. Improve.
+              </span>
+            </div>
           </div>
 
           {/* Botó biblioteca — centrat en mòbil */}
