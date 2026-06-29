@@ -520,8 +520,9 @@ export default function Home() {
           {/* Logo — ancorat a l'esquerra, més petit en mòbil */}
           <div className="flex items-center gap-1.5 shrink-0">
             <img
-              src="/icons/fotochess-icon.png"
-              alt="FotoChess"
+              src="/fotochess-icon.png"
+              alt=""
+              aria-hidden="true"
               className="w-6 h-6 sm:w-8 sm:h-8 rounded-md sm:rounded-lg object-cover"
             />
             <span className="font-display font-bold text-base sm:text-xl">FotoChess</span>

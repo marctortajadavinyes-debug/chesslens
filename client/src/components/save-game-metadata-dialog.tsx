@@ -48,7 +48,7 @@ const TEXT: Record<AppLanguage, DialogText> = {
   ca: {
     title: "Revisa les dades de la partida",
     notice:
-      "Revisa aquestes dades. ChessLens les farà servir per trobar ràpidament les teves partides per rival, data, color o obertura.",
+      "Revisa aquestes dades. FotoChess les farà servir per trobar ràpidament les teves partides per rival, data, color o obertura.",
     white: "Blanques",
     black: "Negres",
     dateLabel: "Data (AAAA-MM-DD)",
@@ -70,7 +70,7 @@ const TEXT: Record<AppLanguage, DialogText> = {
   en: {
     title: "Review game data",
     notice:
-      "Review this data. ChessLens will use it to quickly find your games by opponent, date, color, or opening.",
+      "Review this data. FotoChess will use it to quickly find your games by opponent, date, color, or opening.",
     white: "White",
     black: "Black",
     dateLabel: "Date (YYYY-MM-DD)",
@@ -92,7 +92,7 @@ const TEXT: Record<AppLanguage, DialogText> = {
   es: {
     title: "Revisa los datos de la partida",
     notice:
-      "Revisa estos datos. ChessLens los usará para encontrar rápidamente tus partidas por rival, fecha, color o apertura.",
+      "Revisa estos datos. FotoChess los usará para encontrar rápidamente tus partidas por rival, fecha, color o apertura.",
     white: "Blancas",
     black: "Negras",
     dateLabel: "Fecha (AAAA-MM-DD)",

@@ -1,0 +1,68 @@
+Hay que corregir SOLO dos fallos del cambio ChessLens → FotoChess.
+
+NO rehacer layout.
+NO tocar responsive.
+NO tocar OCR/parser/backend/Gemini/Stockfish.
+NO tocar lógica de Drive salvo texto visible.
+NO crear archivos en attached_assets.
+
+Fallos detectados:
+
+1) En el diálogo de guardar partida en Drive todavía aparece “ChessLens”.
+   Captura: “Revisa aquestes dades. ChessLens les farà servir...”
+   Debe decir “FotoChess”.
+
+2) En el header se ve “Foto FotoChess”, como si el icono estuviera roto o se estuviera mostrando el alt text.
+   El archivo del icono está en:
+   client/public/icons/fotochess-icon.png
+
+Cambios permitidos:
+- client/src/pages/home.tsx
+- client/src/components/save-game-metadata-dialog.tsx
+- otros componentes SOLO si contienen texto visible “ChessLens” o la ruta del icono FotoChess
+
+Cambios concretos:
+
+A) Corregir texto del diálogo de Drive:
+- Buscar en todo el proyecto:
+  ChessLens
+  chesslens
+- En textos visibles de UI, cambiar ChessLens → FotoChess.
+- En concreto, corregir el texto del diálogo de metadatos/Drive:
+  “ChessLens les farà servir...”
+  por:
+  “FotoChess les farà servir...”
+- Hacer lo mismo en español e inglés si existe el mismo texto.
+
+B) Corregir icono del header:
+- Verificar si existe:
+  client/public/icons/fotochess-icon.png
+- En el header/home, el img debe usar exactamente:
+  src="/icons/fotochess-icon.png"
+- No usar alt visible que pueda aparecer como texto en caso de fallo.
+  Usar alt="" y aria-hidden="true" para el icono decorativo.
+- El header debe quedar:
+  [icono cuadrado] FotoChess
+  y NO:
+  Foto FotoChess
+- Mantener tamaño parecido al icono antiguo de la C.
+
+C) Revisión global:
+- Ejecutar búsqueda:
+  grep -RIn "ChessLens\|chesslens" client shared server --exclude-dir=node_modules
+- Informar de:
+  1. menciones visibles cambiadas;
+  2. menciones técnicas que se dejan sin cambiar y por qué.
+- No cambiar claves técnicas como:
+  chesslens_user_settings_v1
+  chesslens_device_id_v1
+  chesslens.driveFolderId.chessGames
+  source: "chesslens"
+  si eso puede romper compatibilidad.
+
+D) Al final ejecutar:
+npm run check
+
+E) Mostrar:
+git diff --name-only
+git diff -- client/src/pages/home.tsx client/src/components/save-game-metadata-dialog.tsx
