@@ -523,7 +523,7 @@ export default function Home() {
               src="/fotochess-icon.png"
               alt=""
               aria-hidden="true"
-              className="w-10 h-10 sm:w-12 sm:h-12 md:w-12 md:h-12 rounded-md sm:rounded-lg object-cover"
+              className="w-8 h-8 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-md sm:rounded-lg object-cover"
             />
             <div className="flex flex-col leading-none">
               <span className="font-display font-bold text-base sm:text-xl">FotoChess</span>
@@ -542,7 +542,7 @@ export default function Home() {
                 size="sm"
                 data-testid="link-library"
               >
-                <Library className="w-4 h-4 mr-2" />
+                <Library className="w-4 h-4 sm:mr-2" />
                 {t.library}
               </Button>
             </Link>
