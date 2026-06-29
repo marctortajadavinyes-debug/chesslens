@@ -523,7 +523,7 @@ export default function Home() {
               src="/fotochess-icon.png"
               alt=""
               aria-hidden="true"
-              className="w-7 h-7 sm:w-9 sm:h-9 rounded-md sm:rounded-lg object-cover"
+              className="w-9 h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 rounded-md sm:rounded-lg object-cover"
             />
             <div className="flex flex-col leading-none">
               <span className="font-display font-bold text-base sm:text-xl">FotoChess</span>
