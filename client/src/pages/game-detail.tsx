@@ -111,7 +111,7 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
         side === "w" ? "blanques" : "negres"
       }.`,
     reviewingHelp:
-      "Fes ara la jugada correcta al tauler i ChessLens continuarà l'escaneig des d'aquí.",
+      "Fes ara la jugada correcta al tauler i FotoChess continuarà l'escaneig des d'aquí.",
     pgnTitle: "PGN",
     editPgn: "Editar PGN",
     cancel: "Cancel·lar",
@@ -138,11 +138,11 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
     analysisWithStockfish: "Anàlisi amb Stockfish 18",
     licensesTitle: "Llicències i avisos de tercers",
     licensesClose: "Tancar",
-    licensesStockfish: "ChessLens utilitza Stockfish per a l'anàlisi d'escacs. Stockfish és un motor d'escacs lliure i de codi obert sota llicència GPLv3.",
-    licensesPythonChess: "ChessLens utilitza python-chess al servidor per validar jugades i generar PGN.",
-    licensesOpenSource: "ChessLens també utilitza biblioteques de codi obert com chess.js, react-chessboard i Lucide Icons per a la interfície i la gestió de posicions.",
+    licensesStockfish: "FotoChess utilitza Stockfish per a l'anàlisi d'escacs. Stockfish és un motor d'escacs lliure i de codi obert sota llicència GPLv3.",
+    licensesPythonChess: "FotoChess utilitza python-chess al servidor per validar jugades i generar PGN.",
+    licensesOpenSource: "FotoChess també utilitza biblioteques de codi obert com chess.js, react-chessboard i Lucide Icons per a la interfície i la gestió de posicions.",
     licensesGemini: "Les imatges de planelles pujades per l'usuari poden ser processades mitjançant Gemini API / Google AI Studio per extreure'n les jugades.",
-    licensesTrademarks: "Chess.com, Lichess.org i ChessBase són marques dels seus respectius titulars. ChessLens no està afiliada, patrocinada ni avalada per aquests serveis.",
+    licensesTrademarks: "Chess.com, Lichess.org i ChessBase són marques dels seus respectius titulars. FotoChess no està afiliada, patrocinada ni avalada per aquests serveis.",
     licensesTrigger: "Llicències i avisos de tercers",
   },
   en: {
@@ -175,7 +175,7 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
         side === "w" ? "White" : "Black"
       }.`,
     reviewingHelp:
-      "Now make the correct move on the board and ChessLens will continue the scan from here.",
+      "Now make the correct move on the board and FotoChess will continue the scan from here.",
     pgnTitle: "PGN",
     editPgn: "Edit PGN",
     cancel: "Cancel",
@@ -202,11 +202,11 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
     analysisWithStockfish: "Analysis with Stockfish 18",
     licensesTitle: "Licences and third-party notices",
     licensesClose: "Close",
-    licensesStockfish: "ChessLens uses Stockfish for chess analysis. Stockfish is a free and open-source chess engine licensed under GPLv3.",
-    licensesPythonChess: "ChessLens uses python-chess on the server to validate moves and generate PGN.",
-    licensesOpenSource: "ChessLens also uses open-source libraries such as chess.js, react-chessboard, and Lucide Icons for the interface and position management.",
+    licensesStockfish: "FotoChess uses Stockfish for chess analysis. Stockfish is a free and open-source chess engine licensed under GPLv3.",
+    licensesPythonChess: "FotoChess uses python-chess on the server to validate moves and generate PGN.",
+    licensesOpenSource: "FotoChess also uses open-source libraries such as chess.js, react-chessboard, and Lucide Icons for the interface and position management.",
     licensesGemini: "Images of scoresheets uploaded by the user may be processed via Gemini API / Google AI Studio to extract the moves.",
-    licensesTrademarks: "Chess.com, Lichess.org and ChessBase are trademarks of their respective owners. ChessLens is not affiliated with, sponsored by, or endorsed by these services.",
+    licensesTrademarks: "Chess.com, Lichess.org and ChessBase are trademarks of their respective owners. FotoChess is not affiliated with, sponsored by, or endorsed by these services.",
     licensesTrigger: "Licences and third-party notices",
   },
   es: {
@@ -241,7 +241,7 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
         side === "w" ? "blancas" : "negras"
       }.`,
     reviewingHelp:
-      "Haz ahora la jugada correcta en el tablero y ChessLens continuará el escaneo desde aquí.",
+      "Haz ahora la jugada correcta en el tablero y FotoChess continuará el escaneo desde aquí.",
     pgnTitle: "PGN",
     editPgn: "Editar PGN",
     cancel: "Cancelar",
@@ -268,11 +268,11 @@ const GAME_DETAIL_TEXT: Record<AppLanguage, GameDetailText> = {
     analysisWithStockfish: "Análisis con Stockfish 18",
     licensesTitle: "Licencias y avisos de terceros",
     licensesClose: "Cerrar",
-    licensesStockfish: "ChessLens utiliza Stockfish para el análisis de ajedrez. Stockfish es un motor de ajedrez libre y de código abierto bajo licencia GPLv3.",
-    licensesPythonChess: "ChessLens utiliza python-chess en el servidor para validar jugadas y generar PGN.",
-    licensesOpenSource: "ChessLens también utiliza bibliotecas de código abierto como chess.js, react-chessboard y Lucide Icons para la interfaz y la gestión de posiciones.",
+    licensesStockfish: "FotoChess utiliza Stockfish para el análisis de ajedrez. Stockfish es un motor de ajedrez libre y de código abierto bajo licencia GPLv3.",
+    licensesPythonChess: "FotoChess utiliza python-chess en el servidor para validar jugadas y generar PGN.",
+    licensesOpenSource: "FotoChess también utiliza bibliotecas de código abierto como chess.js, react-chessboard y Lucide Icons para la interfaz y la gestión de posiciones.",
     licensesGemini: "Las imágenes de planillas subidas por el usuario pueden ser procesadas mediante Gemini API / Google AI Studio para extraer las jugadas.",
-    licensesTrademarks: "Chess.com, Lichess.org y ChessBase son marcas de sus respectivos titulares. ChessLens no está afiliada, patrocinada ni avalada por estos servicios.",
+    licensesTrademarks: "Chess.com, Lichess.org y ChessBase son marcas de sus respectivos titulares. FotoChess no está afiliada, patrocinada ni avalada por estos servicios.",
     licensesTrigger: "Licencias y avisos de terceros",
   },
 };

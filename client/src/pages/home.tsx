@@ -25,7 +25,7 @@ import type {
   SheetFormat,
 } from "@shared/schema";
 
-type ChessLensUserSettings = {
+type FotoChessUserSettings = {
   alias: string;
   email: string;
   appLanguage: AppLanguage;
@@ -102,7 +102,7 @@ function getOrCreateDeviceId() {
   return generated;
 }
 
-const DEFAULT_SETTINGS: ChessLensUserSettings = {
+const DEFAULT_SETTINGS: FotoChessUserSettings = {
   alias: "",
   email: "",
   appLanguage: "ca",
@@ -159,8 +159,8 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     settingsButton: "Configuració",
     heroTitle: "Digitalitza la teva partida d'escacs",
     heroSubtitle: "Puja una o més planelles i genera el PGN automàticament.",
-    initialSettingsTitle: "Configuració inicial de ChessLens",
-    settingsTitle: "Configuració de ChessLens",
+    initialSettingsTitle: "Configuració inicial de FotoChess",
+    settingsTitle: "Configuració de FotoChess",
     alias: "Nom del jugador",
     email: "Correu electrònic",
     optional: "Opcional",
@@ -171,7 +171,7 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     saveSettings: "Desar configuració",
     settingsSavedTitle: "Configuració desada",
     settingsSavedDescription:
-      "ChessLens farà servir aquests valors per defecte.",
+      "FotoChess farà servir aquests valors per defecte.",
     currentSettings: "Configuració actual",
     app: "App",
     scoresheet: "Planella",
@@ -199,21 +199,21 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     genericErrorTitle: "Error",
     suggestionsTitle: "Suggeriments",
     suggestionsDescription:
-      "Ajuda'ns a millorar ChessLens. Escriu-nos qualsevol idea, problema o millora que vulguis proposar.",
+      "Ajuda'ns a millorar FotoChess. Escriu-nos qualsevol idea, problema o millora que vulguis proposar.",
     suggestionsButton: "Enviar suggeriment",
     suggestionsBody: "Escriu aquí el teu suggeriment:",
     licensesTitle: "Llicències i avisos de tercers",
     licensesClose: "Tancar",
     licensesStockfish:
-      "ChessLens utilitza Stockfish per a l'anàlisi d'escacs. Stockfish és un motor d'escacs lliure i de codi obert sota llicència GPLv3.",
+      "FotoChess utilitza Stockfish per a l'anàlisi d'escacs. Stockfish és un motor d'escacs lliure i de codi obert sota llicència GPLv3.",
     licensesPythonChess:
-      "ChessLens utilitza python-chess al servidor per validar jugades i generar PGN.",
+      "FotoChess utilitza python-chess al servidor per validar jugades i generar PGN.",
     licensesOpenSource:
-      "ChessLens també utilitza biblioteques de codi obert com chess.js, react-chessboard i Lucide Icons per a la interfície i la gestió de posicions.",
+      "FotoChess també utilitza biblioteques de codi obert com chess.js, react-chessboard i Lucide Icons per a la interfície i la gestió de posicions.",
     licensesGemini:
       "Les imatges de planelles pujades per l'usuari poden ser processades mitjançant Gemini API / Google AI Studio per extreure'n les jugades.",
     licensesTrademarks:
-      "Chess.com, Lichess.org i ChessBase són marques dels seus respectius titulars. ChessLens no està afiliada, patrocinada ni avalada per aquests serveis.",
+      "Chess.com, Lichess.org i ChessBase són marques dels seus respectius titulars. FotoChess no està afiliada, patrocinada ni avalada per aquests serveis.",
     licensesTrigger: "Llicències i avisos de tercers",
     analysisWithStockfish: "Anàlisi amb Stockfish 18",
   },
@@ -223,8 +223,8 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     heroTitle: "Digitize your chess game",
     heroSubtitle:
       "Upload one or more scoresheets and generate PGN automatically.",
-    initialSettingsTitle: "Initial ChessLens settings",
-    settingsTitle: "ChessLens settings",
+    initialSettingsTitle: "Initial FotoChess settings",
+    settingsTitle: "FotoChess settings",
     alias: "Player name",
     email: "Email",
     optional: "Optional",
@@ -234,7 +234,7 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     cancel: "Cancel",
     saveSettings: "Save settings",
     settingsSavedTitle: "Settings saved",
-    settingsSavedDescription: "ChessLens will use these values by default.",
+    settingsSavedDescription: "FotoChess will use these values by default.",
     currentSettings: "Current settings",
     app: "App",
     scoresheet: "Scoresheet",
@@ -262,21 +262,21 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     genericErrorTitle: "Error",
     suggestionsTitle: "Suggestions",
     suggestionsDescription:
-      "Help us improve ChessLens. Send us any idea, issue, or improvement you would like to suggest.",
+      "Help us improve FotoChess. Send us any idea, issue, or improvement you would like to suggest.",
     suggestionsButton: "Send suggestion",
     suggestionsBody: "Write your suggestion here:",
     licensesTitle: "Licences and third-party notices",
     licensesClose: "Close",
     licensesStockfish:
-      "ChessLens uses Stockfish for chess analysis. Stockfish is a free and open-source chess engine under the GPLv3 licence.",
+      "FotoChess uses Stockfish for chess analysis. Stockfish is a free and open-source chess engine under the GPLv3 licence.",
     licensesPythonChess:
-      "ChessLens uses python-chess on the server to validate moves and generate PGN.",
+      "FotoChess uses python-chess on the server to validate moves and generate PGN.",
     licensesOpenSource:
-      "ChessLens also uses open-source libraries such as chess.js, react-chessboard and Lucide Icons for the interface and position management.",
+      "FotoChess also uses open-source libraries such as chess.js, react-chessboard and Lucide Icons for the interface and position management.",
     licensesGemini:
       "User-uploaded scoresheet images may be processed via Gemini API / Google AI Studio to extract moves.",
     licensesTrademarks:
-      "Chess.com, Lichess.org and ChessBase are trademarks of their respective owners. ChessLens is not affiliated with, sponsored by, or endorsed by these services.",
+      "Chess.com, Lichess.org and ChessBase are trademarks of their respective owners. FotoChess is not affiliated with, sponsored by, or endorsed by these services.",
     licensesTrigger: "Licences and third-party notices",
     analysisWithStockfish: "Analysis with Stockfish 18",
   },
@@ -285,8 +285,8 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     settingsButton: "Configuración",
     heroTitle: "Digitaliza tu partida de ajedrez",
     heroSubtitle: "Sube una o más planillas y genera el PGN automáticamente.",
-    initialSettingsTitle: "Configuración inicial de ChessLens",
-    settingsTitle: "Configuración de ChessLens",
+    initialSettingsTitle: "Configuración inicial de FotoChess",
+    settingsTitle: "Configuración de FotoChess",
     alias: "Nombre del jugador",
     email: "Correo electrónico",
     optional: "Opcional",
@@ -296,7 +296,7 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     cancel: "Cancelar",
     saveSettings: "Guardar configuración",
     settingsSavedTitle: "Configuración guardada",
-    settingsSavedDescription: "ChessLens usará estos valores por defecto.",
+    settingsSavedDescription: "FotoChess usará estos valores por defecto.",
     currentSettings: "Configuración actual",
     app: "App",
     scoresheet: "Planilla",
@@ -324,21 +324,21 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     genericErrorTitle: "Error",
     suggestionsTitle: "Sugerencias",
     suggestionsDescription:
-      "Ayúdanos a mejorar ChessLens. Escríbenos cualquier idea, problema o mejora que quieras proponer.",
+      "Ayúdanos a mejorar FotoChess. Escríbenos cualquier idea, problema o mejora que quieras proponer.",
     suggestionsButton: "Enviar sugerencia",
     suggestionsBody: "Escribe aquí tu sugerencia:",
     licensesTitle: "Licencias y avisos de terceros",
     licensesClose: "Cerrar",
     licensesStockfish:
-      "ChessLens utiliza Stockfish para el análisis de ajedrez. Stockfish es un motor de ajedrez libre y de código abierto bajo licencia GPLv3.",
+      "FotoChess utiliza Stockfish para el análisis de ajedrez. Stockfish es un motor de ajedrez libre y de código abierto bajo licencia GPLv3.",
     licensesPythonChess:
-      "ChessLens utiliza python-chess en el servidor para validar jugadas y generar PGN.",
+      "FotoChess utiliza python-chess en el servidor para validar jugadas y generar PGN.",
     licensesOpenSource:
-      "ChessLens también utiliza bibliotecas de código abierto como chess.js, react-chessboard y Lucide Icons para la interfaz y la gestión de posiciones.",
+      "FotoChess también utiliza bibliotecas de código abierto como chess.js, react-chessboard y Lucide Icons para la interfaz y la gestión de posiciones.",
     licensesGemini:
       "Las imágenes de planillas subidas por el usuario pueden ser procesadas mediante Gemini API / Google AI Studio para extraer las jugadas.",
     licensesTrademarks:
-      "Chess.com, Lichess.org y ChessBase son marcas de sus respectivos titulares. ChessLens no está afiliada, patrocinada ni avalada por estos servicios.",
+      "Chess.com, Lichess.org y ChessBase son marcas de sus respectivos titulares. FotoChess no está afiliada, patrocinada ni avalada por estos servicios.",
     licensesTrigger: "Licencias y avisos de terceros",
     analysisWithStockfish: "Análisis con Stockfish 18",
   },
@@ -371,10 +371,10 @@ export default function Home() {
   const [showSettings, setShowSettings] = useState(false);
   const [showLicenses, setShowLicenses] = useState(false);
   const [settings, setSettings] =
-    useState<ChessLensUserSettings>(DEFAULT_SETTINGS);
+    useState<FotoChessUserSettings>(DEFAULT_SETTINGS);
   // draftSettings holds unsaved form changes; only applied to settings on Save.
   const [draftSettings, setDraftSettings] =
-    useState<ChessLensUserSettings>(DEFAULT_SETTINGS);
+    useState<FotoChessUserSettings>(DEFAULT_SETTINGS);
 
   const t = UI_TEXT[settings.appLanguage] ?? UI_TEXT.ca;
 
@@ -389,7 +389,7 @@ export default function Home() {
         return;
       }
 
-      const parsed = JSON.parse(raw) as Partial<ChessLensUserSettings>;
+      const parsed = JSON.parse(raw) as Partial<FotoChessUserSettings>;
 
       setSettings({
         ...DEFAULT_SETTINGS,
@@ -516,15 +516,19 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b border-border bg-white/50 backdrop-blur-md sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary text-primary-foreground rounded-lg flex items-center justify-center font-display font-bold text-xl">
-              C
-            </div>
-            <span className="font-display font-bold text-xl">ChessLens</span>
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-12 sm:h-16 flex items-center gap-2">
+          {/* Logo — ancorat a l'esquerra, més petit en mòbil */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            <img
+              src="/icons/fotochess-icon.png"
+              alt="FotoChess"
+              className="w-6 h-6 sm:w-8 sm:h-8 rounded-md sm:rounded-lg object-cover"
+            />
+            <span className="font-display font-bold text-base sm:text-xl">FotoChess</span>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Botó biblioteca — centrat en mòbil */}
+          <div className="flex-1 flex justify-center">
             <Link href="/library">
               <Button
                 type="button"
@@ -536,41 +540,44 @@ export default function Home() {
                 {t.library}
               </Button>
             </Link>
-            {hasSavedSettings && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => { setDraftSettings(settings); setShowSettings(true); }}
-                disabled={isUploading}
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                {t.settingsButton}
-              </Button>
-            )}
           </div>
+
+          {/* Configuració — ancorat a la dreta, icona sola en mòbil */}
+          {hasSavedSettings && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => { setDraftSettings(settings); setShowSettings(true); }}
+              disabled={isUploading}
+              className="shrink-0"
+            >
+              <Settings className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">{t.settingsButton}</span>
+            </Button>
+          )}
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        <section className="mb-8 text-center">
+        <section className="mb-6 sm:mb-8 text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <h1 className="text-3xl md:text-4xl font-display font-bold mb-3">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold mb-2 sm:mb-3">
               {t.heroTitle}
             </h1>
-            <p className="text-base text-muted-foreground max-w-2xl mx-auto mb-5">
+            <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto mb-3 sm:mb-5">
               {t.heroSubtitle}
             </p>
           </motion.div>
 
-          {/* Hero — sempre 2 columnes (apila sols a mòbil molt estret) */}
+          {/* Hero — sempre 2 columnes (imatge esquerra, config dreta) */}
           <div className="mx-auto mb-4 w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-200 bg-[#f7f7f4] shadow-sm">
-            <div className="grid grid-cols-[46%_54%] items-stretch max-[480px]:grid-cols-1">
+            <div className="grid grid-cols-[46%_54%] items-stretch">
               {/* Columna esquerra — imatge escorada a l'esquerra */}
-              <div className="relative h-[145px] overflow-hidden sm:h-[155px] lg:h-[165px]">
+              <div className="relative h-[110px] overflow-hidden sm:h-[145px] lg:h-[165px]">
                 <img
                   src="/hero-scoresheet-scan.png"
                   alt="Escaneig de planella d'escacs per generar PGN"
@@ -579,13 +586,13 @@ export default function Home() {
                 />
               </div>
 
-              {/* Columna dreta — Configuració actual (cajita integrada) */}
-              <div className="flex h-full items-center justify-center px-4">
-                <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-[#fbfbf8] px-4 py-3 text-left shadow-sm">
-                  <div className="text-sm font-semibold text-slate-950">
+              {/* Columna dreta — Configuració actual compacta en mòbil */}
+              <div className="flex h-full items-center justify-center px-2 sm:px-4">
+                <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-[#fbfbf8] px-2.5 py-2 sm:px-4 sm:py-3 text-left shadow-sm">
+                  <div className="text-xs sm:text-sm font-semibold text-slate-950">
                     {t.currentSettings}
                   </div>
-                  <div className="mt-1 text-xs text-slate-600 sm:text-sm">
+                  <div className="mt-0.5 sm:mt-1 text-[10px] sm:text-xs text-slate-600">
                     <span className="font-semibold text-slate-900">{t.app}:</span>{" "}
                     {getLanguageOptionLabel(
                       APP_LANGUAGE_OPTIONS,
@@ -598,7 +605,7 @@ export default function Home() {
                       settings.scoresheetLanguage,
                     )}
                   </div>
-                  <div className="text-xs text-slate-600 sm:text-sm">
+                  <div className="text-[10px] sm:text-xs text-slate-600">
                     <span className="font-semibold text-slate-900">{t.format}:</span>{" "}
                     {getSheetFormatLabel(
                       settings.appLanguage,
@@ -610,22 +617,37 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="max-w-xl mx-auto">
+          {/* Panel de Configuració — overlay pantalla completa en mòbil, inline en sm+ */}
+          <div className={showSettings
+            ? "fixed inset-0 z-30 bg-background overflow-y-auto sm:relative sm:inset-auto sm:z-auto sm:overflow-visible sm:bg-transparent"
+            : "max-w-xl mx-auto"
+          }>
             {showSettings ? (
               <motion.div
-                initial={{ opacity: 0, scale: 0.97 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="bg-card p-6 rounded-2xl border shadow-sm text-left space-y-5"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-card p-4 sm:p-6 sm:rounded-2xl sm:border shadow-sm text-left space-y-3 sm:space-y-5 sm:max-w-xl sm:mx-auto"
               >
-                <div>
-                  <h2 className="text-xl font-bold">
+                <div className="flex items-center gap-2 border-b pb-3 sm:border-none sm:pb-0">
+                  <h2 className="text-lg sm:text-xl font-bold flex-1">
                     {hasSavedSettings
                       ? t.settingsTitle
                       : t.initialSettingsTitle}
                   </h2>
+                  {hasSavedSettings && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="sm:hidden text-muted-foreground"
+                      onClick={() => { setDraftSettings(settings); setShowSettings(false); }}
+                    >
+                      {t.cancel}
+                    </Button>
+                  )}
                 </div>
 
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 gap-3">
                   <div>
                     <label className="block text-sm font-medium mb-1">
                       {t.alias}
@@ -639,7 +661,7 @@ export default function Home() {
                         }))
                       }
                       placeholder={t.optional}
-                      className="w-full h-10 rounded-md border bg-background px-3 text-sm"
+                      className="w-full h-9 rounded-md border bg-background px-3 text-sm"
                     />
                   </div>
 
@@ -657,7 +679,7 @@ export default function Home() {
                         }))
                       }
                       placeholder={t.optional}
-                      className="w-full h-10 rounded-md border bg-background px-3 text-sm"
+                      className="w-full h-9 rounded-md border bg-background px-3 text-sm"
                     />
                   </div>
 
@@ -673,7 +695,7 @@ export default function Home() {
                           appLanguage: e.target.value as AppLanguage,
                         }))
                       }
-                      className="w-full h-10 rounded-md border bg-background px-3 text-sm"
+                      className="w-full h-9 rounded-md border bg-background px-3 text-sm"
                     >
                       {APP_LANGUAGE_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -696,7 +718,7 @@ export default function Home() {
                             .value as ScoresheetLanguage,
                         }))
                       }
-                      className="w-full h-10 rounded-md border bg-background px-3 text-sm"
+                      className="w-full h-9 rounded-md border bg-background px-3 text-sm"
                     >
                       {SCORESHEET_LANGUAGE_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -718,7 +740,7 @@ export default function Home() {
                           sheetFormat: e.target.value as SheetFormat,
                         }))
                       }
-                      className="w-full h-10 rounded-md border bg-background px-3 text-sm"
+                      className="w-full h-9 rounded-md border bg-background px-3 text-sm"
                     >
                       {SHEET_FORMAT_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -746,10 +768,10 @@ export default function Home() {
                     onClick={() => {
                       const subject =
                         settings.appLanguage === "ca"
-                          ? "Suggeriment ChessLens"
+                          ? "Suggeriment FotoChess"
                           : settings.appLanguage === "es"
-                            ? "Sugerencia ChessLens"
-                            : "ChessLens suggestion";
+                            ? "Sugerencia FotoChess"
+                            : "FotoChess suggestion";
                       const body = t.suggestionsBody + " ";
                       const mailto = `mailto:chessproapp.mvp@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
                       window.location.href = mailto;
@@ -773,18 +795,19 @@ export default function Home() {
                   </button>
                 </div>
 
-                <div className="flex gap-2 justify-end">
+                <div className="flex gap-2 justify-end pt-1">
                   {hasSavedSettings && (
                     <Button
                       type="button"
                       variant="ghost"
+                      className="hidden sm:inline-flex"
                       onClick={() => { setDraftSettings(settings); setShowSettings(false); }}
                     >
                       {t.cancel}
                     </Button>
                   )}
 
-                  <Button type="button" onClick={saveSettings}>
+                  <Button type="button" onClick={saveSettings} className="flex-1 sm:flex-none">
                     {t.saveSettings}
                   </Button>
                 </div>

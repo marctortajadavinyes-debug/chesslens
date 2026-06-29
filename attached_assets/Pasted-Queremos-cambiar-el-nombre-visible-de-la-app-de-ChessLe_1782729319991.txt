@@ -1,0 +1,95 @@
+Queremos cambiar el nombre visible de la app de “ChessLens” a “FotoChess” y sustituir el icono actual de la C por el nuevo icono minimalista de Dama enmarcada.
+
+Objetivo:
+- Reemplazar “ChessLens” por “FotoChess” en todos los textos visibles de la app.
+- Cambiar el icono actual del header, que ahora muestra una “C”, por el nuevo icono de FotoChess.
+- Mantener el mismo tamaño visual, proporción y estilo de texto que el header actual:
+  - icono cuadrado negro a la izquierda;
+  - texto FotoChess a la derecha;
+  - misma tipografía/tamaño/peso aproximado que ahora usa “ChessLens”.
+- Usar la imagen de referencia que adjunto solo como guía visual. No incrustar una imagen enorme del logo completo si no hace falta; preferimos implementar el header con icono + texto en HTML/React para que sea limpio y responsive.
+
+Archivos que puede tocar:
+- client/src/pages/home.tsx
+- client/src/components/licenses-dialog.tsx
+- componentes de header/navbar si existen
+- componentes de configuración si están separados
+- componentes relacionados con sugerencias/email si existen
+- archivos de iconos públicos si necesita añadir un asset pequeño en client/public
+
+Archivos que NO debe tocar:
+- server/process_image_gemini.py
+- server/routes.ts
+- OCR
+- parser
+- Gemini
+- python-chess
+- Stockfish
+- Drive logic
+- export logic
+- PGN generation
+- review/resume
+
+Cambios concretos:
+
+1. Header / marca principal
+- Sustituir el texto visible “ChessLens” por “FotoChess”.
+- Sustituir el icono actual de la “C” por un icono minimalista basado en la referencia:
+  - fondo negro redondeado;
+  - Dama blanca minimalista con aspecto trencadís muy simple;
+  - marcas de enfoque/cámara en las esquinas.
+- El icono debe verse bien pequeño en el header.
+- Mantener el tamaño general del header como ahora, sin hacerlo más grande.
+
+2. Página principal
+- Cambiar cualquier texto visible “ChessLens” por “FotoChess”.
+- Revisar título de configuración si dice “Configuració de ChessLens” y cambiarlo a “Configuració de FotoChess”.
+- Revisar sección de sugerencias si dice “Suggeriment ChessLens” y cambiarlo a “Suggeriment FotoChess”.
+
+3. Configuración
+- Cambiar todos los textos visibles que mencionen ChessLens por FotoChess.
+- No cambiar la lógica de guardar configuración.
+
+4. Llicències i avisos de tercers
+- Cambiar “ChessLens utilitza...” por “FotoChess utilitza...”.
+- Cambiar cualquier mención de afiliación tipo “ChessLens no està afiliada...” por “FotoChess no està afiliada...”.
+- No cambiar el contenido legal de Stockfish, python-chess, Gemini, Chess.com, Lichess.org o ChessBase, salvo el nombre de la app.
+
+5. Email de sugerencias
+- Cambiar asunto o cuerpo si dice “Suggeriment ChessLens” por “Suggeriment FotoChess”.
+- Cambiar cualquier texto visible relacionado con sugerencias que mencione ChessLens.
+- No cambiar el email de destino salvo que ya esté definido así y no sea necesario.
+
+6. Google Drive
+- Cambiar nombres visibles y metadatos propios de la app si dicen ChessLens por FotoChess.
+- Revisar especialmente:
+  - nombre de carpeta si se crea como ChessLens o Chess Games;
+  - appProperties source si usa “chesslens”;
+  - títulos/toasts visibles de guardado.
+- Antes de cambiar nombres técnicos usados para encontrar carpetas o archivos ya guardados, avisar. No romper compatibilidad con partidas ya guardadas.
+- Si hay riesgo de romper compatibilidad con Drive existente, mantener el identificador técnico antiguo y cambiar solo el texto visible.
+
+7. Revisión global
+- Buscar en todo el proyecto:
+  - ChessLens
+  - chesslens
+  - Chess Lens
+- Hacer una lista de todos los lugares encontrados.
+- Cambiar los textos visibles seguros.
+- NO cambiar identificadores técnicos si podrían romper datos existentes sin avisar.
+- Al final informar:
+  - qué archivos ha modificado;
+  - qué menciones ha cambiado;
+  - qué menciones ha dejado sin cambiar y por qué.
+
+8. Limpieza
+- No crear archivos basura en attached_assets.
+- No crear commits.
+- No hacer push.
+
+Al final ejecutar:
+npm run check
+
+Y mostrar:
+git diff --name-only
+git diff
