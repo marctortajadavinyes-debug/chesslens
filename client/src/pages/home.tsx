@@ -370,6 +370,8 @@ export default function Home() {
   const [hasSavedSettings, setHasSavedSettings] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showLicenses, setShowLicenses] = useState(false);
+  const [showSuggestionDialog, setShowSuggestionDialog] = useState(false);
+  const [suggestionText, setSuggestionText] = useState("");
   const [settings, setSettings] =
     useState<FotoChessUserSettings>(DEFAULT_SETTINGS);
   // draftSettings holds unsaved form changes; only applied to settings on Save.
@@ -770,15 +772,8 @@ export default function Home() {
                     size="sm"
                     className="w-full text-xs h-7"
                     onClick={() => {
-                      const subject =
-                        settings.appLanguage === "ca"
-                          ? "Suggeriment FotoChess"
-                          : settings.appLanguage === "es"
-                            ? "Sugerencia FotoChess"
-                            : "FotoChess suggestion";
-                      const body = t.suggestionsBody + " ";
-                      const mailto = `mailto:chessproapp.mvp@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-                      window.location.href = mailto;
+                      setSuggestionText("");
+                      setShowSuggestionDialog(true);
                     }}
                     data-testid="button-send-suggestion"
                   >
@@ -908,6 +903,90 @@ export default function Home() {
         </section>
 
       </main>
+
+      {showSuggestionDialog && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-3 py-4">
+          <div className="w-full max-w-lg rounded-2xl bg-background p-4 shadow-xl border border-border">
+            <div className="flex items-start justify-between gap-3 mb-3">
+              <div>
+                <h2 className="text-lg font-display font-bold">
+                  {t.suggestionsTitle}
+                </h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {t.suggestionsDescription}
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSuggestionDialog(false)}
+                className="shrink-0"
+              >
+                ×
+              </Button>
+            </div>
+
+            <label className="block text-sm font-medium mb-2">
+              {t.suggestionsBody}
+            </label>
+            <textarea
+              value={suggestionText}
+              onChange={(e) => setSuggestionText(e.target.value)}
+              className="w-full min-h-[180px] rounded-xl border border-border bg-background p-3 text-base leading-relaxed resize-y"
+              autoFocus
+            />
+
+            <div className="mt-4 flex flex-col sm:flex-row gap-2 sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={async () => {
+                  await navigator.clipboard.writeText(suggestionText);
+                  toast({
+                    title:
+                      settings.appLanguage === "ca"
+                        ? "Suggeriment copiat"
+                        : settings.appLanguage === "es"
+                          ? "Sugerencia copiada"
+                          : "Suggestion copied",
+                    duration: 1500,
+                  });
+                }}
+                disabled={!suggestionText.trim()}
+              >
+                {settings.appLanguage === "ca"
+                  ? "Copiar text"
+                  : settings.appLanguage === "es"
+                    ? "Copiar texto"
+                    : "Copy text"}
+              </Button>
+
+              <Button
+                type="button"
+                onClick={() => {
+                  const subject =
+                    settings.appLanguage === "ca"
+                      ? "Suggeriment FotoChess"
+                      : settings.appLanguage === "es"
+                        ? "Sugerencia FotoChess"
+                        : "FotoChess suggestion";
+                  const body = suggestionText.trim() || t.suggestionsBody;
+                  const mailto = `mailto:chessproapp.mvp@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                  window.location.href = mailto;
+                }}
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                {settings.appLanguage === "ca"
+                  ? "Obrir correu"
+                  : settings.appLanguage === "es"
+                    ? "Abrir correo"
+                    : "Open email"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <LicensesDialog
         open={showLicenses}
