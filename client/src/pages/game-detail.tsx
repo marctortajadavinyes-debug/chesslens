@@ -866,7 +866,7 @@ export default function GameDetail() {
             {/* Left placeholder — desktop only */}
             <div className="hidden lg:block flex-1" />
             {/* Right section: Analitzar centred + Veure planella pinned right */}
-            <div className="flex-1 relative flex items-center justify-center min-h-[30px]">
+            <div className="flex-1 flex items-center justify-end gap-2 min-h-[30px] lg:relative lg:justify-center">
               {canAnalyze && (
                 <Button
                   type="button"
@@ -877,7 +877,7 @@ export default function GameDetail() {
                     setJumpSignal({ index: 0, counter: Date.now() });
                   }}
                   data-testid="button-analyze-game"
-                  className="gap-1.5 bg-black text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
+                  className="mr-auto gap-1.5 bg-black text-white hover:bg-neutral-800 dark:bg-white dark:text-black dark:hover:bg-neutral-200 lg:mr-0"
                 >
                   <TrendingUp className="w-4 h-4" />
                   {t.analyze}
@@ -887,7 +887,7 @@ export default function GameDetail() {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="lg:hidden absolute right-0 shrink-0"
+                className="lg:hidden shrink-0"
                 onClick={() => setShowSheetMobile((v) => !v)}
                 data-testid="button-toggle-scoresheet-mobile"
               >
