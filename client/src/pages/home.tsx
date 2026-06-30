@@ -534,7 +534,7 @@ export default function Home() {
           </div>
 
           {/* Botons — fila 2 en mòbil, centre/dreta en sm+ */}
-          <div className="flex items-center justify-center sm:justify-end gap-2 sm:flex-1">
+          <div className="mt-1.5 flex w-full items-center justify-between gap-2 sm:mt-0 sm:w-auto sm:flex-1 sm:justify-end">
             <Link href="/library">
               <Button
                 type="button"
