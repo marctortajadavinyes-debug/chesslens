@@ -580,22 +580,22 @@ export default function Home() {
           </motion.div>
 
           {/* Hero — sempre 2 columnes (imatge esquerra, config dreta) */}
-          <div className="mx-auto mb-4 w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-200 bg-[#f7f7f4] shadow-sm">
-            <div className="grid grid-cols-[46%_54%] items-stretch">
+          <div className="mx-auto mb-4 w-full max-w-3xl overflow-hidden rounded-2xl border border-slate-200 bg-[#f7f4ec] shadow-sm">
+            <div className="grid grid-cols-[45%_55%] sm:grid-cols-[46%_54%] items-stretch">
               {/* Columna esquerra — imatge escorada a l'esquerra */}
               <div className="relative h-[110px] overflow-hidden sm:h-[145px] lg:h-[165px]">
                 <img
                   src="/hero-scoresheet-scan.png"
                   alt="Escaneig de planella d'escacs per generar PGN"
-                  className="absolute inset-y-0 left-[-12px] h-full w-full object-contain object-left"
+                  className="absolute inset-y-0 left-[4px] h-full w-full scale-[1.16] origin-left object-contain object-left mix-blend-multiply sm:left-0 sm:scale-100"
                   loading="eager"
                 />
               </div>
 
               {/* Columna dreta — Configuració actual alineada a la dreta */}
-              <div className="flex h-full items-center justify-end px-1 sm:px-4">
-                <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-[#fbfbf8] px-2.5 py-2 sm:px-4 sm:py-3 text-left shadow-sm">
-                  <div className="text-xs sm:text-sm font-semibold text-slate-950">
+              <div className="flex h-full items-center justify-end pl-0 pr-0.5 sm:px-4">
+                <div className="w-full max-w-[210px] sm:max-w-sm rounded-xl border border-slate-200 bg-white/85 px-2 py-1.5 sm:px-4 sm:py-3 text-left shadow-sm backdrop-blur-sm">
+                  <div className="text-[11px] sm:text-sm font-semibold text-slate-950">
                     {t.currentSettings}
                   </div>
                   <div className="mt-0.5 sm:mt-1 text-[10px] sm:text-xs text-slate-600">
