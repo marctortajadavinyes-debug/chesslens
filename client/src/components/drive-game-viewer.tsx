@@ -351,8 +351,8 @@ export function DriveGameViewer({
       {/* ── Sticky header ─────────────────────────────────────────────────── */}
       <header className="border-b border-border bg-white/50 dark:bg-background/80 backdrop-blur-md sticky top-0 z-10">
         <div
-          className={`max-w-7xl mx-auto px-4 flex items-center justify-between transition-all ${
-            showAnalysis ? "h-10" : "h-16"
+          className={`relative max-w-7xl mx-auto px-4 flex items-center justify-between transition-all ${
+            showAnalysis ? "h-8" : "h-16"
           }`}
         >
           <div className="flex items-center gap-3 min-w-0">
@@ -399,11 +399,22 @@ export function DriveGameViewer({
               </div>
             )}
           </div>
+
+          {showAnalysis && (
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+              <span
+                data-testid="badge-analysis-stockfish"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-300 dark:border-amber-700 whitespace-nowrap"
+              >
+                {lbl.analysisWithStockfish}
+              </span>
+            </div>
+          )}
         </div>
       </header>
 
       {/* ── Main content ──────────────────────────────────────────────────── */}
-      <main className="flex-1 max-w-2xl mx-auto w-full px-4 sm:px-6 py-6 space-y-4">
+      <main className="flex-1 max-w-2xl mx-auto w-full px-4 sm:px-6 pt-2 pb-4 space-y-2 sm:space-y-4">
 
         {/* Analitzar button — shown above board when not in analysis mode */}
         {canAnalyze && !showAnalysis && (
@@ -422,18 +433,6 @@ export function DriveGameViewer({
               <TrendingUp className="w-4 h-4" />
               {lbl.analyze}
             </Button>
-          </div>
-        )}
-
-        {/* Stockfish 18 pill — shown when analysis is active */}
-        {showAnalysis && (
-          <div className="flex items-center justify-center">
-            <span
-              data-testid="badge-analysis-stockfish"
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-300 dark:border-amber-700"
-            >
-              {lbl.analysisWithStockfish}
-            </span>
           </div>
         )}
 
@@ -457,7 +456,7 @@ export function DriveGameViewer({
           {/* Analysis lines */}
           {showAnalysis && (
             <div
-              className="h-[52px] space-y-0.5 bg-muted/30 rounded-lg px-3 py-1.5 overflow-hidden w-full"
+              className="h-[48px] space-y-0.5 bg-muted/30 rounded-lg px-2 sm:px-3 py-1 overflow-hidden w-full"
               data-testid="analysis-lines"
             >
               {posLines.length > 0 ? (
@@ -468,10 +467,10 @@ export function DriveGameViewer({
                   return (
                     <div
                       key={i}
-                      className="flex items-center gap-2 text-xs font-mono"
+                      className="flex items-center gap-1.5 sm:gap-2 text-xs font-mono"
                       data-testid={`analysis-line-${i}`}
                     >
-                      <span className="text-muted-foreground w-12 shrink-0">
+                      <span className="text-muted-foreground w-9 sm:w-12 shrink-0">
                         {ev}
                       </span>
                       <span className="text-foreground/90 truncate">
@@ -492,7 +491,7 @@ export function DriveGameViewer({
           )}
 
           {/* Board + sidebar */}
-          <div className="flex items-start gap-3">
+          <div className="flex flex-col lg:flex-row items-stretch lg:items-start gap-2 lg:gap-3">
             {/* Board column */}
             <div className="flex-1 min-w-0">
               <ChessboardViewer
@@ -529,14 +528,14 @@ export function DriveGameViewer({
 
             {/* Lateral button column — only in analysis mode */}
             {showAnalysis && (
-              <div className="shrink-0 flex flex-col justify-between w-[148px] min-h-[460px]">
+              <div className="grid grid-cols-2 gap-2 w-full lg:shrink-0 lg:flex lg:flex-col lg:justify-between lg:w-[148px] lg:min-h-[460px]">
                 {/* Top: toggle arrows */}
-                <div className="flex flex-col gap-3">
+                <div className="contents lg:flex lg:flex-col lg:gap-3">
                   <Button
                     type="button"
                     size="sm"
                     variant="outline"
-                    className="w-full justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight"
+                    className="w-full justify-center lg:justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight order-1 lg:order-none"
                     onClick={() => setShowArrows((v) => !v)}
                     data-testid="button-toggle-arrows-sidebar"
                   >
@@ -555,7 +554,7 @@ export function DriveGameViewer({
                     type="button"
                     size="sm"
                     variant="outline"
-                    className="w-full justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight"
+                    className="w-full justify-center lg:justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight order-3 col-span-2 lg:order-none lg:col-span-1"
                     onClick={clearSandbox}
                     data-testid="button-return-to-game"
                   >
@@ -569,7 +568,7 @@ export function DriveGameViewer({
                   type="button"
                   size="sm"
                   variant="outline"
-                  className="w-full justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight"
+                  className="w-full justify-center lg:justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight order-2 lg:order-none"
                   onClick={() => {
                     setShowAnalysis(false);
                     posStop();
