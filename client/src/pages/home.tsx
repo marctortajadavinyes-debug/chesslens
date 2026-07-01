@@ -906,7 +906,7 @@ export default function Home() {
 
       {showSuggestionDialog && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 px-3 py-4">
-          <div className="w-full max-w-lg rounded-2xl bg-background p-4 shadow-xl border border-border">
+          <div className="w-full max-w-lg max-h-[calc(100dvh-2rem)] rounded-2xl bg-background p-4 shadow-xl border border-border flex flex-col">
             <div className="flex items-start justify-between gap-3 mb-3">
               <div>
                 <h2 className="text-lg font-display font-bold">
@@ -933,55 +933,40 @@ export default function Home() {
             <textarea
               value={suggestionText}
               onChange={(e) => setSuggestionText(e.target.value)}
-              className="w-full min-h-[180px] rounded-xl border border-border bg-background p-3 text-base leading-relaxed resize-y"
+              className="w-full min-h-[120px] sm:min-h-[160px] max-h-[38dvh] rounded-xl border border-border bg-background p-3 text-base leading-relaxed resize-y"
               autoFocus
             />
 
-            <div className="mt-4 flex flex-col sm:flex-row gap-2 sm:justify-end">
+            <div className="mt-3 shrink-0">
               <Button
                 type="button"
-                variant="outline"
-                onClick={async () => {
-                  await navigator.clipboard.writeText(suggestionText);
-                  toast({
-                    title:
-                      settings.appLanguage === "ca"
-                        ? "Suggeriment copiat"
-                        : settings.appLanguage === "es"
-                          ? "Sugerencia copiada"
-                          : "Suggestion copied",
-                    duration: 1500,
-                  });
-                }}
+                className="w-full"
                 disabled={!suggestionText.trim()}
-              >
-                {settings.appLanguage === "ca"
-                  ? "Copiar text"
-                  : settings.appLanguage === "es"
-                    ? "Copiar texto"
-                    : "Copy text"}
-              </Button>
-
-              <Button
-                type="button"
-                onClick={() => {
+                onClick={async () => {
                   const subject =
                     settings.appLanguage === "ca"
                       ? "Suggeriment FotoChess"
                       : settings.appLanguage === "es"
                         ? "Sugerencia FotoChess"
                         : "FotoChess suggestion";
-                  const body = suggestionText.trim() || t.suggestionsBody;
+                  const body = suggestionText.trim();
+
+                  try {
+                    await navigator.clipboard.writeText(body);
+                  } catch {
+                    // If clipboard access fails, still open the email composer.
+                  }
+
                   const mailto = `mailto:chessproapp.mvp@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
                   window.location.href = mailto;
                 }}
               >
                 <MessageSquare className="w-4 h-4 mr-2" />
                 {settings.appLanguage === "ca"
-                  ? "Obrir correu"
+                  ? "Copiar i obrir correu"
                   : settings.appLanguage === "es"
-                    ? "Abrir correo"
-                    : "Open email"}
+                    ? "Copiar y abrir correo"
+                    : "Copy and open email"}
               </Button>
             </div>
           </div>
