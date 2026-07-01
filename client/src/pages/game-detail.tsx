@@ -791,7 +791,7 @@ export default function GameDetail() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <header className="border-b border-border bg-white/50 backdrop-blur-md z-10">
-        <div className={`max-w-7xl mx-auto px-4 flex items-center justify-between transition-all ${showAnalysis ? "h-10" : "h-16"}`}>
+        <div className={`relative max-w-7xl mx-auto px-4 flex items-center justify-between transition-all ${showAnalysis ? "h-8" : "h-16"}`}>
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" asChild>
               <Link href="/">
@@ -822,6 +822,17 @@ export default function GameDetail() {
             )}
           </div>
 
+          {showAnalysis && (
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+              <span
+                data-testid="badge-analysis-stockfish"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-300 dark:border-amber-700 whitespace-nowrap"
+              >
+                {t.analysisWithStockfish}
+              </span>
+            </div>
+          )}
+
           <div className="hidden lg:flex items-center gap-2">
             {isEditing ? (
               <>
@@ -847,18 +858,6 @@ export default function GameDetail() {
       </header>
 
       <main className="flex-1 max-w-7xl mx-auto w-full pt-2 px-4 pb-4 flex flex-col gap-1">
-
-        {/* Stockfish 18 pill — shown when analysis is active */}
-        {showAnalysis && (
-          <div className="flex items-center justify-center py-1">
-            <span
-              data-testid="badge-analysis-stockfish"
-              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 border border-amber-300 dark:border-amber-700"
-            >
-              {t.analysisWithStockfish}
-            </span>
-          </div>
-        )}
 
         {/* ── Shared header bar — hidden in analysis mode (controls move to sidebar) */}
         {!showAnalysis && (
@@ -1050,7 +1049,7 @@ export default function GameDetail() {
 
             {showAnalysis && (
               <div
-                className="h-[52px] space-y-0.5 bg-muted/30 rounded-lg px-3 py-1.5 overflow-hidden w-full"
+                className="h-[48px] space-y-0.5 bg-muted/30 rounded-lg px-2 sm:px-3 py-1 overflow-hidden w-full"
                 data-testid="analysis-lines"
               >
                 {posLines.length > 0 ? (
@@ -1061,10 +1060,10 @@ export default function GameDetail() {
                     return (
                       <div
                         key={i}
-                        className="flex items-center gap-2 text-xs font-mono"
+                        className="flex items-center gap-1.5 sm:gap-2 text-xs font-mono"
                         data-testid={`analysis-line-${i}`}
                       >
-                        <span className="text-muted-foreground w-12 shrink-0">
+                        <span className="text-muted-foreground w-9 sm:w-12 shrink-0">
                           {ev}
                         </span>
                         <span className="text-foreground/90 truncate">
@@ -1086,7 +1085,7 @@ export default function GameDetail() {
 
             {/* Board + sidebar — this flex row has no lines above it so the
                 sidebar min-h aligns exactly with the board height. */}
-            <div className="flex items-start gap-3">
+            <div className="flex flex-col lg:flex-row items-stretch lg:items-start gap-2 lg:gap-3">
 
               {/* Board column */}
               <div className="flex-1 min-w-0">
@@ -1156,16 +1155,16 @@ export default function GameDetail() {
 
               {/* Lateral button column — only visible in analysis mode */}
               {showAnalysis && (
-                <div className="shrink-0 flex flex-col justify-between w-[148px] min-h-[460px]">
+                <div className="grid grid-cols-2 gap-2 w-full lg:shrink-0 lg:flex lg:flex-col lg:justify-between lg:w-[148px] lg:min-h-[460px]">
                   {/* Top cluster: arrows toggle + scoresheet toggle.
                       Grouped so they sit together at the top; gap-3 gives
                       enough space to avoid misclicks. */}
-                  <div className="flex flex-col gap-3">
+                  <div className="contents lg:flex lg:flex-col lg:gap-3">
                     <Button
                       type="button"
                       size="sm"
                       variant="outline"
-                      className="w-full justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight"
+                      className="w-full justify-center lg:justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight"
                       onClick={() => setShowArrows((v) => !v)}
                       data-testid="button-toggle-arrows-sidebar"
                     >
@@ -1181,7 +1180,7 @@ export default function GameDetail() {
                       type="button"
                       size="sm"
                       variant="outline"
-                      className="w-full justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight"
+                      className="w-full justify-center lg:justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight"
                       onClick={() => setShowSheetMobile((v) => !v)}
                       data-testid="button-toggle-scoresheet-sidebar"
                     >
@@ -1202,7 +1201,7 @@ export default function GameDetail() {
                       type="button"
                       size="sm"
                       variant="outline"
-                      className="w-full justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight"
+                      className="w-full justify-center lg:justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight col-span-2 lg:col-span-1"
                       onClick={clearSandbox}
                       data-testid="button-return-to-game"
                     >
@@ -1216,7 +1215,7 @@ export default function GameDetail() {
                     type="button"
                     size="sm"
                     variant="outline"
-                    className="w-full justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight"
+                    className="w-full justify-center lg:justify-start gap-1.5 text-xs h-auto py-1.5 leading-tight col-span-2 lg:col-span-1"
                     onClick={() => { setShowAnalysis(false); posStop(); }}
                     data-testid="button-hide-analysis-sidebar"
                   >
