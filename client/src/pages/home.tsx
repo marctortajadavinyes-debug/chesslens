@@ -625,14 +625,14 @@ export default function Home() {
 
           {/* Panel de Configuració — overlay pantalla completa en mòbil, inline en sm+ */}
           <div className={showSettings
-            ? "fixed inset-0 z-30 bg-background overflow-y-auto sm:relative sm:inset-auto sm:z-auto sm:overflow-visible sm:bg-transparent"
+            ? "fixed inset-0 z-30 bg-background overflow-y-auto lg:relative lg:inset-auto lg:z-auto lg:overflow-visible lg:bg-transparent"
             : "max-w-xl mx-auto"
           }>
             {showSettings ? (
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-card p-4 sm:p-6 sm:rounded-2xl sm:border shadow-sm text-left space-y-3 sm:space-y-5 sm:max-w-xl sm:mx-auto"
+                className="bg-card p-4 sm:p-5 lg:p-6 sm:rounded-2xl sm:border shadow-sm text-left space-y-3 sm:space-y-4 lg:space-y-5 sm:max-w-xl sm:mx-auto"
               >
                 <div className="flex items-center gap-2 border-b pb-3 sm:border-none sm:pb-0">
                   <h2 className="text-lg sm:text-xl font-bold flex-1">
