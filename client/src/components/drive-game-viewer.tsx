@@ -159,6 +159,11 @@ export function DriveGameViewer({
   onClose,
 }: DriveGameViewerProps) {
   const lbl = LABEL[appLanguage] ?? LABEL.ca;
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [file]);
+
   const p = file.appProperties;
   const white = p.white || "?";
   const black = p.black || "?";
