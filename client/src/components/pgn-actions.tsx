@@ -477,7 +477,7 @@ export function PgnActions({
           <p className="text-xs text-muted-foreground">{t.pgnInvalid}</p>
         ) : null}
 
-        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+        <div className="grid grid-cols-2 gap-2">
           <Button
             type="button"
             variant="default"
@@ -485,7 +485,7 @@ export function PgnActions({
             onClick={handleCopy}
             disabled={disabled}
             data-testid="button-pgn-copy"
-            className="w-full justify-center order-1 sm:w-auto sm:order-none"
+            className="w-full justify-center order-1"
           >
             <Copy className="w-4 h-4 mr-2" />
             {t.copy}
@@ -499,7 +499,7 @@ export function PgnActions({
               onClick={handleShare}
               disabled={disabled}
               data-testid="button-pgn-share"
-              className="w-full justify-center order-5 sm:w-auto sm:order-none"
+              className="w-full justify-center order-5"
             >
               <Share2 className="w-4 h-4 mr-2" />
               {t.share}
@@ -513,7 +513,7 @@ export function PgnActions({
             onClick={handleDownload}
             disabled={disabled}
             data-testid="button-pgn-download"
-            className="w-full justify-center order-2 sm:w-auto sm:order-none"
+            className="w-full justify-center order-2"
           >
             <Download className="w-4 h-4 mr-2" />
             {t.download}
@@ -526,7 +526,7 @@ export function PgnActions({
             onClick={handleDriveClick}
             disabled={disabled || drivePending}
             data-testid="button-pgn-save-drive"
-            className="w-full justify-center order-3 sm:w-auto sm:order-none"
+            className="w-full justify-center order-3"
           >
             {driveState === "saved" ? (
               <Check className="w-4 h-4 mr-2" />
@@ -545,7 +545,7 @@ export function PgnActions({
                 size={size}
                 disabled={disabled}
                 data-testid="button-pgn-export"
-                className="w-full justify-center order-4 sm:w-auto sm:ml-auto sm:order-none"
+                className="w-full justify-center order-4"
               >
                 <Share2 className="w-4 h-4 mr-2" />
                 <span className="hidden lg:inline">{t.exportTitle}</span>
