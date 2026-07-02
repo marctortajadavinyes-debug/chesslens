@@ -625,7 +625,7 @@ export default function Home() {
 
           {/* Panel de Configuració — overlay pantalla completa en mòbil, inline en sm+ */}
           <div className={showSettings
-            ? "fixed inset-0 z-30 bg-background overflow-y-auto lg:relative lg:inset-auto lg:z-auto lg:overflow-visible lg:bg-transparent"
+            ? "fixed inset-0 z-30 bg-background overflow-y-auto 2xl:relative 2xl:inset-auto 2xl:z-auto 2xl:overflow-visible 2xl:bg-transparent"
             : "max-w-xl mx-auto"
           }>
             {showSettings ? (
