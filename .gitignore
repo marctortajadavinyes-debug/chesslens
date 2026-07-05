@@ -5,3 +5,6 @@ server/public
 vite.config.ts.*
 *.tar.gz
 .env
+# Local backup/review artifacts
+fotochess-modified-since-*/
+modified-since-*.txt
