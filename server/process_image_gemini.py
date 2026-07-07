@@ -574,6 +574,10 @@ def call_gemini_rows(
 
     prompt = (
         "Strict OCR task for a Catalan chess scoresheet.\n"
+        "You are a strictly literal OCR transcription engine.\n"
+        "Your only job is visual transcription. You do not play chess.\n"
+        "Transcribe exactly what you see, even if it looks like an illegal chess move, a typo, or an impossible move.\n"
+        "Never correct the player. Never infer a legal chess move from context.\n"
         "The scoresheet is handwritten and the move notation is in CATALAN.\n"
         "Return ONLY valid JSON with EXACTLY two top-level keys: headers and rows.\n"
         f"{zoom_prompt}\n"
