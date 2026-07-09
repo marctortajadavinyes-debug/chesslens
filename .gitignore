@@ -8,3 +8,6 @@ vite.config.ts.*
 # Local backup/review artifacts
 fotochess-modified-since-*/
 modified-since-*.txt
+
+# Replit Agent pasted prompts
+attached_assets/Pasted-*.txt

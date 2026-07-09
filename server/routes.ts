@@ -77,6 +77,7 @@ type Game = {
   createdAt: string;
   updatedAt: string;
   status: GameStatus;
+  ownerDeviceId: string | null;
 
   // Compatibilidad antigua
   imageUrl: string | null;
@@ -102,6 +103,22 @@ const games = new Map<number, Game>();
 
 function nowIso() {
   return new Date().toISOString();
+}
+
+function getRequestDeviceId(req: any): string | null {
+  const headerId = req.headers?.["x-fotochess-device-id"];
+  if (typeof headerId === "string" && headerId.trim().length > 0) {
+    return headerId.trim();
+  }
+  const queryId = req.query?.deviceId;
+  if (typeof queryId === "string" && queryId.trim().length > 0) {
+    return queryId.trim();
+  }
+  const bodyId = req.body?.deviceId;
+  if (typeof bodyId === "string" && bodyId.trim().length > 0) {
+    return bodyId.trim();
+  }
+  return null;
 }
 function resolveGameSettings(body: any): GameSettings {
   const appLanguageValues: AppLanguage[] = ["ca", "es", "en"];
@@ -657,10 +674,18 @@ export async function registerRoutes(_httpServer: Server, app: Express) {
 
     return cells[plyIndex] ?? null;
   }
-  app.get("/api/games", (_req, res) => {
-    const list = Array.from(games.values()).sort(
-      (a, b) => +new Date(b.createdAt) - +new Date(a.createdAt),
-    );
+  app.get("/api/games", (req, res) => {
+    const requestDeviceId = getRequestDeviceId(req);
+
+    const list = Array.from(games.values())
+      .filter((g) => {
+        // Beta de privacitat: només es mostren partides del mateix dispositiu.
+        // Partides antigues sense ownerDeviceId no es mostren a ningú.
+        if (!requestDeviceId) return false;
+        return g.ownerDeviceId === requestDeviceId;
+      })
+      .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
+
     res.json(list);
   });
 
@@ -669,6 +694,11 @@ export async function registerRoutes(_httpServer: Server, app: Express) {
     const g = games.get(id);
 
     if (!g) {
+      return res.status(404).json({ message: "Game not found" });
+    }
+
+    const requestDeviceId = getRequestDeviceId(req);
+    if (!g.ownerDeviceId || g.ownerDeviceId !== requestDeviceId) {
       return res.status(404).json({ message: "Game not found" });
     }
 
@@ -705,6 +735,7 @@ export async function registerRoutes(_httpServer: Server, app: Express) {
         createdAt: nowIso(),
         updatedAt: nowIso(),
         status: "processing",
+        ownerDeviceId: getRequestDeviceId(req),
 
         imageUrl: finalImageUrls[0] ?? null,
         imagePath: finalImagePaths[0] ?? null,
@@ -880,6 +911,11 @@ export async function registerRoutes(_httpServer: Server, app: Express) {
         return res.status(404).json({ message: "Game not found" });
       }
 
+      const patchDeviceId = getRequestDeviceId(req);
+      if (!game.ownerDeviceId || game.ownerDeviceId !== patchDeviceId) {
+        return res.status(404).json({ message: "Game not found" });
+      }
+
       const { pgn, status, error } = req.body ?? {};
 
       if (typeof pgn === "string") {
@@ -910,6 +946,11 @@ export async function registerRoutes(_httpServer: Server, app: Express) {
       const game = games.get(id);
 
       if (!game) {
+        return res.status(404).json({ message: "Game not found" });
+      }
+
+      const reviewDeviceId = getRequestDeviceId(req);
+      if (!game.ownerDeviceId || game.ownerDeviceId !== reviewDeviceId) {
         return res.status(404).json({ message: "Game not found" });
       }
 

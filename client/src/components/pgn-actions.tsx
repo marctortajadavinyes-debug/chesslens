@@ -72,7 +72,7 @@ const TEXT: Record<AppLanguage, ActionsText> = {
   ca: {
     title: "Accions del PGN",
     copy: "Copiar PGN",
-    share: "Compartir",
+    share: "Compartir PGN",
     download: "Descarregar .pgn",
     saveToDrive: "Guardar a Drive",
     copiedTitle: "PGN copiat",
@@ -105,7 +105,7 @@ const TEXT: Record<AppLanguage, ActionsText> = {
   en: {
     title: "PGN actions",
     copy: "Copy PGN",
-    share: "Share",
+    share: "Share PGN",
     download: "Download .pgn",
     saveToDrive: "Save to Drive",
     copiedTitle: "PGN copied",
@@ -138,7 +138,7 @@ const TEXT: Record<AppLanguage, ActionsText> = {
   es: {
     title: "Acciones del PGN",
     copy: "Copiar PGN",
-    share: "Compartir",
+    share: "Compartir PGN",
     download: "Descargar .pgn",
     saveToDrive: "Guardar en Drive",
     copiedTitle: "PGN copiado",

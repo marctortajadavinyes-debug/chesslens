@@ -9,10 +9,15 @@ import type {
 import { getOrCreateDeviceId } from "@/lib/device-id";
 
 export function useGames() {
+  const deviceId = getOrCreateDeviceId();
+
   return useQuery({
-    queryKey: [api.games.list.path],
+    queryKey: [api.games.list.path, deviceId],
     queryFn: async () => {
-      const res = await fetch(api.games.list.path);
+      const url = `${api.games.list.path}?deviceId=${encodeURIComponent(deviceId)}`;
+      const res = await fetch(url, {
+        headers: { "X-FotoChess-Device-Id": deviceId },
+      });
       if (!res.ok) throw new Error("Failed to fetch games");
       return api.games.list.responses[200].parse(await res.json());
     },
@@ -20,11 +25,16 @@ export function useGames() {
 }
 
 export function useGame(id: number) {
+  const deviceId = getOrCreateDeviceId();
+
   return useQuery({
-    queryKey: [api.games.get.path, id],
+    queryKey: [api.games.get.path, id, deviceId],
     queryFn: async () => {
-      const url = buildUrl(api.games.get.path, { id });
-      const res = await fetch(url);
+      const baseUrl = buildUrl(api.games.get.path, { id });
+      const url = `${baseUrl}?deviceId=${encodeURIComponent(deviceId)}`;
+      const res = await fetch(url, {
+        headers: { "X-FotoChess-Device-Id": deviceId },
+      });
       if (res.status === 404) return null;
       if (!res.ok) throw new Error("Failed to fetch game");
       return api.games.get.responses[200].parse(await res.json());
@@ -50,7 +60,10 @@ export function useCreateGame() {
 
       const res = await fetch(api.games.create.path, {
         method: api.games.create.method,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-FotoChess-Device-Id": validated.deviceId ?? getOrCreateDeviceId(),
+        },
         body: JSON.stringify(validated),
       });
 
@@ -81,10 +94,14 @@ export function useUpdateGame() {
     }: { id: number } & UpdateGameRequest) => {
       const validated = api.games.update.input.parse(updates);
       const url = buildUrl(api.games.update.path, { id });
+      const deviceId = getOrCreateDeviceId();
 
       const res = await fetch(url, {
         method: api.games.update.method,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-FotoChess-Device-Id": deviceId,
+        },
         body: JSON.stringify(validated),
       });
 
@@ -115,10 +132,14 @@ export function useReviewGame() {
     }: { id: number } & ReviewGameRequest) => {
       const validated = api.games.review.input.parse(payload);
       const url = buildUrl(api.games.review.path, { id });
+      const deviceId = getOrCreateDeviceId();
 
       const res = await fetch(url, {
         method: api.games.review.method,
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-FotoChess-Device-Id": deviceId,
+        },
         body: JSON.stringify(validated),
       });
 
