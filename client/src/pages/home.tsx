@@ -13,6 +13,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { useCreateGame, useGames } from "@/hooks/use-games";
+import { getOrCreateDeviceId } from "@/lib/device-id";
 import { analyzePgn } from "@/lib/pgn-analysis";
 import { AnalysisPanel } from "@/components/analysis-panel";
 import { Button } from "@/components/ui/button";
@@ -87,20 +88,6 @@ type UiText = {
 };
 
 const SETTINGS_STORAGE_KEY = "chesslens_user_settings_v1";
-const DEVICE_STORAGE_KEY = "chesslens_device_id_v1";
-
-function getOrCreateDeviceId() {
-  const existing = window.localStorage.getItem(DEVICE_STORAGE_KEY);
-  if (existing) return existing;
-
-  const generated =
-    typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID()
-      : `device_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-
-  window.localStorage.setItem(DEVICE_STORAGE_KEY, generated);
-  return generated;
-}
 
 const DEFAULT_SETTINGS: FotoChessUserSettings = {
   alias: "",

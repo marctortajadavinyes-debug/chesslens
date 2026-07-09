@@ -9,7 +9,7 @@
  * Solo cacheamos el app shell (HTML de navegación y assets estáticos del build).
  */
 
-const CACHE_VERSION = "chesslens-v1";
+const CACHE_VERSION = "chesslens-v2";
 const APP_SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 

@@ -1,4 +1,5 @@
 const STORAGE_KEY = "chesslens.deviceId";
+const LEGACY_STORAGE_KEY = "chesslens_device_id_v1";
 
 let memoryFallbackId: string | null = null;
 
@@ -50,6 +51,16 @@ function safeReadStorage(): string | null {
   }
 }
 
+function safeReadLegacyStorage(): string | null {
+  try {
+    if (typeof window === "undefined" || !window.localStorage) return null;
+    const value = window.localStorage.getItem(LEGACY_STORAGE_KEY);
+    return typeof value === "string" && value.length > 0 ? value : null;
+  } catch {
+    return null;
+  }
+}
+
 function safeWriteStorage(value: string): boolean {
   try {
     if (typeof window === "undefined" || !window.localStorage) return false;
@@ -65,6 +76,16 @@ export function getOrCreateDeviceId(): string {
   if (stored) {
     memoryFallbackId = stored;
     return stored;
+  }
+
+  // Migració segura: si l'usuari ja tenia un deviceId antic guardat amb la
+  // clau legacy (chesslens_device_id_v1), el reutilitzem per no perdre
+  // l'accés a les partides ja creades amb aquell id.
+  const legacy = safeReadLegacyStorage();
+  if (legacy) {
+    safeWriteStorage(legacy);
+    memoryFallbackId = legacy;
+    return legacy;
   }
 
   if (memoryFallbackId) {
