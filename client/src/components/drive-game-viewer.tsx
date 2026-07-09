@@ -597,11 +597,11 @@ export function DriveGameViewer({
         onOpenChange={setShowLicenses}
         t={{
           title: "Llicències i avisos de tercers",
-          stockfish: "ChessLens utilitza Stockfish per a l'anàlisi d'escacs. Stockfish és un motor d'escacs lliure i de codi obert sota llicència GPLv3.",
-          pythonChess: "ChessLens utilitza python-chess al servidor per validar jugades i generar PGN.",
-          openSource: "ChessLens també utilitza biblioteques de codi obert com chess.js, react-chessboard i Lucide Icons per a la interfície i la gestió de posicions.",
+          stockfish: "FotoChess utilitza Stockfish per a l'anàlisi d'escacs. Stockfish és un motor d'escacs lliure i de codi obert sota llicència GPLv3.",
+          pythonChess: "FotoChess utilitza python-chess al servidor per validar jugades i generar PGN.",
+          openSource: "FotoChess també utilitza biblioteques de codi obert com chess.js, react-chessboard i Lucide Icons per a la interfície i la gestió de posicions.",
           gemini: "Les imatges de planelles pujades per l'usuari poden ser processades mitjançant Gemini API / Google AI Studio per extreure'n les jugades.",
-          trademarks: "Chess.com, Lichess.org i ChessBase són marques dels seus respectius titulars. ChessLens no està afiliada, patrocinada ni avalada per aquests serveis.",
+          trademarks: "Chess.com, Lichess.org i ChessBase són marques dels seus respectius titulars. FotoChess no està afiliada, patrocinada ni avalada per aquests serveis.",
           close: "Tancar",
         }}
       />

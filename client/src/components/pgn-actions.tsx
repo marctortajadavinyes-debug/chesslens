@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Copy, Download, Share2, CloudUpload, Check, ExternalLink, FileDown } from "lucide-react";
+import { Copy, Download, CloudUpload, Check, ExternalLink, FileDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -39,13 +39,11 @@ interface PgnActionsProps {
 type ActionsText = {
   title: string;
   copy: string;
-  share: string;
   download: string;
   saveToDrive: string;
   copiedTitle: string;
   copiedDescription: string;
   copyErrorTitle: string;
-  shareErrorTitle: string;
   pgnNotReady: string;
   pgnInvalid: string;
   driveSavedTitle: string;
@@ -72,13 +70,11 @@ const TEXT: Record<AppLanguage, ActionsText> = {
   ca: {
     title: "Accions del PGN",
     copy: "Copiar PGN",
-    share: "Compartir PGN",
     download: "Descarregar .pgn",
     saveToDrive: "Guardar a Drive",
     copiedTitle: "PGN copiat",
     copiedDescription: "El PGN s'ha copiat al porta-retalls.",
     copyErrorTitle: "No s'ha pogut copiar el PGN",
-    shareErrorTitle: "No s'ha pogut compartir el PGN",
     pgnNotReady: "El PGN encara s'està generant.",
     pgnInvalid: "El PGN no és vàlid encara.",
     driveSavedTitle: "PGN guardat a Drive",
@@ -105,13 +101,11 @@ const TEXT: Record<AppLanguage, ActionsText> = {
   en: {
     title: "PGN actions",
     copy: "Copy PGN",
-    share: "Share PGN",
     download: "Download .pgn",
     saveToDrive: "Save to Drive",
     copiedTitle: "PGN copied",
     copiedDescription: "The PGN has been copied to the clipboard.",
     copyErrorTitle: "Could not copy the PGN",
-    shareErrorTitle: "Could not share the PGN",
     pgnNotReady: "PGN is still being generated.",
     pgnInvalid: "PGN is not valid yet.",
     driveSavedTitle: "PGN saved to Drive",
@@ -138,13 +132,11 @@ const TEXT: Record<AppLanguage, ActionsText> = {
   es: {
     title: "Acciones del PGN",
     copy: "Copiar PGN",
-    share: "Compartir PGN",
     download: "Descargar .pgn",
     saveToDrive: "Guardar en Drive",
     copiedTitle: "PGN copiado",
     copiedDescription: "El PGN se ha copiado al portapapeles.",
     copyErrorTitle: "No se ha podido copiar el PGN",
-    shareErrorTitle: "No se ha podido compartir el PGN",
     pgnNotReady: "El PGN se está generando.",
     pgnInvalid: "El PGN aún no es válido.",
     driveSavedTitle: "PGN guardado en Drive",
@@ -261,10 +253,6 @@ export function PgnActions({
 
   const hasImages = imageUrls.length > 0;
 
-  const canShare =
-    typeof navigator !== "undefined" &&
-    typeof (navigator as Navigator & { share?: unknown }).share === "function";
-
   if (!hasPgn) return null;
 
   // --- Handlers ---
@@ -278,23 +266,6 @@ export function PgnActions({
       toast({ title: t.copiedTitle, description: t.copiedDescription, duration: 1500 });
     } else {
       toast({ title: t.copyErrorTitle, variant: "destructive" });
-    }
-  };
-
-  const handleShare = async () => {
-    if (disabled || !canShare) return;
-    setIsWorking(true);
-    try {
-      await (navigator as Navigator & {
-        share: (data: ShareData) => Promise<void>;
-      }).share({ title: `ChessLens #${gameId}`, text: trimmedPgn });
-    } catch (err) {
-      const name = (err as { name?: string })?.name;
-      if (name !== "AbortError") {
-        toast({ title: t.shareErrorTitle, variant: "destructive" });
-      }
-    } finally {
-      setIsWorking(false);
     }
   };
 
@@ -491,21 +462,6 @@ export function PgnActions({
             {t.copy}
           </Button>
 
-          {canShare && (
-            <Button
-              type="button"
-              variant="outline"
-              size={size}
-              onClick={handleShare}
-              disabled={disabled}
-              data-testid="button-pgn-share"
-              className="w-full justify-center order-5"
-            >
-              <Share2 className="w-4 h-4 mr-2" />
-              {t.share}
-            </Button>
-          )}
-
           <Button
             type="button"
             variant="outline"
@@ -547,7 +503,7 @@ export function PgnActions({
                 data-testid="button-pgn-export"
                 className="w-full justify-center order-4"
               >
-                <Share2 className="w-4 h-4 mr-2" />
+                <FileDown className="w-4 h-4 mr-2" />
                 <span className="hidden lg:inline">{t.exportTitle}</span>
                 <span className="lg:hidden">{t.export}</span>
               </Button>

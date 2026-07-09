@@ -1,7 +1,7 @@
 {
-  "name": "ChessLens",
-  "short_name": "ChessLens",
-  "description": "Digitalitza les teves planilles d'escacs i genera el PGN automàticament.",
+  "name": "FotoChess",
+  "short_name": "FotoChess",
+  "description": "Scan. Save PGN. Analyze. Improve.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
