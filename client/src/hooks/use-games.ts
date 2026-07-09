@@ -159,6 +159,14 @@ export function useReviewGame() {
     onSuccess: (data, variables) => {
       queryClient.setQueryData([api.games.get.path, variables.id], data);
       queryClient.invalidateQueries({ queryKey: [api.games.list.path] });
+      // The individual game query is keyed as [path, id, deviceId] (since the
+      // deviceId privacy fix). invalidateQueries matches by key prefix, so
+      // this partial key still reaches and refetches that cached query —
+      // without this, the UI kept showing the stale "needs_review" state
+      // after a correction was applied and the game had already resumed.
+      queryClient.invalidateQueries({
+        queryKey: [api.games.get.path, variables.id],
+      });
     },
   });
 }
