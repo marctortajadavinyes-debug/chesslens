@@ -14,6 +14,30 @@ export interface PgnMetadata {
   firstBlackMoves: string;
 }
 
+// --- Date helpers: PGN <-> ISO ---
+
+/**
+ * Convert PGN Date tag (YYYY.MM.DD) to ISO date (YYYY-MM-DD).
+ * Tolerates unknowns, empty, "*", and already-ISO input.
+ */
+export function pgnDateToIsoDate(date: string): string {
+  const d = (date ?? "").trim();
+  if (!d || d === "*" || d === "????.??.??" || d === "????-??-??") return "";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+  return d.replace(/\./g, "-");
+}
+
+/**
+ * Convert ISO date (YYYY-MM-DD) to PGN Date tag (YYYY.MM.DD).
+ * Tolerates unknowns, empty, "*", and already-PGN input.
+ */
+export function isoDateToPgnDate(date: string): string {
+  const d = (date ?? "").trim();
+  if (!d || d === "*" || d === "????.??.??" || d === "????-??-??") return "????.??.??";
+  if (/^\d{4}\.\d{2}\.\d{2}$/.test(d)) return d;
+  return d.replace(/-/g, ".");
+}
+
 // --- Header extraction ---
 
 export function extractPgnHeader(pgn: string, tag: string): string {
@@ -204,7 +228,7 @@ export function applyMetadataToPgn(pgn: string, meta: PgnMetadata): string {
   // Override with trimmed meta values
   if (meta.white !== undefined) headerMap.set("White", meta.white.trim() || "?");
   if (meta.black !== undefined) headerMap.set("Black", meta.black.trim() || "?");
-  if (meta.date !== undefined) headerMap.set("Date", meta.date.trim() || "????.??.??");
+  if (meta.date !== undefined) headerMap.set("Date", isoDateToPgnDate(meta.date.trim()));
   if (meta.result !== undefined) headerMap.set("Result", meta.result.trim() || "*");
 
   // Ensure all STR tags exist
@@ -266,7 +290,7 @@ export function extractPgnMetadata(
 ): PgnMetadata {
   const white = extractPgnHeader(pgn, "White");
   const black = extractPgnHeader(pgn, "Black");
-  const date = extractPgnHeader(pgn, "Date");
+  const date = pgnDateToIsoDate(extractPgnHeader(pgn, "Date"));
   const result = extractPgnHeader(pgn, "Result");
   const userColor = detectUserColor(pgn, playerAlias ?? "");
   const opponent =
