@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Copy, Download, CloudUpload, Check, ExternalLink, FileDown } from "lucide-react";
+import { Copy, Download, CloudUpload, Check, ExternalLink, FileDown, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -503,7 +503,7 @@ export function PgnActions({
                 data-testid="button-pgn-export"
                 className="w-full justify-center order-4"
               >
-                <FileDown className="w-4 h-4 mr-2" />
+                <Share2 className="w-4 h-4 mr-2" />
                 <span className="hidden lg:inline">{t.exportTitle}</span>
                 <span className="lg:hidden">{t.export}</span>
               </Button>
