@@ -22,6 +22,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import type { AppLanguage } from "@shared/schema";
 import { usePositionAnalysis } from "@/hooks/use-position-analysis";
+import { evalToWhitePercent } from "@/lib/eval-bar";
 import { LicensesDialog } from "@/components/licenses-dialog";
 import { Chess } from "chess.js";
 
@@ -332,28 +333,7 @@ function pvToSan(fen: string, uciPv: string[]): string {
   }
 }
 
-function evalToWhitePercent(scoreCpWhite?: number, mateWhite?: number): number {
-  if (mateWhite !== undefined) return mateWhite > 0 ? 100 : 0;
-  if (scoreCpWhite === undefined) return 50;
-
-  const absCp = Math.abs(scoreCpWhite);
-  const sign = scoreCpWhite >= 0 ? 1 : -1;
-
-  let half: number;
-  if (absCp <= 140) {
-    half = (absCp / 140) * 12.5;
-  } else if (absCp <= 300) {
-    half = 12.5 + ((absCp - 140) / 160) * 12.5;
-  } else if (absCp <= 500) {
-    half = 25 + ((absCp - 300) / 200) * 12.5;
-  } else {
-    const excess = absCp - 500;
-    const smoothing = 220;
-    half = 37.5 + 8.5 * (1 - smoothing / (excess + smoothing));
-  }
-
-  return Math.max(4, Math.min(96, 50 + sign * half));
-}
+// evalToWhitePercent is shared — imported from @/lib/eval-bar
 
 function evalToString(scoreCpWhite?: number, mateWhite?: number): string {
   if (mateWhite !== undefined) {
