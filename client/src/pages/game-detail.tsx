@@ -333,11 +333,26 @@ function pvToSan(fen: string, uciPv: string[]): string {
 }
 
 function evalToWhitePercent(scoreCpWhite?: number, mateWhite?: number): number {
-  // Mate → the winning side takes the entire bar (100 or 0).
   if (mateWhite !== undefined) return mateWhite > 0 ? 100 : 0;
   if (scoreCpWhite === undefined) return 50;
-  const clamped = Math.max(-1000, Math.min(1000, scoreCpWhite));
-  return 50 + (clamped / 1000) * 45;
+
+  const absCp = Math.abs(scoreCpWhite);
+  const sign = scoreCpWhite >= 0 ? 1 : -1;
+
+  let half: number;
+  if (absCp <= 140) {
+    half = (absCp / 140) * 12.5;
+  } else if (absCp <= 300) {
+    half = 12.5 + ((absCp - 140) / 160) * 12.5;
+  } else if (absCp <= 500) {
+    half = 25 + ((absCp - 300) / 200) * 12.5;
+  } else {
+    const excess = absCp - 500;
+    const smoothing = 220;
+    half = 37.5 + 8.5 * (1 - smoothing / (excess + smoothing));
+  }
+
+  return Math.max(4, Math.min(96, 50 + sign * half));
 }
 
 function evalToString(scoreCpWhite?: number, mateWhite?: number): string {
@@ -519,8 +534,39 @@ export default function GameDetail() {
   }, [showAnalysis, activeFen]);
 
   const posLine = posLines[0];
-  const evalTopPercent = evalToWhitePercent(posLine?.scoreCpWhite, posLine?.mateWhite);
-  const evalString = posLine ? evalToString(posLine.scoreCpWhite, posLine.mateWhite) : "";
+
+  // ── Stable eval for bar: preserve last valid evaluation while recalculating ──
+  // Stores only the numeric values, never the pv/variants (those stay in posLines).
+  const [lastEval, setLastEval] = useState<{
+    scoreCpWhite?: number;
+    mateWhite?: number;
+  } | null>(null);
+
+  // Save whenever a real result arrives.
+  useEffect(() => {
+    if (posLine) {
+      setLastEval({ scoreCpWhite: posLine.scoreCpWhite, mateWhite: posLine.mateWhite });
+    }
+  }, [posLine]);
+
+  // Clear when the user exits analysis entirely.
+  useEffect(() => {
+    if (!showAnalysis) setLastEval(null);
+  }, [showAnalysis]);
+
+  // Which eval feeds the bar:
+  //   • posLine exists → use current result
+  //   • analyzing with no result yet → use last valid (avoids bounce to center)
+  //   • error / idle / done-without-result → nothing (neutral bar)
+  const barEval =
+    posLine
+      ? ({ scoreCpWhite: posLine.scoreCpWhite, mateWhite: posLine.mateWhite } as const)
+      : posStatus === "analyzing"
+        ? lastEval
+        : null;
+
+  const evalTopPercent = evalToWhitePercent(barEval?.scoreCpWhite, barEval?.mateWhite);
+  const evalString = barEval ? evalToString(barEval.scoreCpWhite, barEval.mateWhite) : "";
 
   // showArrows — persisted in localStorage
   const [showArrows, setShowArrows] = useState(
