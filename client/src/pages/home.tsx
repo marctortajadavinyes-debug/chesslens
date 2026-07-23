@@ -121,22 +121,22 @@ const SHEET_FORMAT_OPTIONS: { value: SheetFormat }[] = [
 
 const SHEET_FORMAT_LABELS: Record<AppLanguage, Record<SheetFormat, string>> = {
   ca: {
-    fce_75_3x25: "FCE · 75 jugades · 3 columnes x 25",
-    fide_60_3x20: "FEDA / FIDE / US · 60 jugades · 3 columnes x 20",
-    standard_60_2x30: "Estàndard club/escolar · 60 jugades · 2 columnes x 30",
-    generic_40_2x20: "Genèrica / escolar · 40 jugades · 2 columnes x 20",
+    fce_75_3x25: "75 jugades · 3 columnes × 25",
+    fide_60_3x20: "60 jugades · 3 columnes × 20",
+    standard_60_2x30: "60 jugades · 2 columnes × 30",
+    generic_40_2x20: "40 jugades · 2 columnes × 20",
   },
   en: {
-    fce_75_3x25: "FCE · 75 moves · 3 columns x 25",
-    fide_60_3x20: "FEDA / FIDE / US · 60 moves · 3 columns x 20",
-    standard_60_2x30: "Club/school standard · 60 moves · 2 columns x 30",
-    generic_40_2x20: "Generic / school · 40 moves · 2 columns x 20",
+    fce_75_3x25: "75 moves · 3 columns × 25",
+    fide_60_3x20: "60 moves · 3 columns × 20",
+    standard_60_2x30: "60 moves · 2 columns × 30",
+    generic_40_2x20: "40 moves · 2 columns × 20",
   },
   es: {
-    fce_75_3x25: "FCE · 75 jugadas · 3 columnas x 25",
-    fide_60_3x20: "FEDA / FIDE / US · 60 jugadas · 3 columnas x 20",
-    standard_60_2x30: "Estándar club/escolar · 60 jugadas · 2 columnas x 30",
-    generic_40_2x20: "Genérica / escolar · 40 jugadas · 2 columnas x 20",
+    fce_75_3x25: "75 jugadas · 3 columnas × 25",
+    fide_60_3x20: "60 jugadas · 3 columnas × 20",
+    standard_60_2x30: "60 jugadas · 2 columnas × 30",
+    generic_40_2x20: "40 jugadas · 2 columnas × 20",
   },
 };
 
