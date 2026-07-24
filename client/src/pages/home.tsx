@@ -79,9 +79,8 @@ type UiText = {
   licensesTitle: string;
   licensesClose: string;
   licensesStockfish: string;
-  licensesPythonChess: string;
-  licensesOpenSource: string;
-  licensesGemini: string;
+  licensesLucide: string;
+  licensesOtherComponents: string;
   licensesTrademarks: string;
   licensesTrigger: string;
   analysisWithStockfish: string;
@@ -192,13 +191,11 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     licensesTitle: "Llicències i avisos de tercers",
     licensesClose: "Tancar",
     licensesStockfish:
-      "FotoChess utilitza Stockfish per a l'anàlisi d'escacs. Stockfish és un motor d'escacs lliure i de codi obert sota llicència GPLv3.",
-    licensesPythonChess:
-      "FotoChess utilitza python-chess al servidor per validar jugades i generar PGN.",
-    licensesOpenSource:
-      "FotoChess també utilitza biblioteques de codi obert com chess.js, react-chessboard i Lucide Icons per a la interfície i la gestió de posicions.",
-    licensesGemini:
-      "Les imatges de planelles pujades per l'usuari poden ser processades mitjançant Gemini API / Google AI Studio per extreure'n les jugades.",
+      "FotoChess ofereix anàlisi d'escacs mitjançant Stockfish, un motor d'escacs lliure i de codi obert sota llicència GNU GPL v3.",
+    licensesLucide:
+      "FotoChess utilitza Lucide Icons en alguns elements de la interfície. Lucide es distribueix sota llicència ISC.",
+    licensesOtherComponents:
+      "FotoChess incorpora altres components i serveis de tercers, subjectes a les seves respectives condicions i llicències.",
     licensesTrademarks:
       "Chess.com, Lichess.org i ChessBase són marques dels seus respectius titulars. FotoChess no està afiliada, patrocinada ni avalada per aquests serveis.",
     licensesTrigger: "Llicències i avisos de tercers",
@@ -255,13 +252,11 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     licensesTitle: "Licences and third-party notices",
     licensesClose: "Close",
     licensesStockfish:
-      "FotoChess uses Stockfish for chess analysis. Stockfish is a free and open-source chess engine under the GPLv3 licence.",
-    licensesPythonChess:
-      "FotoChess uses python-chess on the server to validate moves and generate PGN.",
-    licensesOpenSource:
-      "FotoChess also uses open-source libraries such as chess.js, react-chessboard and Lucide Icons for the interface and position management.",
-    licensesGemini:
-      "User-uploaded scoresheet images may be processed via Gemini API / Google AI Studio to extract moves.",
+      "FotoChess provides chess analysis using Stockfish, a free and open-source chess engine licensed under the GNU GPL v3.",
+    licensesLucide:
+      "FotoChess uses Lucide Icons in some interface elements. Lucide is distributed under the ISC License.",
+    licensesOtherComponents:
+      "FotoChess includes other third-party components and services subject to their respective terms and licenses.",
     licensesTrademarks:
       "Chess.com, Lichess.org and ChessBase are trademarks of their respective owners. FotoChess is not affiliated with, sponsored by, or endorsed by these services.",
     licensesTrigger: "Licences and third-party notices",
@@ -317,13 +312,11 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     licensesTitle: "Licencias y avisos de terceros",
     licensesClose: "Cerrar",
     licensesStockfish:
-      "FotoChess utiliza Stockfish para el análisis de ajedrez. Stockfish es un motor de ajedrez libre y de código abierto bajo licencia GPLv3.",
-    licensesPythonChess:
-      "FotoChess utiliza python-chess en el servidor para validar jugadas y generar PGN.",
-    licensesOpenSource:
-      "FotoChess también utiliza bibliotecas de código abierto como chess.js, react-chessboard y Lucide Icons para la interfaz y la gestión de posiciones.",
-    licensesGemini:
-      "Las imágenes de planillas subidas por el usuario pueden ser procesadas mediante Gemini API / Google AI Studio para extraer las jugadas.",
+      "FotoChess ofrece análisis de ajedrez mediante Stockfish, un motor de ajedrez libre y de código abierto bajo licencia GNU GPL v3.",
+    licensesLucide:
+      "FotoChess utiliza Lucide Icons en algunos elementos de la interfaz. Lucide se distribuye bajo licencia ISC.",
+    licensesOtherComponents:
+      "FotoChess incorpora otros componentes y servicios de terceros, sujetos a sus respectivas condiciones y licencias.",
     licensesTrademarks:
       "Chess.com, Lichess.org y ChessBase son marcas de sus respectivos titulares. FotoChess no está afiliada, patrocinada ni avalada por estos servicios.",
     licensesTrigger: "Licencias y avisos de terceros",
@@ -966,9 +959,8 @@ export default function Home() {
         t={{
           title: t.licensesTitle,
           stockfish: t.licensesStockfish,
-          pythonChess: t.licensesPythonChess,
-          openSource: t.licensesOpenSource,
-          gemini: t.licensesGemini,
+          lucide: t.licensesLucide,
+          otherComponents: t.licensesOtherComponents,
           trademarks: t.licensesTrademarks,
           close: t.licensesClose,
         }}
