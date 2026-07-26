@@ -84,6 +84,7 @@ type UiText = {
   licensesTrademarks: string;
   licensesTrigger: string;
   analysisWithStockfish: string;
+  privacyPolicy: string;
 };
 
 const SETTINGS_STORAGE_KEY = "chesslens_user_settings_v1";
@@ -200,6 +201,7 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
       "Chess.com, Lichess.org i ChessBase són marques dels seus respectius titulars. FotoChess no està afiliada, patrocinada ni avalada per aquests serveis.",
     licensesTrigger: "Llicències i avisos de tercers",
     analysisWithStockfish: "Anàlisi amb Stockfish 18",
+    privacyPolicy: "Política de privacitat",
   },
   en: {
     library: "My games",
@@ -261,6 +263,7 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
       "Chess.com, Lichess.org and ChessBase are trademarks of their respective owners. FotoChess is not affiliated with, sponsored by, or endorsed by these services.",
     licensesTrigger: "Licences and third-party notices",
     analysisWithStockfish: "Analysis with Stockfish 18",
+    privacyPolicy: "Privacy Policy",
   },
   es: {
     library: "Mis partidas",
@@ -321,6 +324,7 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
       "Chess.com, Lichess.org y ChessBase son marcas de sus respectivos titulares. FotoChess no está afiliada, patrocinada ni avalada por estos servicios.",
     licensesTrigger: "Licencias y avisos de terceros",
     analysisWithStockfish: "Análisis con Stockfish 18",
+    privacyPolicy: "Política de privacidad",
   },
 };
 
@@ -862,6 +866,17 @@ export default function Home() {
             )}
           </div>
         </section>
+
+        {/* Privacy policy link — centred, between upload panel and recent games */}
+        <div className="text-center py-2">
+          <Link
+            href="/privacy"
+            data-testid="privacy-policy-link"
+            className="text-xs text-muted-foreground underline hover:text-muted-foreground/70 transition-colors"
+          >
+            {t.privacyPolicy}
+          </Link>
+        </div>
 
         <section>
           <h2 className="text-2xl font-bold mb-6">{t.recentGames}</h2>
