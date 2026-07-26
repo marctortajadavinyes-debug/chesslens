@@ -9,6 +9,7 @@
 
 import { useState, useEffect } from "react";
 import { Link } from "wouter";
+import { ArrowLeft } from "lucide-react";
 
 type Lang = "ca" | "es" | "en";
 
@@ -1689,16 +1690,25 @@ export default function Privacy() {
       {/* Header */}
       <header className="border-b border-border bg-white/50 backdrop-blur-md sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between gap-4">
-          <Link
-            href="/"
-            className="font-display font-bold text-lg tracking-tight hover:opacity-80 transition-opacity"
-          >
-            FotoChess
-          </Link>
+          <div className="flex items-center gap-1">
+            <Link
+              href="/"
+              aria-label={content.backLink}
+              className="inline-flex items-center justify-center rounded-md p-1.5 hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+            </Link>
+            <Link
+              href="/"
+              className="font-display font-bold text-lg tracking-tight hover:opacity-80 transition-opacity"
+            >
+              FotoChess
+            </Link>
+          </div>
 
           {/* Language selector */}
           <nav aria-label="Language selector" className="flex items-center gap-1 text-xs text-muted-foreground">
-            {(["ca", "es", "en"] as Lang[]).map((l, i) => (
+            {(["ca", "en", "es"] as Lang[]).map((l, i) => (
               <span key={l} className="flex items-center gap-1">
                 {i > 0 && <span aria-hidden="true">·</span>}
                 <button
