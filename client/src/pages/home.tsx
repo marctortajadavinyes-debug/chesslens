@@ -85,6 +85,7 @@ type UiText = {
   licensesTrigger: string;
   analysisWithStockfish: string;
   privacyPolicy: string;
+  termsOfUse: string;
 };
 
 const SETTINGS_STORAGE_KEY = "chesslens_user_settings_v1";
@@ -202,6 +203,7 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     licensesTrigger: "Llicències i avisos de tercers",
     analysisWithStockfish: "Anàlisi amb Stockfish 18",
     privacyPolicy: "Política de privacitat",
+    termsOfUse: "Condicions d'ús",
   },
   en: {
     library: "My games",
@@ -264,6 +266,7 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     licensesTrigger: "Licences and third-party notices",
     analysisWithStockfish: "Analysis with Stockfish 18",
     privacyPolicy: "Privacy Policy",
+    termsOfUse: "Terms of Use",
   },
   es: {
     library: "Mis partidas",
@@ -325,6 +328,7 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     licensesTrigger: "Licencias y avisos de terceros",
     analysisWithStockfish: "Análisis con Stockfish 18",
     privacyPolicy: "Política de privacidad",
+    termsOfUse: "Condiciones de uso",
   },
 };
 
@@ -867,14 +871,22 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Privacy policy link — centred, between upload panel and recent games */}
-        <div className="text-center py-2">
+        {/* Legal links — centred, between upload panel and recent games */}
+        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 py-2">
           <Link
             href="/privacy"
             data-testid="privacy-policy-link"
             className="text-xs text-muted-foreground underline hover:text-muted-foreground/70 transition-colors"
           >
             {t.privacyPolicy}
+          </Link>
+          <span aria-hidden="true" className="text-xs text-muted-foreground">·</span>
+          <Link
+            href="/terms"
+            data-testid="terms-of-use-link"
+            className="text-xs text-muted-foreground underline hover:text-muted-foreground/70 transition-colors"
+          >
+            {t.termsOfUse}
           </Link>
         </div>
 
