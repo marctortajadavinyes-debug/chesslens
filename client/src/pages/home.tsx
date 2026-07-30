@@ -871,25 +871,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Legal links — centred, between upload panel and recent games */}
-        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 py-2">
-          <Link
-            href="/privacy"
-            data-testid="privacy-policy-link"
-            className="text-xs text-muted-foreground underline hover:text-muted-foreground/70 transition-colors"
-          >
-            {t.privacyPolicy}
-          </Link>
-          <span aria-hidden="true" className="text-xs text-muted-foreground">·</span>
-          <Link
-            href="/terms"
-            data-testid="terms-of-use-link"
-            className="text-xs text-muted-foreground underline hover:text-muted-foreground/70 transition-colors"
-          >
-            {t.termsOfUse}
-          </Link>
-        </div>
-
         <section>
           <h2 className="text-2xl font-bold mb-6">{t.recentGames}</h2>
           {isLoading ? (
@@ -908,6 +889,25 @@ export default function Home() {
             </div>
           )}
         </section>
+
+        {/* Small legal footer after the complete recent-games section */}
+        <footer className="mt-8 pb-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+          <Link
+            href="/privacy"
+            data-testid="privacy-policy-link"
+            className="underline hover:text-muted-foreground/70 transition-colors"
+          >
+            {t.privacyPolicy}
+          </Link>
+          <span aria-hidden="true">·</span>
+          <Link
+            href="/terms"
+            data-testid="terms-of-use-link"
+            className="underline hover:text-muted-foreground/70 transition-colors"
+          >
+            {t.termsOfUse}
+          </Link>
+        </footer>
 
       </main>
 

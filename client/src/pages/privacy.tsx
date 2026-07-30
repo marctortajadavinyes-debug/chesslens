@@ -189,7 +189,7 @@ const CONTENT: Record<Lang, PolicyContent> = {
           <>
             <p>
               Mentre l'usuari treballa amb una partida, FotoChess manté
-              temporalment a la memòria operativa del servidor:
+              temporalment en la memòria operativa del servidor:
             </p>
             <ul>
               <li>la imatge necessària per mostrar la planella;</li>
@@ -1270,7 +1270,7 @@ const CONTENT: Record<Lang, PolicyContent> = {
           <>
             <p>
               While the user is working with a game, FotoChess temporarily
-              keeps the following in the server's operational memory:
+              keeps the following in the server’s operational memory:
             </p>
             <ul>
               <li>the image needed to display the scoresheet;</li>

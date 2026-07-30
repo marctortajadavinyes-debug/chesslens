@@ -387,7 +387,7 @@ const CONTENT_CA: TermsContent = {
             <li>els riscos d'abús.</li>
           </ul>
           <p>La versió vigent indicarà la data de l'última actualització.</p>
-          <p>La continuació de l'ús després de la publicació d'una nova versió implicarà l'aplicació de les condicions actualitzades a partir de la seva entrada en vigor, sense perjudici dels drets que la normativa imperativa reconegui a l'usuari.</p>
+          <p>Les condicions actualitzades seran aplicables des de la data indicada. Quan els canvis siguin substancials, se n'informarà de manera visible abans que entrin en vigor.</p>
         </>
       ),
     },
@@ -741,7 +741,7 @@ const CONTENT_ES: TermsContent = {
             <li>los riesgos de abuso.</li>
           </ul>
           <p>La versión vigente indicará la fecha de la última actualización.</p>
-          <p>La continuación del uso después de la publicación de una nueva versión implicará la aplicación de las condiciones actualizadas desde su entrada en vigor, sin perjuicio de los derechos que la normativa imperativa reconozca al usuario.</p>
+          <p>Las condiciones actualizadas serán aplicables desde la fecha indicada. Cuando los cambios sean sustanciales, se informará de forma visible antes de que entren en vigor.</p>
         </>
       ),
     },
@@ -1095,7 +1095,7 @@ const CONTENT_EN: TermsContent = {
             <li>risks of abuse.</li>
           </ul>
           <p>The current version will always state the date of the latest update.</p>
-          <p>Continued use after publication of a new version means that the updated terms will apply from their effective date, without prejudice to rights granted to users under mandatory law.</p>
+          <p>The updated terms will apply from the date indicated. Where changes are substantial, users will be informed visibly before they take effect.</p>
         </>
       ),
     },
