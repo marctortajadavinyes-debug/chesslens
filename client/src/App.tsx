@@ -17,7 +17,9 @@ function Router() {
       <Route path="/games/:id" component={GameDetail} />
       <Route path="/library" component={Library} />
       <Route path="/privacy" component={Privacy} />
+      <Route path="/privacidad" component={Privacy} />
       <Route path="/terms" component={Terms} />
+      <Route path="/terminos" component={Terms} />
       <Route component={NotFound} />
     </Switch>
   );
