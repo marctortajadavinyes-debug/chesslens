@@ -903,7 +903,7 @@ export default function Home() {
 
         <section
           aria-labelledby="about-fotochess-title"
-          className="mt-6 mx-auto max-w-3xl px-4 text-center"
+          className="mt-4 mx-auto max-w-3xl px-4 text-center"
         >
           <h2
             id="about-fotochess-title"
@@ -917,7 +917,7 @@ export default function Home() {
         </section>
 
         {/* Small legal footer after the complete recent-games section */}
-        <footer className="mt-4 pb-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+        <footer className="mt-2 pb-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
           <Link
             href="/privacy"
             data-testid="privacy-policy-link"
