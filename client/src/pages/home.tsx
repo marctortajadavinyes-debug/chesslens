@@ -71,6 +71,8 @@ type UiText = {
   addAnotherSheet: string;
   recentGames: string;
   noGames: string;
+  aboutFotoChessTitle: string;
+  aboutFotoChessDescription: string;
   genericErrorTitle: string;
   suggestionsTitle: string;
   suggestionsDescription: string;
@@ -184,6 +186,9 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     addAnotherSheet: "Afegir una altra planella (partides multiplanella)",
     recentGames: "Partides recents",
     noGames: "No hi ha partides encara",
+    aboutFotoChessTitle: "Sobre FotoChess",
+    aboutFotoChessDescription:
+      "FotoChess és una aplicació web que digitalitza planelles d’escacs a partir de fotografies i les converteix en fitxers PGN editables. Després pots guardar les partides a la teva biblioteca personal de Google Drive, filtrar-les —per exemple, per obertura—, analitzar-les i exportar-les a altres plataformes.",
     genericErrorTitle: "Error",
     suggestionsTitle: "Suggeriments",
     suggestionsDescription:
@@ -247,6 +252,9 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     addAnotherSheet: "Add another scoresheet (multi-sheet games)",
     recentGames: "Recent games",
     noGames: "No games yet",
+    aboutFotoChessTitle: "About FotoChess",
+    aboutFotoChessDescription:
+      "FotoChess is a web application that digitizes chess scoresheets from photographs and converts them into editable PGN files. You can then save the games to your personal Google Drive library, filter them—for example, by opening—analyze them, and export them to other platforms.",
     genericErrorTitle: "Error",
     suggestionsTitle: "Suggestions",
     suggestionsDescription:
@@ -309,6 +317,9 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     addAnotherSheet: "Añadir otra planilla (partidas multiplanilla)",
     recentGames: "Partidas recientes",
     noGames: "Todavía no hay partidas",
+    aboutFotoChessTitle: "Sobre FotoChess",
+    aboutFotoChessDescription:
+      "FotoChess es una aplicación web que digitaliza planillas de ajedrez a partir de fotografías y las convierte en archivos PGN editables. Después puedes guardar las partidas en tu biblioteca personal de Google Drive, filtrarlas —por ejemplo, por apertura—, analizarlas y exportarlas a otras plataformas.",
     genericErrorTitle: "Error",
     suggestionsTitle: "Sugerencias",
     suggestionsDescription:
@@ -888,6 +899,21 @@ export default function Home() {
               ))}
             </div>
           )}
+        </section>
+
+        <section
+          aria-labelledby="about-fotochess-title"
+          className="mt-10 mx-auto max-w-3xl px-4 text-center"
+        >
+          <h2
+            id="about-fotochess-title"
+            className="text-sm font-semibold text-foreground"
+          >
+            {t.aboutFotoChessTitle}
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+            {t.aboutFotoChessDescription}
+          </p>
         </section>
 
         {/* Small legal footer after the complete recent-games section */}
