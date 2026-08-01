@@ -97,8 +97,8 @@ const SETTINGS_STORAGE_KEY = "chesslens_user_settings_v1";
 const DEFAULT_SETTINGS: FotoChessUserSettings = {
   alias: "",
   email: "",
-  appLanguage: "ca",
-  scoresheetLanguage: "ca",
+  appLanguage: "es",
+  scoresheetLanguage: "es",
   sheetFormat: "fce_75_3x25",
 };
 
@@ -953,39 +953,43 @@ export default function Home() {
           )}
         </section>
 
-        <section
-          aria-labelledby="about-fotochess-title"
-          className="mt-4 mx-auto max-w-3xl px-4 text-center"
-        >
-          <h2
-            id="about-fotochess-title"
-            className="text-sm font-semibold text-foreground"
-          >
-            {t.aboutFotoChessTitle}
-          </h2>
-          <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-            {t.aboutFotoChessDescription}
-          </p>
-        </section>
+        {hasSavedSettings && (
+          <>
+            <section
+              aria-labelledby="about-fotochess-title"
+              className="mt-4 mx-auto max-w-3xl px-4 text-center"
+            >
+              <h2
+                id="about-fotochess-title"
+                className="text-sm font-semibold text-foreground"
+              >
+                {t.aboutFotoChessTitle}
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                {t.aboutFotoChessDescription}
+              </p>
+            </section>
 
-        {/* Small legal footer after the complete recent-games section */}
-        <footer className="mt-2 pb-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-          <Link
-            href="/privacy"
-            data-testid="privacy-policy-link"
-            className="underline hover:text-muted-foreground/70 transition-colors"
-          >
-            {t.privacyPolicy}
-          </Link>
-          <span aria-hidden="true">·</span>
-          <Link
-            href="/terms"
-            data-testid="terms-of-use-link"
-            className="underline hover:text-muted-foreground/70 transition-colors"
-          >
-            {t.termsOfUse}
-          </Link>
-        </footer>
+            {/* Small legal footer after the complete recent-games section */}
+            <footer className="mt-2 pb-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+              <Link
+                href="/privacy"
+                data-testid="privacy-policy-link"
+                className="underline hover:text-muted-foreground/70 transition-colors"
+              >
+                {t.privacyPolicy}
+              </Link>
+              <span aria-hidden="true">·</span>
+              <Link
+                href="/terms"
+                data-testid="terms-of-use-link"
+                className="underline hover:text-muted-foreground/70 transition-colors"
+              >
+                {t.termsOfUse}
+              </Link>
+            </footer>
+          </>
+        )}
 
       </main>
 
