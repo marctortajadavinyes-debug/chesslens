@@ -88,6 +88,8 @@ type UiText = {
   analysisWithStockfish: string;
   privacyPolicy: string;
   termsOfUse: string;
+  initialFotoChessTitle: string;
+  initialFotoChessDescription: string;
 };
 
 const SETTINGS_STORAGE_KEY = "chesslens_user_settings_v1";
@@ -209,6 +211,9 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     analysisWithStockfish: "Anàlisi amb Stockfish 18",
     privacyPolicy: "Política de privacitat",
     termsOfUse: "Condicions d'ús",
+    initialFotoChessTitle: "FotoChess",
+    initialFotoChessDescription:
+      "FotoChess és una aplicació web que digitalitza planelles d'escacs a partir de fotografies i les converteix en fitxers PGN editables. Pots guardar voluntàriament les partides a la teva biblioteca personal de Google Drive, filtrar-les, analitzar-les i exportar-les a altres plataformes.",
   },
   en: {
     library: "My games",
@@ -275,6 +280,9 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     analysisWithStockfish: "Analysis with Stockfish 18",
     privacyPolicy: "Privacy Policy",
     termsOfUse: "Terms of Use",
+    initialFotoChessTitle: "FotoChess",
+    initialFotoChessDescription:
+      "FotoChess is a web application that digitizes chess scoresheets from photographs and converts them into editable PGN files. You can optionally save games to your personal Google Drive library, filter them, analyze them, and export them to other platforms.",
   },
   es: {
     library: "Mis partidas",
@@ -340,6 +348,9 @@ const UI_TEXT: Record<AppLanguage, UiText> = {
     analysisWithStockfish: "Análisis con Stockfish 18",
     privacyPolicy: "Política de privacidad",
     termsOfUse: "Condiciones de uso",
+    initialFotoChessTitle: "FotoChess",
+    initialFotoChessDescription:
+      "FotoChess es una aplicación web que digitaliza planillas de ajedrez a partir de fotografías y las convierte en archivos PGN editables. Puedes guardar voluntariamente las partidas en tu biblioteca personal de Google Drive, filtrarlas, analizarlas y exportarlas a otras plataformas.",
   },
 };
 
@@ -378,6 +389,8 @@ export default function Home() {
     useState<FotoChessUserSettings>(DEFAULT_SETTINGS);
 
   const t = UI_TEXT[settings.appLanguage] ?? UI_TEXT.ca;
+  // Reflects the language selector in the initial-settings form before saving.
+  const initialSettingsText = UI_TEXT[draftSettings.appLanguage] ?? UI_TEXT.ca;
 
   useEffect(() => {
     try {
@@ -651,6 +664,45 @@ export default function Home() {
                     </Button>
                   )}
                 </div>
+
+                {!hasSavedSettings && (
+                  <section
+                    aria-labelledby="initial-fotochess-title"
+                    className="rounded-xl border border-border bg-muted/20 p-3 text-center"
+                  >
+                    <h3
+                      id="initial-fotochess-title"
+                      className="text-lg font-bold text-foreground"
+                    >
+                      {initialSettingsText.initialFotoChessTitle}
+                    </h3>
+
+                    <p
+                      data-testid="initial-fotochess-description"
+                      className="mt-1.5 text-sm leading-relaxed text-muted-foreground"
+                    >
+                      {initialSettingsText.initialFotoChessDescription}
+                    </p>
+
+                    <div className="mt-2 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                      <Link
+                        href="/privacy"
+                        data-testid="initial-privacy-policy-link"
+                        className="underline hover:text-muted-foreground/70 transition-colors"
+                      >
+                        {initialSettingsText.privacyPolicy}
+                      </Link>
+                      <span aria-hidden="true">·</span>
+                      <Link
+                        href="/terms"
+                        data-testid="initial-terms-of-use-link"
+                        className="underline hover:text-muted-foreground/70 transition-colors"
+                      >
+                        {initialSettingsText.termsOfUse}
+                      </Link>
+                    </div>
+                  </section>
+                )}
 
                 <div className="grid grid-cols-1 gap-3">
                   <div>
