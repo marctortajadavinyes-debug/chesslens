@@ -850,6 +850,9 @@ def clean_spacing(token: str) -> str:
     t = t.replace("0-0-0", "O-O-O").replace("0-0", "O-O")
     t = t.replace("o-o-o", "O-O-O").replace("o-o", "O-O")
     t = re.sub(r"[!?]+$", "", t)
+    # "=" al final de una jugada indica reclamación de tablas.
+    # Se elimina para validar la jugada, sin afectar promociones como e8=Q.
+    t = re.sub(r"=$", "", t)
     t = t.replace(":", "")
     t = t.replace(";", "")
     t = t.replace(",", "")
