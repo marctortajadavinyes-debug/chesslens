@@ -853,6 +853,9 @@ def clean_spacing(token: str) -> str:
     # "=" al final de una jugada indica reclamación de tablas.
     # Se elimina para validar la jugada, sin afectar promociones como e8=Q.
     t = re.sub(r"=$", "", t)
+    # Una anotación horaria al final de la celda no forma parte de la jugada.
+    # Ejemplos: Ag3(1:20), Dh5(14:04), Nf6[0:37].
+    t = re.sub(r"[\(\[]\d{1,2}[:.]\d{2}[\)\]]$", "", t)
     t = t.replace(":", "")
     t = t.replace(";", "")
     t = t.replace(",", "")
