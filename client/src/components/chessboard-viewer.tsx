@@ -238,6 +238,12 @@ function formatSanForScoresheetLanguage(
     .replace(/K/g, "R");
 }
 
+// Unicode chess symbols for the click-based promotion overlay
+const PROMO_UNICODE: Record<string, Record<string, string>> = {
+  w: { q: "♕", r: "♖", b: "♗", n: "♘" },
+  b: { q: "♛", r: "♜", b: "♝", n: "♞" },
+};
+
 export function ChessboardViewer({
   pgn,
   error,
@@ -267,6 +273,16 @@ export function ChessboardViewer({
   const [uiError, setUiError] = useState<string | null>(null);
   const [tempPosition, setTempPosition] = useState<string | null>(null);
   const handledJumpRef = useRef<number | undefined>(undefined);
+
+  // ── Click-to-move state ────────────────────────────────────
+  const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
+  const [legalTargetSquares, setLegalTargetSquares] = useState<string[]>([]);
+  /** Pending click-based promotion: captured origin + target before piece selection. */
+  const [pendingPromotion, setPendingPromotion] = useState<{
+    from: string;
+    to: string;
+    color: "w" | "b";
+  } | null>(null);
 
   const { toast } = useToast();
   const t = BOARD_TEXT[appLanguage] ?? BOARD_TEXT.ca;
@@ -363,43 +379,66 @@ export function ChessboardViewer({
     }
   }, [enableInput, historySan.length, lockToEnd]);
 
+  // Clear click-to-move selection whenever the board position or interaction
+  // mode changes, so stale highlights never linger.
+  useEffect(() => {
+    setSelectedSquare(null);
+    setLegalTargetSquares([]);
+    setPendingPromotion(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    currentMoveIndex,
+    pgn,
+    sandboxFen,
+    jumpSignal?.counter,
+    enableInput,
+    enableAnalysisSandbox,
+    boardOrientation,
+    syncToken,
+    isPlaying,
+  ]);
+
   const currentPosition = useMemo(() => {
     if (sandboxFen) return sandboxFen;
     if (tempPosition) return tempPosition;
     return fenAtMoveIndex(game, currentMoveIndex);
   }, [sandboxFen, game, currentMoveIndex, tempPosition]);
 
-  const handlePieceDrop = (source: string, target: string, piece: string) => {
+  // ── Helpers ──────────────────────────────────────────────────
+
+  function clearSquareSelection() {
+    setSelectedSquare(null);
+    setLegalTargetSquares([]);
+  }
+
+  /**
+   * Shared move executor used by both the drag path (handlePieceDrop) and the
+   * click path (handleSquareClick / promotion overlay).
+   *
+   * via='drag'  → shows the illegal-move toast on failure.
+   * via='click' → fails silently (no toast).
+   */
+  function executeMoveInternal(
+    source: string,
+    target: string,
+    promotion: string | undefined,
+    via: "drag" | "click",
+  ): boolean {
     // SANDBOX MODE — user explores a variant in analysis; never touches the real game.
-    // Gate is enableAnalysisSandbox (NOT sandboxFen) so the first move also works
-    // when sandboxFen is still null.
     if (enableAnalysisSandbox) {
       if (!onSandboxMove) {
-        console.warn("[sandbox] enableAnalysisSandbox=true but onSandboxMove is missing!");
+        console.warn(
+          "[sandbox] enableAnalysisSandbox=true but onSandboxMove is missing!",
+        );
         return false;
       }
 
       const baseFen = sandboxFen ?? fenAtMoveIndex(game, currentMoveIndex);
-      console.log("[sandbox viewer drop start]", { source, target, piece, baseFen, currentMoveIndex });
-
       const sandboxGame = new Chess();
       sandboxGame.load(baseFen);
 
-      // Determine promotion piece only for real pawn-promotion moves.
-      // react-chessboard passes the resulting piece type ("wQ", "bR"…) as the
-      // third argument; for regular moves it passes the moving piece ("wP", "bN"…).
-      const movingPiece = sandboxGame.get(source as any);
-      const isPawnPromotion =
-        movingPiece?.type === "p" &&
-        (target.endsWith("8") || target.endsWith("1"));
-      const promotionChar = isPawnPromotion
-        ? (piece[1]?.toLowerCase() ?? "q")
-        : undefined;
-
-      // Build a minimal move object — do NOT include promotion key at all for
-      // non-promotion moves so chess.js cannot accidentally reject it.
-      const moveInput = isPawnPromotion
-        ? { from: source, to: target, promotion: promotionChar }
+      const moveInput = promotion
+        ? { from: source, to: target, promotion }
         : { from: source, to: target };
 
       let result: ReturnType<Chess["move"]> | null = null;
@@ -410,7 +449,10 @@ export function ChessboardViewer({
         return false;
       }
       if (!result) {
-        console.warn("[sandbox] chess.move returned null/false", { moveInput, baseFen });
+        console.warn("[sandbox] chess.move returned null/false", {
+          moveInput,
+          baseFen,
+        });
         return false;
       }
 
@@ -434,7 +476,80 @@ export function ChessboardViewer({
       return true;
     }
 
-    // CORRECTION MODE — real move review; guarded by enableInput
+    // CORRECTION MODE — real move review; guarded by enableInput.
+    if (!enableInput || !onMove) return false;
+
+    const currentGame = new Chess(fenAtMoveIndex(game, currentMoveIndex));
+    const moveInput = promotion
+      ? { from: source, to: target, promotion }
+      : { from: source, to: target };
+
+    try {
+      currentGame.move(moveInput as any);
+      setTempPosition(currentGame.fen());
+
+      onMove({
+        from: source,
+        to: target,
+        promotion,
+        undoIndex: currentMoveIndex,
+      });
+
+      return true;
+    } catch {
+      if (via === "drag") {
+        toast({
+          title: t.illegalBoardMove,
+          variant: "destructive",
+          duration: 2000,
+        });
+      }
+      return false;
+    }
+  }
+
+  // ── Drag handler ─────────────────────────────────────────────
+
+  const handlePieceDrop = (source: string, target: string, piece: string) => {
+    // Clear any lingering click selection when a drag is completed.
+    clearSquareSelection();
+    setPendingPromotion(null);
+
+    if (enableAnalysisSandbox) {
+      if (!onSandboxMove) {
+        console.warn(
+          "[sandbox] enableAnalysisSandbox=true but onSandboxMove is missing!",
+        );
+        return false;
+      }
+
+      const baseFen = sandboxFen ?? fenAtMoveIndex(game, currentMoveIndex);
+      console.log("[sandbox viewer drop start]", {
+        source,
+        target,
+        piece,
+        baseFen,
+        currentMoveIndex,
+      });
+
+      const sandboxGame = new Chess();
+      sandboxGame.load(baseFen);
+
+      // Determine promotion piece only for real pawn-promotion moves.
+      // react-chessboard passes the resulting piece type ("wQ", "bR"…) as the
+      // third argument; for regular moves it passes the moving piece ("wP", "bN"…).
+      const movingPiece = sandboxGame.get(source as any);
+      const isPawnPromotion =
+        movingPiece?.type === "p" &&
+        (target.endsWith("8") || target.endsWith("1"));
+      const promotionChar = isPawnPromotion
+        ? (piece[1]?.toLowerCase() ?? "q")
+        : undefined;
+
+      return executeMoveInternal(source, target, promotionChar, "drag");
+    }
+
+    // CORRECTION MODE
     if (!enableInput || !onMove) return false;
 
     const currentGame = new Chess(fenAtMoveIndex(game, currentMoveIndex));
@@ -445,33 +560,157 @@ export function ChessboardViewer({
       (target.endsWith("8") || target.endsWith("1"));
 
     // Capturamos la pieza elegida en el menú de imágenes nativo de react-chessboard
-    let promotionChar = undefined;
-    if (isPawnPromotion) {
-      // 'piece' suele venir como "wQ", "bR", etc. Nos quedamos con la segunda letra en minúscula.
-      promotionChar = piece.length === 2 ? piece[1].toLowerCase() : "q";
-    }
+    const promotionChar = isPawnPromotion
+      ? (piece.length === 2 ? piece[1].toLowerCase() : "q")
+      : undefined;
 
-    try {
-      currentGame.move({ from: source, to: target, promotion: promotionChar });
-      setTempPosition(currentGame.fen());
-
-      onMove({
-        from: source,
-        to: target,
-        promotion: promotionChar,
-        undoIndex: currentMoveIndex,
-      });
-
-      return true;
-    } catch {
-      toast({
-        title: t.illegalBoardMove,
-        variant: "destructive",
-        duration: 2000,
-      });
-      return false;
-    }
+    return executeMoveInternal(source, target, promotionChar, "drag");
   };
+
+  // ── Click-to-move handler ────────────────────────────────────
+
+  const handleSquareClick = (square: string) => {
+    // If a promotion overlay is open, cancel it on any square click.
+    if (pendingPromotion) {
+      setPendingPromotion(null);
+      clearSquareSelection();
+      return;
+    }
+
+    if (!enableInput && !enableAnalysisSandbox) {
+      clearSquareSelection();
+      return;
+    }
+
+    // Effective FEN for legal move calculation — matches the position shown.
+    const effectiveFen = enableAnalysisSandbox
+      ? (sandboxFen ?? fenAtMoveIndex(game, currentMoveIndex))
+      : fenAtMoveIndex(game, currentMoveIndex);
+
+    const clickedGame = new Chess();
+    try {
+      clickedGame.load(effectiveFen);
+    } catch {
+      clearSquareSelection();
+      return;
+    }
+
+    if (selectedSquare !== null) {
+      // ── A piece is already selected ──────────────────────────
+
+      // Case 1: click the same square → cancel selection.
+      if (square === selectedSquare) {
+        clearSquareSelection();
+        return;
+      }
+
+      // Case 2: click a legal destination → execute the move.
+      if (legalTargetSquares.includes(square)) {
+        const movingPiece = clickedGame.get(selectedSquare as any);
+        const isPromotion =
+          movingPiece?.type === "p" &&
+          (square.endsWith("8") || square.endsWith("1"));
+
+        if (isPromotion) {
+          // Show the custom promotion overlay.
+          const color = clickedGame.turn();
+          clearSquareSelection();
+          setPendingPromotion({ from: selectedSquare, to: square, color });
+        } else {
+          const from = selectedSquare;
+          clearSquareSelection();
+          executeMoveInternal(from, square, undefined, "click");
+        }
+        return;
+      }
+
+      // Case 3: click any other square → cancel silently (no toast).
+      clearSquareSelection();
+      return;
+    }
+
+    // ── No piece selected yet — try to select ────────────────
+
+    const piece = clickedGame.get(square as any);
+    if (!piece) return; // empty square
+
+    // Only allow selecting a piece of the side to move.
+    if (piece.color !== clickedGame.turn()) return;
+
+    const moves = clickedGame.moves({
+      square: square as any,
+      verbose: true,
+    }) as any[];
+    if (moves.length === 0) return; // no legal moves from this square
+
+    // Deduplicate targets (promotions generate multiple moves to the same square).
+    const seen: Record<string, true> = {};
+    const targets: string[] = [];
+    for (const m of moves) {
+      const to = m.to as string;
+      if (!seen[to]) { seen[to] = true; targets.push(to); }
+    }
+
+    setSelectedSquare(square);
+    setLegalTargetSquares(targets);
+  };
+
+  // ── Square highlight styles ──────────────────────────────────
+
+  const squareHighlights = useMemo((): Record<
+    string,
+    Record<string, string | number>
+  > => {
+    const styles: Record<string, Record<string, string | number>> = {};
+    if (!selectedSquare && legalTargetSquares.length === 0) return styles;
+
+    // Highlight the selected origin with a strong green inset border.
+    if (selectedSquare) {
+      styles[selectedSquare] = {
+        boxShadow: "inset 0 0 0 4px rgba(20, 85, 30, 0.9)",
+      };
+    }
+
+    if (legalTargetSquares.length > 0) {
+      // Load the effective position to distinguish empty squares from captures.
+      const posGame = new Chess();
+      try {
+        const fen = enableAnalysisSandbox
+          ? (sandboxFen ?? fenAtMoveIndex(game, currentMoveIndex))
+          : fenAtMoveIndex(game, currentMoveIndex);
+        posGame.load(fen);
+      } catch {
+        /* leave posGame at starting position — highlight will still show */
+      }
+
+      for (const sq of legalTargetSquares) {
+        const occupant = posGame.get(sq as any);
+        if (occupant) {
+          // Capture destination: ring / inset border.
+          styles[sq] = {
+            boxShadow: "inset 0 0 0 4px rgba(20, 85, 30, 0.6)",
+          };
+        } else {
+          // Empty destination: small centered dot.
+          styles[sq] = {
+            backgroundImage:
+              "radial-gradient(circle, rgba(20, 85, 30, 0.45) 26%, transparent 26%)",
+          };
+        }
+      }
+    }
+
+    return styles;
+  }, [
+    selectedSquare,
+    legalTargetSquares,
+    enableAnalysisSandbox,
+    sandboxFen,
+    game,
+    currentMoveIndex,
+  ]);
+
+  // ── PGN / error loading ──────────────────────────────────────
 
   useEffect(() => {
     setTempPosition(null);
@@ -547,6 +786,12 @@ export function ChessboardViewer({
               position={currentPosition}
               boardOrientation={boardOrientation}
               onPieceDrop={handlePieceDrop}
+              onPieceDragBegin={() => {
+                clearSquareSelection();
+                setPendingPromotion(null);
+              }}
+              onSquareClick={(sq) => handleSquareClick(sq)}
+              customSquareStyles={squareHighlights as any}
               arePiecesDraggable={enableInput || enableAnalysisSandbox}
               customDarkSquareStyle={{ backgroundColor: "#779556" }}
               customLightSquareStyle={{ backgroundColor: "#ebecd0" }}
@@ -555,6 +800,35 @@ export function ChessboardViewer({
               customArrowColor="rgb(255,170,0)"
             />
           </div>
+
+          {/* ── Click-based promotion overlay ───────────────── */}
+          {pendingPromotion && (
+            <div
+              className="absolute inset-0 z-10 flex items-center justify-center rounded-lg"
+              style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+              onClick={() => setPendingPromotion(null)}
+            >
+              <div
+                className="flex gap-2 rounded-xl bg-white p-3 shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {(["q", "r", "b", "n"] as const).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => {
+                      const { from, to } = pendingPromotion;
+                      setPendingPromotion(null);
+                      executeMoveInternal(from, to, p, "click");
+                    }}
+                    className="flex h-14 w-14 items-center justify-center rounded-lg border-2 border-gray-200 bg-amber-50 text-4xl transition-colors hover:border-green-600 hover:bg-amber-100 cursor-pointer"
+                    title={p.toUpperCase()}
+                  >
+                    {PROMO_UNICODE[pendingPromotion.color]?.[p] ?? p.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
